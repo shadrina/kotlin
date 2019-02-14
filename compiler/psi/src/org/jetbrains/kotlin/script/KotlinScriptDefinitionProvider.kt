@@ -16,15 +16,8 @@
 
 package org.jetbrains.kotlin.script
 
-import com.intellij.ide.highlighter.JavaClassFileType
 import com.intellij.openapi.components.ServiceManager
-import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.idea.KotlinFileType
-import org.jetbrains.kotlin.psi.KtFile
 
 interface ScriptDefinitionProvider {
     fun findScriptDefinition(fileName: String): KotlinScriptDefinition?
@@ -39,36 +32,4 @@ interface ScriptDefinitionProvider {
     }
 }
 
-fun PsiFile.scriptDefinition(project: Project): KotlinScriptDefinition? {
-    if (this !is KtFile || this.script == null) return null
-    if (virtualFile.isNonScript()) return null
-
-    return scriptDefinitionByFileName(project, virtualFile.name)
-}
-
-fun findScriptDefinition(file: VirtualFile, project: Project): KotlinScriptDefinition? {
-    if (file.isNonScript()) return null
-    if ((PsiManager.getInstance(project).findFile(file) as? KtFile)?.script == null) return null
-
-    return scriptDefinitionByFileName(project, file.name)
-}
-
-fun scriptDefinitionByFileName(project: Project, fileName: String): KotlinScriptDefinition {
-    val scriptDefinitionProvider = ScriptDefinitionProvider.getInstance(project) ?: return null
-        ?: throw IllegalStateException("Unable to get script definition: ScriptDefinitionProvider is not configured.")
-
-    return scriptDefinitionProvider.findScriptDefinition(fileName) ?: scriptDefinitionProvider.getDefaultScriptDefinition()
-}
-
-private fun VirtualFile.isNonScript(): Boolean =
-    isDirectory ||
-            extension == KotlinFileType.EXTENSION ||
-            extension == JavaClassFileType.INSTANCE.defaultExtension ||
-            !this.isKotlinFileType()
-
-private fun VirtualFile.isKotlinFileType(): Boolean {
-    val typeRegistry = FileTypeRegistry.getInstance()
-    return typeRegistry.getFileTypeByFile(this) == KotlinFileType.INSTANCE ||
-            typeRegistry.getFileTypeByFileName(name) == KotlinFileType.INSTANCE
-}
 
