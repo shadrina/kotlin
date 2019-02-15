@@ -114,7 +114,7 @@
           <element id="archive" name="kotlin-scripting-compiler.jar">
             <element id="module-output" name="kotlin.kotlin-scripting-compiler.main" />
             <element id="directory" name="META-INF">
-              <element id="file-copy" path="$PROJECT_DIR$/plugins/scripting/scripting-cli/build/tmp/jar/MANIFEST.MF" />
+              <element id="file-copy" path="$PROJECT_DIR$/plugins/scripting/scripting-compiler/build/tmp/jar/MANIFEST.MF" />
             </element>
           </element>
           <element id="archive" name="kotlin-scripting-idea.jar">
@@ -198,7 +198,7 @@
           </element>
           <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.3.30-dev-1419/285fde038cb28087a51aee95919d428a2511b443/kotlin-stdlib-jdk8-1.3.30-dev-1419.jar" output-file-name="kotlin-stdlib-jdk8.jar" />
           <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.30-dev-1419/72c0c2470715b0aa18d5624c4fa9db0345b6c09f/kotlin-stdlib-jdk7-1.3.30-dev-1419.jar" output-file-name="kotlin-stdlib-jdk7.jar" />
-          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.3.30-dev-1419/c4bca00118a72c8d59fbe3d2c6621e0d79f12095/kotlin-stdlib-1.3.30-dev-1419.jar"  output-file-name="kotlin-stdlib.jar" />
+          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.3.30-dev-1419/c4bca00118a72c8d59fbe3d2c6621e0d79f12095/kotlin-stdlib-1.3.30-dev-1419.jar" output-file-name="kotlin-stdlib.jar" />
           <element id="artifact" artifact-name="kotlin-reflect.jar" />
           <element id="artifact" artifact-name="kotlin-compiler-client-embeddable.jar" />
           <element id="artifact" artifact-name="kotlin-plugin.jar" />
