@@ -1,21 +1,3 @@
-/*
- * Copyright 2010-2017 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.jetbrains.kotlin.js
-
 import com.google.gwt.dev.js.ThrowExceptionOnErrorReporter
 import org.jetbrains.kotlin.js.backend.JsToStringGenerationVisitor
 import org.jetbrains.kotlin.js.backend.ast.*
@@ -29,14 +11,27 @@ import org.jetbrains.kotlin.js.util.TextOutputImpl
 import java.io.File
 import java.io.StringReader
 
-fun main(args: Array<String>) {
+buildscript {
+    repositories.withRedirector(project) {
+        bootstrapKotlinRepo?.let(::maven)
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-compiler:$bootstrapKotlinVersion")
+    }
+}
+
+project.extra["mergeAndWrapJsParts"] = ::mergeAndWrapJsParts
+
+
+fun mergeAndWrapJsParts(args: List<String>) {
     val program = JsProgram()
 
     val outputFile = File(args[0])
     val baseDir = File(args[1]).canonicalFile.toPath()
     fun File.relativizeIfNecessary(): String = baseDir.relativize(canonicalFile.toPath()).toString()
 
-    val wrapperFile = File(args[2])
+    val wrapperFile = projectDir.resolve(args[2])
     val wrapper = parse(wrapperFile.readText(), ThrowExceptionOnErrorReporter, program.scope, wrapperFile.relativizeIfNecessary())!!
     val insertionPlace = wrapper.createInsertionPlace()
 
@@ -96,7 +91,7 @@ fun main(args: Array<String>) {
     sourceMapFile.writeText(sourceMapJson.toString())
 }
 
-private fun List<JsStatement>.createInsertionPlace(): JsBlock {
+fun List<JsStatement>.createInsertionPlace(): JsBlock {
     val block = JsGlobalBlock()
 
     val visitor = object : JsVisitorWithContextImpl() {
@@ -125,7 +120,7 @@ private fun List<JsStatement>.createInsertionPlace(): JsBlock {
     return block
 }
 
-private fun collectFiles(rootFile: File, target: MutableList<File>) {
+fun collectFiles(rootFile: File, target: MutableList<File>) {
     if (rootFile.isDirectory) {
         for (child in rootFile.listFiles().sorted()) {
             collectFiles(child, target)
