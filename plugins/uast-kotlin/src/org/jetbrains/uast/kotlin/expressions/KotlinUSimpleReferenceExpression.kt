@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.synthetic.SyntheticJavaPropertyDescriptor
 import org.jetbrains.kotlin.utils.addToStdlib.constant
 import org.jetbrains.uast.*
+import org.jetbrains.uast.internal.log
 import org.jetbrains.uast.kotlin.declarations.KotlinUIdentifier
 import org.jetbrains.uast.kotlin.internal.DelegatedMultiResolve
 import org.jetbrains.uast.visitor.UastVisitor
@@ -202,17 +203,23 @@ class KotlinClassViaConstructorUSimpleReferenceExpression(
         givenParent: UElement?
 ) : KotlinAbstractUExpression(givenParent), USimpleNameReferenceExpression, KotlinUElementWithType {
     override val resolvedName: String?
-        get() = (psi.getResolvedCall(psi.analyze())?.resultingDescriptor as? ConstructorDescriptor)
-                ?.containingDeclaration?.name?.asString()
+        get() = (resolved as? PsiNamedElement)?.name
 
-    override fun resolve(): PsiElement? =
+    private val resolved by lazy {
         when (val resultingDescriptor = psi.getResolvedCall(psi.analyze())?.resultingDescriptor) {
-            is ConstructorDescriptor ->
-                resultingDescriptor.containingDeclaration.toSource()?.getMaybeLightElement(this)
+            is ConstructorDescriptor -> {
+                resultingDescriptor.constructedClass.toSource()?.getMaybeLightElement(this)
+                    ?: resolveDeserializedClass(psi, resultingDescriptor)
+            }
             is SamConstructorDescriptor ->
                 (resultingDescriptor.returnType?.getFunctionalInterfaceType(this, psi) as? PsiClassType)?.resolve()
             else -> null
         }
+    }
+
+    override fun resolve(): PsiElement? = resolved
+
+    override fun asLogString(): String = log<USimpleNameReferenceExpression>("identifier = $identifier, resolvesTo = $resolvedName")
 }
 
 class KotlinStringUSimpleReferenceExpression(

@@ -208,14 +208,19 @@ class KotlinClassViaConstructorUSimpleReferenceExpression(
         get() = (psi.getResolvedCall(psi.analyze())?.resultingDescriptor as? ConstructorDescriptor)
                 ?.containingDeclaration?.name?.asString()
 
-    override fun resolve(): PsiElement? =
+    private val resolved: PsiElement? by lazy {
         when (val resultingDescriptor = psi.getResolvedCall(psi.analyze())?.resultingDescriptor) {
-            is ConstructorDescriptor ->
-                resultingDescriptor.containingDeclaration.toSource()?.getMaybeLightElement(this)
+            is ConstructorDescriptor -> {
+                resultingDescriptor.constructedClass.toSource()?.getMaybeLightElement(this)
+                    ?: resolveDeserializedClass(psi, resultingDescriptor)
+            }
             is SamConstructorDescriptor ->
                 (resultingDescriptor.returnType?.getFunctionalInterfaceType(this, psi) as? PsiClassType)?.resolve()
             else -> null
         }
+    }
+
+    override fun resolve(): PsiElement? = resolved
 }
 
 class KotlinStringUSimpleReferenceExpression(
