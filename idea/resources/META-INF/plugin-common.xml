@@ -226,7 +226,7 @@
                         serviceImplementation="org.jetbrains.kotlin.idea.KotlinPluginUpdater"/>
 
     <projectService serviceInterface="org.jetbrains.kotlin.idea.util.ImportInsertHelper"
-                    serviceImplementation="org.jetbrains.kotlin.util.ImportInsertHelperImpl"/>
+                    serviceImplementation="org.jetbrains.kotlin.idea.util.ImportInsertHelperImpl"/>
 
     <applicationService serviceInterface="org.jetbrains.kotlin.psi.KotlinDeclarationNavigationPolicy"
                         serviceImplementation="org.jetbrains.kotlin.idea.decompiler.navigation.KotlinDeclarationNavigationPolicyImpl"/>
@@ -1358,6 +1358,11 @@
 
     <intentionAction>
       <className>org.jetbrains.kotlin.idea.intentions.IntroduceVariableIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.kotlin.idea.intentions.IntroduceImportAliasIntention</className>
       <category>Kotlin</category>
     </intentionAction>
 
