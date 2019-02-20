@@ -212,7 +212,7 @@ class KotlinClassViaConstructorUSimpleReferenceExpression(
             is SamConstructorDescriptor ->
                 (resultingDescriptor.returnType?.getFunctionalInterfaceType(this, psi) as? PsiClassType)?.resolve()
             else -> null
-    }
+        }
 }
 
 class KotlinStringUSimpleReferenceExpression(
