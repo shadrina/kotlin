@@ -36,9 +36,7 @@ fun main(args: Array<String>) {
 private fun mergeStdlibParts(outputFile: File, wrapperFile: File, baseDir: File, inputPaths: List<File>) {
     val program = JsProgram()
 
-    val baseDirPath = baseDir.toPath()
-
-    fun File.relativizeIfNecessary(): String = baseDirPath.relativize(canonicalFile.toPath()).toString()
+    fun File.relativizeIfNecessary(): String = canonicalFile.toRelativeString(baseDir)
 
     val wrapper = parse(wrapperFile.readText(), ThrowExceptionOnErrorReporter, program.scope, wrapperFile.relativizeIfNecessary())!!
     val insertionPlace = wrapper.createInsertionPlace()
