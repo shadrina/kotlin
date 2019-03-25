@@ -426,6 +426,10 @@ public class KtVisitor<R, D> extends PsiElementVisitor {
         return visitKtElement(condition, data);
     }
 
+    public R visitQuotation(@NotNull KtQuotation entry, D data) {
+        return visitStringTemplateEntry(entry, data);
+    }
+
     public R visitStringTemplateEntry(@NotNull KtStringTemplateEntry entry, D data) {
         return visitKtElement(entry, data);
     }

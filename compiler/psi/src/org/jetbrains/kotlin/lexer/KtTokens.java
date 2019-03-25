@@ -40,6 +40,7 @@ public interface KtTokens {
     KtToken FLOAT_LITERAL      = new KtToken("FLOAT_CONSTANT");
     KtToken CHARACTER_LITERAL  = new KtToken("CHARACTER_LITERAL");
 
+    KtToken QUOTE = new KtToken("QUOTE");
     KtToken CLOSING_QUOTE = new KtToken("CLOSING_QUOTE");
     KtToken OPEN_QUOTE = new KtToken("OPEN_QUOTE");
     KtToken REGULAR_STRING_PART = new KtToken("REGULAR_STRING_PART");
@@ -131,6 +132,7 @@ public interface KtTokens {
     KtKeywordToken NOT_IS      = KtKeywordToken.keyword("NOT_IS", "!is");
     KtSingleValueToken HASH        = new KtSingleValueToken("HASH", "#");
     KtSingleValueToken AT          = new KtSingleValueToken("AT", "@");
+    // KtSingleValueToken QUOTE       = new KtSingleValueToken("QUOTE", "q\"");
 
     KtSingleValueToken COMMA       = new KtSingleValueToken("COMMA", ",");
 

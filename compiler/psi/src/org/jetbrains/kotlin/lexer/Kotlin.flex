@@ -116,6 +116,8 @@ ESCAPE_SEQUENCE=\\(u{HEX_DIGIT}{HEX_DIGIT}{HEX_DIGIT}{HEX_DIGIT}|[^\n])
 // ANY_ESCAPE_SEQUENCE = \\[^]
 THREE_QUO = (\"\"\")
 THREE_OR_MORE_QUO = ({THREE_QUO}\"*)
+Q_QUO = (q\")
+Q_THREE_QUO = (q\"\"\")
 
 REGULAR_STRING_PART=[^\\\"\n\$]+
 SHORT_TEMPLATE_ENTRY=\${IDENTIFIER}
@@ -127,6 +129,7 @@ LONELY_BACKTICK=`
 
 // String templates
 
+{Q_THREE_QUO}                    { pushState(RAW_STRING); return KtTokens.QUOTE; }
 {THREE_QUO}                      { pushState(RAW_STRING); return KtTokens.OPEN_QUOTE; }
 <RAW_STRING> \n                  { return KtTokens.REGULAR_STRING_PART; }
 <RAW_STRING> \"                  { return KtTokens.REGULAR_STRING_PART; }
@@ -143,6 +146,7 @@ LONELY_BACKTICK=`
                                     }
                                  }
 
+{Q_QUO}                     { pushState(STRING); return KtTokens.QUOTE; }
 \"                          { pushState(STRING); return KtTokens.OPEN_QUOTE; }
 <STRING> \n                 { popState(); yypushback(1); return KtTokens.DANGLING_NEWLINE; }
 <STRING> \"                 { popState(); return KtTokens.CLOSING_QUOTE; }

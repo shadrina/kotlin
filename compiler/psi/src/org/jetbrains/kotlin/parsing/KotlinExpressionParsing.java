@@ -117,7 +117,9 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
             AT, // Just for better recovery and maybe for annotations
 
-            LBRACKET // Collection literal expression
+            LBRACKET, // Collection literal expression
+
+            QUOTE // Quotation
     );
 
     public static final TokenSet STATEMENT_FIRST = TokenSet.orSet(
@@ -674,12 +676,16 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                     parseLocalDeclaration(/* rollbackIfDefinitelyNotExpression = */ myBuilder.newlineBeforeCurrentToken(), false)) {
             // declaration was parsed, do nothing
         }
+        else if (at(QUOTE)) {
+            parseQuotation();
+        }
         else if (at(IDENTIFIER)) {
             parseSimpleNameExpression();
         }
         else if (at(LBRACE)) {
             parseFunctionLiteral();
         }
+
         else if (at(OPEN_QUOTE)) {
             parseStringTemplate();
         }
@@ -690,6 +696,29 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         }
 
         return ok;
+    }
+
+    private void parseQuotation() {
+        assert _at(QUOTE);
+
+        PsiBuilder.Marker template = mark();
+
+        advance();
+
+        while (!eof()) {
+            if (at(CLOSING_QUOTE) || at(DANGLING_NEWLINE)) {
+                break;
+            }
+            parseStringTemplateElement();
+        }
+
+        if (at(DANGLING_NEWLINE)) {
+            errorAndAdvance("Expecting '\"'");
+        }
+        else {
+            expect(CLOSING_QUOTE, "Expecting '\"'");
+        }
+        template.done(QUOTATION);
     }
 
     /*
