@@ -89,6 +89,7 @@ public interface KtNodeTypes {
     IElementType CHARACTER_CONSTANT = KtStubElementTypes.CHARACTER_CONSTANT;
     IElementType INTEGER_CONSTANT   = KtStubElementTypes.INTEGER_CONSTANT;
 
+    IElementType QUOTATION                     = KtStubElementTypes.QUOTATION;
     IElementType STRING_TEMPLATE               = KtStubElementTypes.STRING_TEMPLATE;
     IElementType LONG_STRING_TEMPLATE_ENTRY    = KtStubElementTypes.LONG_STRING_TEMPLATE_ENTRY;
     IElementType SHORT_STRING_TEMPLATE_ENTRY   = KtStubElementTypes.SHORT_STRING_TEMPLATE_ENTRY;
