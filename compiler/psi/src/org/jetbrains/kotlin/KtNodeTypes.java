@@ -89,7 +89,6 @@ public interface KtNodeTypes {
     IElementType CHARACTER_CONSTANT = KtStubElementTypes.CHARACTER_CONSTANT;
     IElementType INTEGER_CONSTANT   = KtStubElementTypes.INTEGER_CONSTANT;
 
-    IElementType QUOTATION                     = KtStubElementTypes.QUOTATION;
     IElementType STRING_TEMPLATE               = KtStubElementTypes.STRING_TEMPLATE;
     IElementType LONG_STRING_TEMPLATE_ENTRY    = KtStubElementTypes.LONG_STRING_TEMPLATE_ENTRY;
     IElementType SHORT_STRING_TEMPLATE_ENTRY   = KtStubElementTypes.SHORT_STRING_TEMPLATE_ENTRY;
@@ -113,6 +112,7 @@ public interface KtNodeTypes {
     IElementType DO_WHILE                  = new KtNodeType("DO_WHILE", KtDoWhileExpression.class);
     IElementType LOOP_RANGE                = new KtNodeType("LOOP_RANGE", KtContainerNode.class);
     IElementType BODY                      = new KtNodeType("BODY", KtContainerNodeForControlStructureBody.class);
+    IElementType QUOTATION                 = new KtNodeType("QUOTATION", KtQuotation.class);
 
     IElementType BLOCK                     = new BlockExpressionElementType();
 
@@ -121,7 +121,7 @@ public interface KtNodeTypes {
     IElementType FUNCTION_LITERAL          = new KtNodeType("FUNCTION_LITERAL", KtFunctionLiteral.class);
     IElementType ANNOTATED_EXPRESSION      = new KtNodeType("ANNOTATED_EXPRESSION", KtAnnotatedExpression.class);
 
-    IElementType REFERENCE_EXPRESSION     = KtStubElementTypes.REFERENCE_EXPRESSION;
+    IElementType REFERENCE_EXPRESSION    = KtStubElementTypes.REFERENCE_EXPRESSION;
     IElementType ENUM_ENTRY_SUPERCLASS_REFERENCE_EXPRESSION = KtStubElementTypes.ENUM_ENTRY_SUPERCLASS_REFERENCE_EXPRESSION;
     IElementType OPERATION_REFERENCE       = new KtNodeType("OPERATION_REFERENCE", KtOperationReferenceExpression.class);
     IElementType LABEL                     = new KtNodeType("LABEL", KtLabelReferenceExpression.class);
