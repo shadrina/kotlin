@@ -6,7 +6,9 @@
 package org.jetbrains.kotlin.resolve
 
 import com.google.common.collect.Sets
-import org.jetbrains.kotlin.psi.KtFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiRecursiveElementWalkingVisitor
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.BindingContext.PACKAGE_TO_FILES
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice
 
@@ -20,10 +22,20 @@ class FilePreprocessor(
 ) {
     fun preprocessFile(file: KtFile) {
         registerFileByPackage(file)
+        initializeQuotations(file)
 
         for (extension in extensions) {
             extension.preprocessFile(file)
         }
+    }
+
+    private fun initializeQuotations(file: KtFile) {
+        file.accept(object : PsiRecursiveElementWalkingVisitor() {
+            override fun visitElement(element: PsiElement?) {
+                super.visitElement(element)
+                if (element != null && element is KtQuotation) element.initializeRealPsi()
+            }
+        })
     }
 
     private fun registerFileByPackage(file: KtFile) {
