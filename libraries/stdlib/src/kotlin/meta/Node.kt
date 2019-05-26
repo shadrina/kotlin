@@ -6,6 +6,12 @@
 package kotlin.meta
 
 sealed class Node {
+
+    /**
+     * Companion's author didn't forget about the existence of reflection.
+     * The use of reflection in stdlib is prohibited, so the author resorts
+     * to such terrible methods. =(
+     */
     companion object {
         private const val PREFIX = "kotlin.meta.Node."
 
@@ -15,12 +21,12 @@ sealed class Node {
         fun stringRepresentation(className: String, args: List<ArgDesc>): String {
             fun arrayToListOf(arrayString: String) = "listOf(${arrayString.substring(1, arrayString.length - 1)})"
             return "$PREFIX$className(${
-            args.map {
+            args.joinToString(", ") {
                 when (it.type) {
                     Companion.ArgType.VALUE -> "${it.name}=${it.value}"
                     Companion.ArgType.LIST -> "${it.name}=${arrayToListOf(it.value)}"
                 }
-            }.joinToString(", ")
+            }
             })"
         }
     }

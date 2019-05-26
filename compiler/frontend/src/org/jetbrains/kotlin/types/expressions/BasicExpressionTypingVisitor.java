@@ -1557,6 +1557,11 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @Override
+    public KotlinTypeInfo visitQuotation(@NotNull KtQuotation quotation, ExpressionTypingContext data) {
+        return visitQualifiedExpression(quotation.getRealPsi(), data);
+    }
+
+    @Override
     public KotlinTypeInfo visitStringTemplateExpression(
             @NotNull KtStringTemplateExpression expression,
             ExpressionTypingContext contextWithExpectedType
