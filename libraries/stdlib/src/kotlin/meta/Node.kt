@@ -8,27 +8,31 @@ package kotlin.meta
 sealed class Node {
 
     /**
-     * Companion's author didn't forget about the existence of reflection.
+     * Author didn't forget about the existence of reflection.
      * The use of reflection in stdlib is prohibited, so the author resorts
      * to such terrible methods. =(
      */
+
     companion object {
-        private const val PREFIX = "kotlin.meta.Node."
+        const val PREFIX = "kotlin.meta.Node."
+    }
 
-        enum class ArgType { VALUE, LIST }
-        data class ArgDesc(val name: String, val value: String, val type: ArgType)
+    protected enum class ArgType { VALUE, LIST }
+    protected data class ArgDesc(val name: String, val value: String, val type: ArgType)
 
-        fun stringRepresentation(className: String, args: List<ArgDesc>): String {
-            fun arrayToListOf(arrayString: String) = "listOf(${arrayString.substring(1, arrayString.length - 1)})"
-            return "$PREFIX$className(${
-            args.joinToString(", ") {
-                when (it.type) {
-                    Companion.ArgType.VALUE -> "${it.name}=${it.value}"
-                    Companion.ArgType.LIST -> "${it.name}=${arrayToListOf(it.value)}"
-                }
+    protected fun stringifyValue(s: String?) = if (s == null) s.toString() else "\"" + s + "\""
+    protected fun stringifyList(l: List<String?>) = l.map { "\"" + l.toString() + "\"" }.toString()
+
+    protected fun stringRepresentation(className: String, args: List<ArgDesc>): String {
+        fun arrayToListOf(arrayString: String) = "listOf(${arrayString.substring(1, arrayString.length - 1)})"
+        return "$PREFIX$className(${
+        args.joinToString(", ") {
+            when (it.type) {
+                ArgType.VALUE -> "${it.name}=${it.value}"
+                ArgType.LIST  -> "${it.name}=${arrayToListOf(it.value)}"
             }
-            })"
         }
+        })"
     }
 
     var tag: Any? = null
@@ -55,10 +59,10 @@ sealed class Node {
     ) : Node(), Entry {
         override fun toString() = stringRepresentation(
             "File", listOf(
-                ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                ArgDesc("pkg", pkg.toString(), Companion.ArgType.VALUE),
-                ArgDesc("imports", imports.toString(), Companion.ArgType.LIST),
-                ArgDesc("decls", decls.toString(), Companion.ArgType.LIST)
+                ArgDesc("anns", anns.toString(), ArgType.LIST),
+                ArgDesc("pkg", pkg.toString(), ArgType.VALUE),
+                ArgDesc("imports", imports.toString(), ArgType.LIST),
+                ArgDesc("decls", decls.toString(), ArgType.LIST)
             )
         )
     }
@@ -71,10 +75,10 @@ sealed class Node {
     ) : Node(), Entry {
         override fun toString() = stringRepresentation(
             "Script", listOf(
-                ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                ArgDesc("pkg", pkg.toString(), Companion.ArgType.VALUE),
-                ArgDesc("imports", imports.toString(), Companion.ArgType.LIST),
-                ArgDesc("exprs", exprs.toString(), Companion.ArgType.LIST)
+                ArgDesc("anns", anns.toString(), ArgType.LIST),
+                ArgDesc("pkg", pkg.toString(), ArgType.VALUE),
+                ArgDesc("imports", imports.toString(), ArgType.LIST),
+                ArgDesc("exprs", exprs.toString(), ArgType.LIST)
             )
         )
     }
@@ -85,8 +89,8 @@ sealed class Node {
     ) : Node(), WithModifiers {
         override fun toString() = stringRepresentation(
             "Package", listOf(
-                ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                ArgDesc("names", names.toString(), Companion.ArgType.LIST)
+                ArgDesc("mods", mods.toString(), ArgType.LIST),
+                ArgDesc("names", stringifyList(names), ArgType.LIST)
             )
         )
     }
@@ -98,9 +102,9 @@ sealed class Node {
     ) : Node() {
         override fun toString() = stringRepresentation(
             "Import", listOf(
-                ArgDesc("names", names.toString(), Companion.ArgType.LIST),
-                ArgDesc("wildcard", wildcard.toString(), Companion.ArgType.VALUE),
-                ArgDesc("alias", alias.toString(), Companion.ArgType.VALUE)
+                ArgDesc("names", stringifyList(names), ArgType.LIST),
+                ArgDesc("wildcard", wildcard.toString(), ArgType.VALUE),
+                ArgDesc("alias", stringifyValue(alias), ArgType.VALUE)
             )
         )
     }
@@ -120,22 +124,22 @@ sealed class Node {
         ) : Decl(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "Decl.Structured", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("form", form.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("name", name, Companion.ArgType.VALUE),
-                    ArgDesc("typeParams", typeParams.toString(), Companion.ArgType.LIST),
-                    ArgDesc("primaryConstructor", primaryConstructor.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("parentAnns", parentAnns.toString(), Companion.ArgType.LIST),
-                    ArgDesc("parents", parents.toString(), Companion.ArgType.LIST),
-                    ArgDesc("typeConstraints", typeConstraints.toString(), Companion.ArgType.LIST),
-                    ArgDesc("members", members.toString(), Companion.ArgType.LIST)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("form", form.toString(), ArgType.VALUE),
+                    ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                    ArgDesc("typeParams", typeParams.toString(), ArgType.LIST),
+                    ArgDesc("primaryConstructor", primaryConstructor.toString(), ArgType.VALUE),
+                    ArgDesc("parentAnns", parentAnns.toString(), ArgType.LIST),
+                    ArgDesc("parents", parents.toString(), ArgType.LIST),
+                    ArgDesc("typeConstraints", typeConstraints.toString(), ArgType.LIST),
+                    ArgDesc("members", members.toString(), ArgType.LIST)
                 )
             )
 
             enum class Form {
                 CLASS, ENUM_CLASS, INTERFACE, OBJECT, COMPANION_OBJECT;
 
-                override fun toString() = "Decl.Structured.Form." + super.toString()
+                override fun toString() = PREFIX + "Decl.Structured.Form." + super.toString()
             }
 
             sealed class Parent : Node() {
@@ -147,10 +151,10 @@ sealed class Node {
                 ) : Parent() {
                     override fun toString() = stringRepresentation(
                         "Decl.Structured.Parent.CallConstructor", listOf(
-                            ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("typeArgs", typeArgs.toString(), Companion.ArgType.LIST),
-                            ArgDesc("args", args.toString(), Companion.ArgType.LIST),
-                            ArgDesc("lambda", lambda.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("type", type.toString(), ArgType.VALUE),
+                            ArgDesc("typeArgs", typeArgs.toString(), ArgType.LIST),
+                            ArgDesc("args", args.toString(), ArgType.LIST),
+                            ArgDesc("lambda", lambda.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -161,8 +165,8 @@ sealed class Node {
                 ) : Parent() {
                     override fun toString() = stringRepresentation(
                         "Decl.Structured.Parent.Type", listOf(
-                            ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("by", by.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("type", type.toString(), ArgType.VALUE),
+                            ArgDesc("by", by.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -174,8 +178,8 @@ sealed class Node {
             ) : Node(), WithModifiers {
                 override fun toString() = stringRepresentation(
                     "Decl.Structured.PrimaryConstructor", listOf(
-                        ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                        ArgDesc("params", params.toString(), Companion.ArgType.LIST)
+                        ArgDesc("mods", mods.toString(), ArgType.LIST),
+                        ArgDesc("params", params.toString(), ArgType.LIST)
                     )
                 )
             }
@@ -184,7 +188,7 @@ sealed class Node {
         data class Init(val block: Block) : Decl() {
             override fun toString() = stringRepresentation(
                 "Decl.Init", listOf(
-                    ArgDesc("block", block.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("block", block.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -203,15 +207,15 @@ sealed class Node {
         ) : Decl(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "Decl.Func", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("typeParams", typeParams.toString(), Companion.ArgType.LIST),
-                    ArgDesc("receiverType", receiverType.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("name", name.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("paramTypeParams", paramTypeParams.toString(), Companion.ArgType.LIST),
-                    ArgDesc("params", params.toString(), Companion.ArgType.LIST),
-                    ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("typeConstraints", typeConstraints.toString(), Companion.ArgType.LIST),
-                    ArgDesc("body", body.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("typeParams", typeParams.toString(), ArgType.LIST),
+                    ArgDesc("receiverType", receiverType.toString(), ArgType.VALUE),
+                    ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                    ArgDesc("paramTypeParams", paramTypeParams.toString(), ArgType.LIST),
+                    ArgDesc("params", params.toString(), ArgType.LIST),
+                    ArgDesc("type", type.toString(), ArgType.VALUE),
+                    ArgDesc("typeConstraints", typeConstraints.toString(), ArgType.LIST),
+                    ArgDesc("body", body.toString(), ArgType.VALUE)
                 )
             )
 
@@ -225,11 +229,11 @@ sealed class Node {
             ) : Node(), WithModifiers {
                 override fun toString() = stringRepresentation(
                     "Decl.Func.Param", listOf(
-                        ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                        ArgDesc("readOnly", readOnly.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("name", name, Companion.ArgType.VALUE),
-                        ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("default", default.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("mods", mods.toString(), ArgType.LIST),
+                        ArgDesc("readOnly", readOnly.toString(), ArgType.VALUE),
+                        ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                        ArgDesc("type", type.toString(), ArgType.VALUE),
+                        ArgDesc("default", default.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -238,7 +242,7 @@ sealed class Node {
                 data class Block(val block: Node.Block) : Body() {
                     override fun toString() = stringRepresentation(
                         "Decl.Func.Body", listOf(
-                            ArgDesc("block", block.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("block", block.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -246,7 +250,7 @@ sealed class Node {
                 data class Expr(val expr: Node.Expr) : Body() {
                     override fun toString() = stringRepresentation(
                         "Decl.Func.Expr", listOf(
-                            ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("expr", expr.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -267,15 +271,15 @@ sealed class Node {
         ) : Decl(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "Decl.Property", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("readOnly", readOnly.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("typeParams", typeParams.toString(), Companion.ArgType.LIST),
-                    ArgDesc("receiverType", receiverType.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("vars", vars.toString(), Companion.ArgType.LIST),
-                    ArgDesc("typeConstraints", typeConstraints.toString(), Companion.ArgType.LIST),
-                    ArgDesc("delegated", delegated.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("accessors", accessors.toString(), Companion.ArgType.LIST)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("readOnly", readOnly.toString(), ArgType.VALUE),
+                    ArgDesc("typeParams", typeParams.toString(), ArgType.LIST),
+                    ArgDesc("receiverType", receiverType.toString(), ArgType.VALUE),
+                    ArgDesc("vars", vars.toString(), ArgType.LIST),
+                    ArgDesc("typeConstraints", typeConstraints.toString(), ArgType.LIST),
+                    ArgDesc("delegated", delegated.toString(), ArgType.VALUE),
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("accessors", accessors.toString(), ArgType.LIST)
                 )
             )
 
@@ -285,8 +289,8 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "Decl.Property.Var", listOf(
-                        ArgDesc("name", name, Companion.ArgType.VALUE),
-                        ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                        ArgDesc("type", type.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -297,8 +301,8 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "Decl.Property.Accessors", listOf(
-                        ArgDesc("first", first.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("second", second.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("first", first.toString(), ArgType.VALUE),
+                        ArgDesc("second", second.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -311,9 +315,9 @@ sealed class Node {
                 ) : Accessor() {
                     override fun toString() = stringRepresentation(
                         "Decl.Property.Accessor.Get", listOf(
-                            ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                            ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("body", body.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("mods", mods.toString(), ArgType.LIST),
+                            ArgDesc("type", type.toString(), ArgType.VALUE),
+                            ArgDesc("body", body.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -327,10 +331,11 @@ sealed class Node {
                 ) : Accessor() {
                     override fun toString() = stringRepresentation(
                         "Decl.Property.Accessor.Set", listOf(
-                            ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                            ArgDesc("paramMods", paramMods.toString(), Companion.ArgType.LIST),
-                            ArgDesc("paramType", paramType.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("body", body.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("mods", mods.toString(), ArgType.LIST),
+                            ArgDesc("paramMods", paramMods.toString(), ArgType.LIST),
+                            ArgDesc("paramName", stringifyValue(paramName), ArgType.VALUE),
+                            ArgDesc("paramType", paramType.toString(), ArgType.VALUE),
+                            ArgDesc("body", body.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -345,10 +350,10 @@ sealed class Node {
         ) : Decl(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "Decl.TypeAlias", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("name", name, Companion.ArgType.VALUE),
-                    ArgDesc("typeParams", typeParams.toString(), Companion.ArgType.LIST),
-                    ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                    ArgDesc("typeParams", typeParams.toString(), ArgType.LIST),
+                    ArgDesc("type", type.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -361,10 +366,10 @@ sealed class Node {
         ) : Decl(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "Decl.Constructor", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("params", params.toString(), Companion.ArgType.LIST),
-                    ArgDesc("delegationCall", delegationCall.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("block", block.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("params", params.toString(), ArgType.LIST),
+                    ArgDesc("delegationCall", delegationCall.toString(), ArgType.VALUE),
+                    ArgDesc("block", block.toString(), ArgType.VALUE)
                 )
             )
 
@@ -374,8 +379,8 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "Decl.Constructor.DelegationCall", listOf(
-                        ArgDesc("target", target.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("args", args.toString(), Companion.ArgType.LIST)
+                        ArgDesc("target", target.toString(), ArgType.VALUE),
+                        ArgDesc("args", args.toString(), ArgType.LIST)
                     )
                 )
             }
@@ -383,7 +388,7 @@ sealed class Node {
             enum class DelegationTarget {
                 THIS, SUPER;
 
-                override fun toString() = "Decl.Constructor.DelegationTarget." + super.toString()
+                override fun toString() = PREFIX + "Decl.Constructor.DelegationTarget." + super.toString()
             }
         }
 
@@ -395,10 +400,10 @@ sealed class Node {
         ) : Decl(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "Decl.EnumEntry", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("name", name, Companion.ArgType.VALUE),
-                    ArgDesc("args", args.toString(), Companion.ArgType.LIST),
-                    ArgDesc("members", members.toString(), Companion.ArgType.LIST)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                    ArgDesc("args", args.toString(), ArgType.LIST),
+                    ArgDesc("members", members.toString(), ArgType.LIST)
                 )
             )
         }
@@ -411,9 +416,9 @@ sealed class Node {
     ) : Node(), WithModifiers {
         override fun toString() = stringRepresentation(
             "TypeParam", listOf(
-                ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                ArgDesc("name", name, Companion.ArgType.VALUE),
-                ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                ArgDesc("mods", mods.toString(), ArgType.LIST),
+                ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                ArgDesc("type", type.toString(), ArgType.VALUE)
             )
         )
     }
@@ -425,9 +430,9 @@ sealed class Node {
     ) : Node(), WithAnnotations {
         override fun toString() = stringRepresentation(
             "TypeConstraint", listOf(
-                ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                ArgDesc("name", name, Companion.ArgType.VALUE),
-                ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                ArgDesc("anns", anns.toString(), ArgType.LIST),
+                ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                ArgDesc("type", type.toString(), ArgType.VALUE)
             )
         )
     }
@@ -439,8 +444,8 @@ sealed class Node {
         ) : TypeRef(), WithModifiers {
             override fun toString() = stringRepresentation(
                 "TypeRef.Paren", listOf(
-                    ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                    ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("mods", mods.toString(), ArgType.LIST),
+                    ArgDesc("type", type.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -452,9 +457,9 @@ sealed class Node {
         ) : TypeRef() {
             override fun toString() = stringRepresentation(
                 "TypeRef.Func", listOf(
-                    ArgDesc("receiverType", receiverType.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("params", params.toString(), Companion.ArgType.LIST),
-                    ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("receiverType", receiverType.toString(), ArgType.VALUE),
+                    ArgDesc("params", params.toString(), ArgType.LIST),
+                    ArgDesc("type", type.toString(), ArgType.VALUE)
                 )
             )
 
@@ -464,8 +469,8 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "TypeRef.Func.Param", listOf(
-                        ArgDesc("name", name.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                        ArgDesc("type", type.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -476,7 +481,7 @@ sealed class Node {
         ) : TypeRef() {
             override fun toString() = stringRepresentation(
                 "TypeRef.Simple", listOf(
-                    ArgDesc("pieces", pieces.toString(), Companion.ArgType.LIST)
+                    ArgDesc("pieces", pieces.toString(), ArgType.LIST)
                 )
             )
 
@@ -487,8 +492,8 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "TypeRef.Simple.Piece", listOf(
-                        ArgDesc("name", name, Companion.ArgType.VALUE),
-                        ArgDesc("typeParams", typeParams.toString(), Companion.ArgType.LIST)
+                        ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                        ArgDesc("typeParams", typeParams.toString(), ArgType.LIST)
                     )
                 )
             }
@@ -497,7 +502,7 @@ sealed class Node {
         data class Nullable(val type: TypeRef) : TypeRef() {
             override fun toString() = stringRepresentation(
                 "TypeRef.Nullable", listOf(
-                    ArgDesc("type", type.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("type", type.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -505,7 +510,7 @@ sealed class Node {
         data class Dynamic(val _unused_: Boolean = false) : TypeRef() {
             override fun toString() = stringRepresentation(
                 "TypeRef.Dynamic", listOf(
-                    ArgDesc("_unused_", _unused_.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("_unused_", _unused_.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -517,8 +522,8 @@ sealed class Node {
     ) : Node(), WithModifiers {
         override fun toString() = stringRepresentation(
             "Type", listOf(
-                ArgDesc("mods", mods.toString(), Companion.ArgType.LIST),
-                ArgDesc("ref", ref.toString(), Companion.ArgType.VALUE)
+                ArgDesc("mods", mods.toString(), ArgType.LIST),
+                ArgDesc("ref", ref.toString(), ArgType.VALUE)
             )
         )
     }
@@ -530,9 +535,9 @@ sealed class Node {
     ) : Node() {
         override fun toString() = stringRepresentation(
             "ValueArg", listOf(
-                ArgDesc("name", name.toString(), Companion.ArgType.VALUE),
-                ArgDesc("asterisk", asterisk.toString(), Companion.ArgType.VALUE),
-                ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                ArgDesc("name", stringifyValue(name), ArgType.VALUE),
+                ArgDesc("asterisk", asterisk.toString(), ArgType.VALUE),
+                ArgDesc("expr", expr.toString(), ArgType.VALUE)
             )
         )
     }
@@ -545,9 +550,9 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.If", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("body", body.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("elseBody", elseBody.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("body", body.toString(), ArgType.VALUE),
+                    ArgDesc("elseBody", elseBody.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -559,9 +564,9 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Try", listOf(
-                    ArgDesc("block", block.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("catches", catches.toString(), Companion.ArgType.LIST),
-                    ArgDesc("elseBody", finallyBlock.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("block", block.toString(), ArgType.VALUE),
+                    ArgDesc("catches", catches.toString(), ArgType.LIST),
+                    ArgDesc("elseBody", finallyBlock.toString(), ArgType.VALUE)
                 )
             )
 
@@ -573,10 +578,10 @@ sealed class Node {
             ) : Node(), WithAnnotations {
                 override fun toString() = stringRepresentation(
                     "Expr.Try.Catch", listOf(
-                        ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                        ArgDesc("varName", varName, Companion.ArgType.VALUE),
-                        ArgDesc("varType", varType.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("block", block.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("anns", anns.toString(), ArgType.LIST),
+                        ArgDesc("varName", stringifyValue(varName), ArgType.VALUE),
+                        ArgDesc("varType", varType.toString(), ArgType.VALUE),
+                        ArgDesc("block", block.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -591,10 +596,10 @@ sealed class Node {
         ) : Expr(), WithAnnotations {
             override fun toString() = stringRepresentation(
                 "Expr.For", listOf(
-                    ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                    ArgDesc("vars", vars.toString(), Companion.ArgType.LIST),
-                    ArgDesc("inExpr", inExpr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("body", body.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("anns", anns.toString(), ArgType.LIST),
+                    ArgDesc("vars", vars.toString(), ArgType.LIST),
+                    ArgDesc("inExpr", inExpr.toString(), ArgType.VALUE),
+                    ArgDesc("body", body.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -606,9 +611,9 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.While", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("body", body.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("doWhile", doWhile.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("body", body.toString(), ArgType.VALUE),
+                    ArgDesc("doWhile", doWhile.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -620,9 +625,9 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.BinaryOp", listOf(
-                    ArgDesc("lhs", lhs.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("oper", oper.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("rhs", rhs.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("lhs", lhs.toString(), ArgType.VALUE),
+                    ArgDesc("oper", oper.toString(), ArgType.VALUE),
+                    ArgDesc("rhs", rhs.toString(), ArgType.VALUE)
                 )
             )
 
@@ -630,7 +635,7 @@ sealed class Node {
                 data class Infix(val str: String) : Oper() {
                     override fun toString() = stringRepresentation(
                         "Expr.BinaryOp.Oper.Infix", listOf(
-                            ArgDesc("str", str, Companion.ArgType.VALUE)
+                            ArgDesc("str", stringifyValue(str), ArgType.VALUE)
                         )
                     )
                 }
@@ -638,7 +643,7 @@ sealed class Node {
                 data class Token(val token: BinaryOp.Token) : Oper() {
                     override fun toString() = stringRepresentation(
                         "Expr.BinaryOp.Oper.Token", listOf(
-                            ArgDesc("token", token.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("token", token.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -653,7 +658,7 @@ sealed class Node {
                 OR("||"), AND("&&"), ELVIS("?:"), RANGE("stdlib"),
                 DOT("."), DOT_SAFE("?."), SAFE("?");
 
-                override fun toString() = "Expr.BinaryOp.Token." + super.toString()
+                override fun toString() = PREFIX + "Expr.BinaryOp.Token." + super.toString()
             }
         }
 
@@ -664,16 +669,16 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.UnaryOp", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("oper", oper.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("prefix", prefix.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("oper", oper.toString(), ArgType.VALUE),
+                    ArgDesc("prefix", prefix.toString(), ArgType.VALUE)
                 )
             )
 
             data class Oper(val token: Token) : Node() {
                 override fun toString() = stringRepresentation(
                     "Expr.UnaryOp.Oper", listOf(
-                        ArgDesc("token", token.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("token", token.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -681,7 +686,7 @@ sealed class Node {
             enum class Token(val str: String) {
                 NEG("-"), POS("+"), INC("++"), DEC("--"), NOT("!"), NULL_DEREF("!!");
 
-                override fun toString() = "Expr.UnaryOp.Token." + super.toString()
+                override fun toString() = PREFIX + "Expr.UnaryOp.Token." + super.toString()
             }
         }
 
@@ -692,16 +697,16 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.TypeOp", listOf(
-                    ArgDesc("lhs", lhs.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("oper", oper.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("rhs", rhs.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("lhs", lhs.toString(), ArgType.VALUE),
+                    ArgDesc("oper", oper.toString(), ArgType.VALUE),
+                    ArgDesc("rhs", rhs.toString(), ArgType.VALUE)
                 )
             )
 
             data class Oper(val token: Token) : Node() {
                 override fun toString() = stringRepresentation(
                     "Expr.TypeOp.Oper", listOf(
-                        ArgDesc("token", token.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("token", token.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -709,7 +714,7 @@ sealed class Node {
             enum class Token(val str: String) {
                 AS("as"), AS_SAFE("as?"), COL(":"), IS("is"), NOT_IS("!is");
 
-                override fun toString() = "Expr.TypeOp.Token." + super.toString()
+                override fun toString() = PREFIX + "Expr.TypeOp.Token." + super.toString()
             }
         }
 
@@ -722,8 +727,8 @@ sealed class Node {
             ) : DoubleColonRef() {
                 override fun toString() = stringRepresentation(
                     "Expr.DoubleColonRef.Callable", listOf(
-                        ArgDesc("recv", recv.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("name", name, Companion.ArgType.VALUE)
+                        ArgDesc("recv", recv.toString(), ArgType.VALUE),
+                        ArgDesc("name", stringifyValue(name), ArgType.VALUE)
                     )
                 )
             }
@@ -733,7 +738,7 @@ sealed class Node {
             ) : DoubleColonRef() {
                 override fun toString() = stringRepresentation(
                     "Expr.DoubleColonRef.Class", listOf(
-                        ArgDesc("recv", recv.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("recv", recv.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -742,7 +747,7 @@ sealed class Node {
                 data class Expr(val expr: Node.Expr) : Recv() {
                     override fun toString() = stringRepresentation(
                         "Expr.DoubleColonRef.Recv.Expr", listOf(
-                            ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("expr", expr.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -753,8 +758,8 @@ sealed class Node {
                 ) : Recv() {
                     override fun toString() = stringRepresentation(
                         "Expr.DoubleColonRef.Recv.Type", listOf(
-                            ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("questionMarks", questionMarks.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("type", type.toString(), ArgType.VALUE),
+                            ArgDesc("questionMarks", questionMarks.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -766,7 +771,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Paren", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -777,8 +782,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.StringTmpl", listOf(
-                    ArgDesc("elems", elems.toString(), Companion.ArgType.LIST),
-                    ArgDesc("raw", raw.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("elems", elems.toString(), ArgType.LIST),
+                    ArgDesc("raw", raw.toString(), ArgType.VALUE)
                 )
             )
 
@@ -786,7 +791,7 @@ sealed class Node {
                 data class Regular(val str: String) : Elem() {
                     override fun toString() = stringRepresentation(
                         "Expr.StringTmpl.Elem.Regular", listOf(
-                            ArgDesc("str", str, Companion.ArgType.VALUE)
+                            ArgDesc("str", stringifyValue(str), ArgType.VALUE)
                         )
                     )
                 }
@@ -794,7 +799,7 @@ sealed class Node {
                 data class ShortTmpl(val str: String) : Elem() {
                     override fun toString() = stringRepresentation(
                         "Expr.StringTmpl.Elem.ShortTmpl", listOf(
-                            ArgDesc("str", str, Companion.ArgType.VALUE)
+                            ArgDesc("str", stringifyValue(str), ArgType.VALUE)
                         )
                     )
                 }
@@ -802,7 +807,7 @@ sealed class Node {
                 data class UnicodeEsc(val digits: String) : Elem() {
                     override fun toString() = stringRepresentation(
                         "Expr.StringTmpl.Elem.UnicodeEsc", listOf(
-                            ArgDesc("digits", digits, Companion.ArgType.VALUE)
+                            ArgDesc("digits", stringifyValue(digits), ArgType.VALUE)
                         )
                     )
                 }
@@ -810,7 +815,7 @@ sealed class Node {
                 data class RegularEsc(val char: Char) : Elem() {
                     override fun toString() = stringRepresentation(
                         "Expr.StringTmpl.Elem.RegularEsc", listOf(
-                            ArgDesc("char", char.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("char", char.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -818,7 +823,7 @@ sealed class Node {
                 data class LongTmpl(val expr: Expr) : Elem() {
                     override fun toString() = stringRepresentation(
                         "Expr.StringTmpl.Elem.LongTmpl", listOf(
-                            ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("expr", expr.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -831,15 +836,15 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Const", listOf(
-                    ArgDesc("value", value, Companion.ArgType.VALUE),
-                    ArgDesc("form", form.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("value", stringifyValue(value), ArgType.VALUE),
+                    ArgDesc("form", form.toString(), ArgType.VALUE)
                 )
             )
 
             enum class Form {
                 BOOLEAN, CHAR, INT, FLOAT, NULL;
 
-                override fun toString() = "Expr.Const.Form." + super.toString()
+                override fun toString() = PREFIX + "Expr.Const.Form." + super.toString()
             }
         }
 
@@ -849,8 +854,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Brace", listOf(
-                    ArgDesc("params", params.toString(), Companion.ArgType.LIST),
-                    ArgDesc("block", block.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("params", params.toString(), ArgType.LIST),
+                    ArgDesc("block", block.toString(), ArgType.VALUE)
                 )
             )
 
@@ -861,8 +866,8 @@ sealed class Node {
             ) : Expr() {
                 override fun toString() = stringRepresentation(
                     "Expr.Brace.Param", listOf(
-                        ArgDesc("vars", vars.toString(), Companion.ArgType.LIST),
-                        ArgDesc("destructType", destructType.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("vars", vars.toString(), ArgType.LIST),
+                        ArgDesc("destructType", destructType.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -873,7 +878,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.This", listOf(
-                    ArgDesc("label", label.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("label", stringifyValue(label), ArgType.VALUE)
                 )
             )
         }
@@ -884,8 +889,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Super", listOf(
-                    ArgDesc("typeArg", typeArg.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("label", label.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("typeArg", typeArg.toString(), ArgType.VALUE),
+                    ArgDesc("label", stringifyValue(label), ArgType.VALUE)
                 )
             )
         }
@@ -896,8 +901,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.When", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("entries", entries.toString(), Companion.ArgType.LIST)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("entries", entries.toString(), ArgType.LIST)
                 )
             )
 
@@ -907,8 +912,8 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "Expr.When.Entry", listOf(
-                        ArgDesc("conds", conds.toString(), Companion.ArgType.LIST),
-                        ArgDesc("body", body.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("conds", conds.toString(), ArgType.LIST),
+                        ArgDesc("body", body.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -917,7 +922,7 @@ sealed class Node {
                 data class Expr(val expr: Node.Expr) : Cond() {
                     override fun toString() = stringRepresentation(
                         "Expr.When.Cond.Expr", listOf(
-                            ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("expr", expr.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -928,8 +933,8 @@ sealed class Node {
                 ) : Cond() {
                     override fun toString() = stringRepresentation(
                         "Expr.When.Cond.In", listOf(
-                            ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("not", not.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                            ArgDesc("not", not.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -940,8 +945,8 @@ sealed class Node {
                 ) : Cond() {
                     override fun toString() = stringRepresentation(
                         "Expr.When.Cond.Is", listOf(
-                            ArgDesc("type", type.toString(), Companion.ArgType.VALUE),
-                            ArgDesc("not", not.toString(), Companion.ArgType.VALUE)
+                            ArgDesc("type", type.toString(), ArgType.VALUE),
+                            ArgDesc("not", not.toString(), ArgType.VALUE)
                         )
                     )
                 }
@@ -954,8 +959,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Object", listOf(
-                    ArgDesc("parents", parents.toString(), Companion.ArgType.LIST),
-                    ArgDesc("members", members.toString(), Companion.ArgType.LIST)
+                    ArgDesc("parents", parents.toString(), ArgType.LIST),
+                    ArgDesc("members", members.toString(), ArgType.LIST)
                 )
             )
         }
@@ -965,7 +970,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Throw", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -976,8 +981,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Return", listOf(
-                    ArgDesc("label", label.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("label", stringifyValue(label), ArgType.VALUE),
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -987,7 +992,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Continue", listOf(
-                    ArgDesc("label", label.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("label", stringifyValue(label), ArgType.VALUE)
                 )
             )
         }
@@ -997,7 +1002,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Break", listOf(
-                    ArgDesc("label", label.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("label", stringifyValue(label), ArgType.VALUE)
                 )
             )
         }
@@ -1007,7 +1012,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.CollLit", listOf(
-                    ArgDesc("exprs", exprs.toString(), Companion.ArgType.LIST)
+                    ArgDesc("exprs", exprs.toString(), ArgType.LIST)
                 )
             )
         }
@@ -1017,7 +1022,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Name", listOf(
-                    ArgDesc("name", name, Companion.ArgType.VALUE)
+                    ArgDesc("name", stringifyValue(name), ArgType.VALUE)
                 )
             )
         }
@@ -1028,8 +1033,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Labeled", listOf(
-                    ArgDesc("label", label, Companion.ArgType.VALUE),
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("label", stringifyValue(label), ArgType.VALUE),
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1040,8 +1045,8 @@ sealed class Node {
         ) : Expr(), WithAnnotations {
             override fun toString() = stringRepresentation(
                 "Expr.Annotated", listOf(
-                    ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("anns", anns.toString(), ArgType.LIST),
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1054,10 +1059,10 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Call", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("typeArgs", typeArgs.toString(), Companion.ArgType.LIST),
-                    ArgDesc("args", args.toString(), Companion.ArgType.LIST),
-                    ArgDesc("lambda", lambda.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("typeArgs", typeArgs.toString(), ArgType.LIST),
+                    ArgDesc("args", args.toString(), ArgType.LIST),
+                    ArgDesc("lambda", lambda.toString(), ArgType.VALUE)
                 )
             )
 
@@ -1068,9 +1073,9 @@ sealed class Node {
             ) : Node(), WithAnnotations {
                 override fun toString() = stringRepresentation(
                     "Expr.Call.TrailLambda", listOf(
-                        ArgDesc("anns", anns.toString(), Companion.ArgType.LIST),
-                        ArgDesc("label", label.toString(), Companion.ArgType.VALUE),
-                        ArgDesc("func", func.toString(), Companion.ArgType.VALUE)
+                        ArgDesc("anns", anns.toString(), ArgType.LIST),
+                        ArgDesc("label", stringifyValue(label), ArgType.VALUE),
+                        ArgDesc("func", func.toString(), ArgType.VALUE)
                     )
                 )
             }
@@ -1082,8 +1087,8 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.ArrayAccess", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("indices", indices.toString(), Companion.ArgType.LIST)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE),
+                    ArgDesc("indices", indices.toString(), ArgType.LIST)
                 )
             )
         }
@@ -1093,7 +1098,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.AnonFunc", listOf(
-                    ArgDesc("func", func.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("func", func.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1104,7 +1109,7 @@ sealed class Node {
         ) : Expr() {
             override fun toString() = stringRepresentation(
                 "Expr.Property", listOf(
-                    ArgDesc("decl", decl.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("decl", decl.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1113,7 +1118,7 @@ sealed class Node {
     data class Block(val stmts: List<Stmt>) : Node() {
         override fun toString() = stringRepresentation(
             "Block", listOf(
-                ArgDesc("stmts", stmts.toString(), Companion.ArgType.LIST)
+                ArgDesc("stmts", stmts.toString(), ArgType.LIST)
             )
         )
     }
@@ -1122,7 +1127,7 @@ sealed class Node {
         data class Decl(val decl: Node.Decl) : Stmt() {
             override fun toString() = stringRepresentation(
                 "Stmt.Decl", listOf(
-                    ArgDesc("decl", decl.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("decl", decl.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1130,7 +1135,7 @@ sealed class Node {
         data class Expr(val expr: Node.Expr) : Stmt() {
             override fun toString() = stringRepresentation(
                 "Stmt.Expr", listOf(
-                    ArgDesc("expr", expr.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("expr", expr.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1143,15 +1148,15 @@ sealed class Node {
         ) : Modifier() {
             override fun toString() = stringRepresentation(
                 "Modifier.AnnotationSet", listOf(
-                    ArgDesc("target", target.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("anns", anns.toString(), Companion.ArgType.LIST)
+                    ArgDesc("target", target.toString(), ArgType.VALUE),
+                    ArgDesc("anns", anns.toString(), ArgType.LIST)
                 )
             )
 
             enum class Target {
                 FIELD, FILE, PROPERTY, GET, SET, RECEIVER, PARAM, SETPARAM, DELEGATE;
 
-                override fun toString() = "Modifier.AnnotationSet.Target." + super.toString()
+                override fun toString() = PREFIX + "Modifier.AnnotationSet.Target." + super.toString()
             }
 
             data class Annotation(
@@ -1161,9 +1166,9 @@ sealed class Node {
             ) : Node() {
                 override fun toString() = stringRepresentation(
                     "Modifier.AnnotationSet.Annotation", listOf(
-                        ArgDesc("names", names.toString(), Companion.ArgType.LIST),
-                        ArgDesc("typeArgs", typeArgs.toString(), Companion.ArgType.LIST),
-                        ArgDesc("args", args.toString(), Companion.ArgType.LIST)
+                        ArgDesc("names", stringifyList(names), ArgType.LIST),
+                        ArgDesc("typeArgs", typeArgs.toString(), ArgType.LIST),
+                        ArgDesc("args", args.toString(), ArgType.LIST)
                     )
                 )
             }
@@ -1172,7 +1177,7 @@ sealed class Node {
         data class Lit(val keyword: Keyword) : Modifier() {
             override fun toString() = stringRepresentation(
                 "Modifier.Lit", listOf(
-                    ArgDesc("keyword", keyword.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("keyword", keyword.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1184,7 +1189,7 @@ sealed class Node {
             TAILREC, OPERATOR, INFIX, INLINE, EXTERNAL, SUSPEND, CONST,
             ACTUAL, EXPECT;
 
-            override fun toString() = "Modifier.Keyword" + super.toString()
+            override fun toString() = PREFIX + "Modifier.Keyword" + super.toString()
         }
     }
 
@@ -1194,7 +1199,7 @@ sealed class Node {
         ) : Extra() {
             override fun toString() = stringRepresentation(
                 "Extra.BlankLines", listOf(
-                    ArgDesc("count", count.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("count", count.toString(), ArgType.VALUE)
                 )
             )
         }
@@ -1206,9 +1211,9 @@ sealed class Node {
         ) : Extra() {
             override fun toString() = stringRepresentation(
                 "Extra.Comment", listOf(
-                    ArgDesc("text", text, Companion.ArgType.VALUE),
-                    ArgDesc("startsLine", startsLine.toString(), Companion.ArgType.VALUE),
-                    ArgDesc("endsLine", endsLine.toString(), Companion.ArgType.VALUE)
+                    ArgDesc("text", stringifyValue(text), ArgType.VALUE),
+                    ArgDesc("startsLine", startsLine.toString(), ArgType.VALUE),
+                    ArgDesc("endsLine", endsLine.toString(), ArgType.VALUE)
                 )
             )
         }
