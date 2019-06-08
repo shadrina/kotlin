@@ -10,6 +10,7 @@ import java.lang.IllegalStateException
 
 class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
     lateinit var realPsi: KtDotQualifiedExpression
+    private lateinit var factory: KtPsiFactory
     private val converter = KastreeConverter()
 
     /**
@@ -17,33 +18,20 @@ class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
      * See [org.jetbrains.kotlin.resolve]
      */
     fun initializeRealPsi() {
-        val factory = KtPsiFactory(node.psi.project, false)
+        if (!::factory.isInitialized) {
+            factory = KtPsiFactory(node.psi.project, false)
+        }
         val quotationContext = node.firstChildNode.treeNext.text
-        val parsed = factory.createExpressionIfPossible(quotationContext) ?: return
+        val parsed = factory.createExpressionIfPossible(quotationContext) ?: factory.createFile(quotationContext)
 
         try {
-            val stringRepresentation = converter.convertExpr(parsed).toString()
-            realPsi = factory.createExpression(stringRepresentation) as KtDotQualifiedExpression
+            val converted = if (parsed is KtExpression) converter.convertExpr(parsed) else converter.convertFile(parsed as KtFile)
+            realPsi = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
 
         } catch (_: IllegalStateException) {
             return
         }
     }
 
-    /**
-     * Method can be overridden in two ways:
-     * 1. Delegate to custom visitQuotation
-     * 2. Return only converted PSI if the corresponding property is initialized
-     *
-     * Second approach is based on the assumption of source node inapplicability
-     * after the preprocessing stage.
-     */
-    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
-        // 1
-        return visitor.visitQuotation(this, data)
-
-        // 2
-        // return if (::realPsi.isInitialized) visitor.visitDotQualifiedExpression(realPsi, data)
-        // else visitor.visitQuotation(this, data)
-    }
+    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 }
