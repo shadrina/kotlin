@@ -13,19 +13,16 @@ class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
     private lateinit var factory: KtPsiFactory
     private val converter = KastreeConverter()
 
-    /**
-     * Initialization occurs in FilePreprocessor.
-     * See [org.jetbrains.kotlin.resolve]
-     */
     fun initializeRealPsi() {
         if (!::factory.isInitialized) {
             factory = KtPsiFactory(node.psi.project, false)
         }
-        val quotationContext = node.firstChildNode.treeNext.text
-        val parsed = factory.createExpressionIfPossible(quotationContext) ?: factory.createFile(quotationContext)
+        val quotationContent = node.firstChildNode.treeNext.text
+        // TODO: quotation content may be not expression
+        val parsed = factory.createExpression(quotationContent)
 
         try {
-            val converted = if (parsed is KtExpression) converter.convertExpr(parsed) else converter.convertFile(parsed as KtFile)
+            val converted = converter.convertExpr(parsed)
             realPsi = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
 
         } catch (_: IllegalStateException) {
