@@ -10,11 +10,9 @@ import java.lang.IllegalStateException
 import java.lang.StringBuilder
 
 class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
+    lateinit var realPsi: KtDotQualifiedExpression
     private lateinit var factory: KtPsiFactory
     private val converter = KastreeConverter()
-
-    lateinit var realPsi: KtDotQualifiedExpression
-    private val externalNames = mutableListOf<String>()
 
     fun initializeRealPsi() {
         if (!::factory.isInitialized) {
@@ -39,17 +37,18 @@ class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
     private fun createQuotationContent(): String {
-        externalNames.clear()
+        val externalNames = mutableListOf<String>()
         val text = StringBuilder()
         for (child in children) {
             if (child is KtSimpleNameStringTemplateEntry || child is KtBlockStringTemplateEntry) {
                 val content = child.firstChild.nextSibling.text
                 externalNames.add(content)
                 text.append(content)
-                continue
+            } else {
+                text.append(child.text)
             }
-            text.append(child.text)
         }
+        converter.externalNames = externalNames
         return text.toString()
     }
 }
