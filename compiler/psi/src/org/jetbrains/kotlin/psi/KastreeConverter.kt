@@ -19,6 +19,8 @@ import org.jetbrains.kotlin.psi.psiUtil.*
 import java.util.*
 
 open class KastreeConverter {
+    lateinit var externalNames: List<String>
+
     protected open fun onNode(node: Node, elem: PsiElement) { }
 
     open fun convertAnnotated(v: KtAnnotatedExpression) = Node.Expr.Annotated(
@@ -377,7 +379,9 @@ open class KastreeConverter {
         }
     }.toList()
 
-    open fun convertName(v: KtSimpleNameExpression) = Node.Expr.Name(
+    open fun convertName(v: KtSimpleNameExpression) = if (externalNames.contains(v.text)) Node.Expr.ExternalName(
+        name = v.getReferencedName()
+    ).map(v) else Node.Expr.Name(
         name = v.getReferencedName()
     ).map(v)
 

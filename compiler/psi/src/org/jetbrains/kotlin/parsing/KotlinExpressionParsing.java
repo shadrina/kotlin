@@ -620,6 +620,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
      *   : literalConstant
      *   : functionLiteral
      *   : declaration
+     *   : quotation
      *   : SimpleName
      *   : collectionLiteral
      *   ;
@@ -698,6 +699,11 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         return ok;
     }
 
+    /*
+     * quotation
+     *   : QUOTE stringTemplateElement* CLOSING_QUOTE
+     *   ;
+     */
     private void parseQuotation() {
         assert _at(QUOTE);
 

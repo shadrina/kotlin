@@ -945,6 +945,12 @@ sealed class Node {
             )
         }
 
+        data class ExternalName(
+            val name: String
+        ) : Expr() {
+            override fun toCode() = name
+        }
+
         data class Labeled(
             val label: String,
             val expr: Expr
