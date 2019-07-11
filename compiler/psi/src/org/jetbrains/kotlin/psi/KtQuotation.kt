@@ -6,13 +6,21 @@
 package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
+import com.intellij.psi.PsiElement
 import java.lang.IllegalStateException
 import java.lang.StringBuilder
 
 class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
+    companion object {
+        private const val QUOTE_TOKEN_OFFSET = 2
+        private const val INSERTION_PLACEHOLDER = "x"
+    }
+
     lateinit var realPsi: KtDotQualifiedExpression
     private lateinit var factory: KtPsiFactory
     private val converter = KastreeConverter()
+
+    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
     fun initializeRealPsi() {
         if (!::factory.isInitialized) {
@@ -34,21 +42,30 @@ class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
         }
     }
 
-    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
+    fun getEntries() = children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
+
+    private fun getEntryContent(entry: PsiElement): String = when (entry) {
+        is KtSimpleNameStringTemplateEntry -> entry.firstChild.nextSibling.text
+        is KtBlockStringTemplateEntry -> entry.text.removePrefix(entry.firstChild.text).removeSuffix(entry.lastChild.text)
+        else -> entry.text
+    }
 
     private fun createQuotationContent(): String {
-        val externalNames = mutableListOf<String>()
+        val insertionsInfo = mutableMapOf<Int, String>()
         val text = StringBuilder()
+        var offset = QUOTE_TOKEN_OFFSET
+
         for (child in children) {
+            val content = getEntryContent(child)
             if (child is KtSimpleNameStringTemplateEntry || child is KtBlockStringTemplateEntry) {
-                val content = child.firstChild.nextSibling.text
-                externalNames.add(content)
-                text.append(content)
+                insertionsInfo.put(child.startOffsetInParent - offset, content)
+                text.append(INSERTION_PLACEHOLDER)
+                offset += child.text.length - INSERTION_PLACEHOLDER.length
             } else {
                 text.append(child.text)
             }
         }
-        converter.externalNames = externalNames
+        converter.insertionsInfo = insertionsInfo
         return text.toString()
     }
 }
