@@ -1557,8 +1557,33 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @Override
-    public KotlinTypeInfo visitQuotation(@NotNull KtQuotation quotation, ExpressionTypingContext data) {
-        return visitQualifiedExpression(quotation.getRealPsi(), data);
+    public KotlinTypeInfo visitQuotation(@NotNull KtQuotation quotation, ExpressionTypingContext context) {
+        // TODO: Where to use this typeInfo?
+        KtVisitorVoid visitor = new KtVisitorVoid() {
+            private KotlinTypeInfo typeInfo = TypeInfoFactoryKt.noTypeInfo(context);
+
+            @Override
+            public void visitStringTemplateEntryWithExpression(@NotNull KtStringTemplateEntryWithExpression entry) {
+                KtExpression entryExpression = entry.getExpression();
+                if (entryExpression != null) {
+                    typeInfo = facade.getTypeInfo(entryExpression, context.replaceDataFlowInfo(typeInfo.getDataFlowInfo()));
+                }
+            }
+
+            @Override
+            public void visitEscapeStringTemplateEntry(@NotNull KtEscapeStringTemplateEntry entry) {
+                CompileTimeConstantChecker.CharacterWithDiagnostic value =
+                        CompileTimeConstantChecker.escapedStringToCharacter(entry.getText(), entry);
+                Diagnostic diagnostic = value.getDiagnostic();
+                if (diagnostic != null) {
+                    context.trace.report(diagnostic);
+                }
+            }
+        };
+        for (PsiElement entry : quotation.getEntries()) {
+            entry.accept(visitor);
+        }
+        return visitQualifiedExpression(quotation.getRealPsi(), context);
     }
 
     @Override
@@ -1580,16 +1605,6 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 KtExpression entryExpression = entry.getExpression();
                 if (entryExpression != null) {
                     typeInfo = facade.getTypeInfo(entryExpression, context.replaceDataFlowInfo(typeInfo.getDataFlowInfo()));
-                }
-            }
-
-            @Override
-            public void visitEscapeStringTemplateEntry(@NotNull KtEscapeStringTemplateEntry entry) {
-                CompileTimeConstantChecker.CharacterWithDiagnostic value =
-                        CompileTimeConstantChecker.escapedStringToCharacter(entry.getText(), entry);
-                Diagnostic diagnostic = value.getDiagnostic();
-                if (diagnostic != null) {
-                    context.trace.report(diagnostic);
                 }
             }
         }
