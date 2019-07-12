@@ -41,6 +41,9 @@ public interface KtTokens {
     KtToken CHARACTER_LITERAL  = new KtToken("CHARACTER_LITERAL");
 
     KtToken QUOTE = new KtToken("QUOTE");
+    KtToken QUOTE_EXPRESSION = new KtToken("QUOTE_EXPRESSION");
+    KtToken QUOTE_DECLARATION = new KtToken("QUOTE_DECLARATION");
+    KtToken QUOTE_TYPE = new KtToken("QUOTE_TYPE");
     KtToken CLOSING_QUOTE = new KtToken("CLOSING_QUOTE");
     KtToken OPEN_QUOTE = new KtToken("OPEN_QUOTE");
     KtToken REGULAR_STRING_PART = new KtToken("REGULAR_STRING_PART");
