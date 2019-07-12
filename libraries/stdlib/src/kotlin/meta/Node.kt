@@ -221,14 +221,14 @@ sealed class Node {
             sealed class Body : Node() {
                 data class Block(val block: Node.Block) : Body() {
                     override fun toCode() = stringRepresentation(
-                        "Decl.Func.Body",
+                        "Decl.Func.Body.Block",
                         "block" to block.toCode()
                     )
                 }
 
                 data class Expr(val expr: Node.Expr) : Body() {
                     override fun toCode() = stringRepresentation(
-                        "Decl.Func.Expr",
+                        "Decl.Func.Body.Expr",
                         "expr" to expr.toCode()
                     )
                 }

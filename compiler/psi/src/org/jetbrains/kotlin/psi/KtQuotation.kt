@@ -1,6 +1,6 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
- * that can be found in the license/LICENSE.txt file.
+ * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.psi
@@ -9,29 +9,27 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import java.lang.IllegalStateException
 import java.lang.StringBuilder
+import kotlin.meta.Node
 
-class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
+abstract class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
     companion object {
-        private const val QUOTE_TOKEN_OFFSET = 2
         private const val INSERTION_PLACEHOLDER = "x"
     }
 
     lateinit var realPsi: KtDotQualifiedExpression
-    private lateinit var factory: KtPsiFactory
-    private val converter = KastreeConverter()
+    protected lateinit var factory: KtPsiFactory
+    protected val converter = KastreeConverter()
 
-    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
+    abstract fun convertToCustomAST(quotationContent: String): Node
 
     fun initializeRealPsi() {
+        // TODO: Consider blank line case
         if (!::factory.isInitialized) {
             factory = KtPsiFactory(node.psi.project, false)
         }
-        val quotationContent = createQuotationContent()
-        // TODO: quotation content may be not expression
-        val parsed = factory.createExpressionIfPossible(quotationContent)
-
         try {
-            val converted = converter.convertExpr(parsed as KtExpression)
+            val quotationContent = createQuotationContent()
+            val converted = convertToCustomAST(quotationContent)
             realPsi = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
 
         } catch (e: Exception) {
@@ -42,30 +40,32 @@ class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
         }
     }
 
-    fun getEntries() = children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
+    fun getEntries(): List<PsiElement> =
+        children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
+
+    private fun createQuotationContent(): String {
+        val text = StringBuilder()
+        var offset = firstChild.text.length
+        val insertionsInfo = mutableMapOf<Int, String>()
+
+        for (child in children) {
+            val content = getEntryContent(child)
+            val childText = child.text
+            if (child is KtSimpleNameStringTemplateEntry || child is KtBlockStringTemplateEntry) {
+                insertionsInfo[child.startOffsetInParent - offset] = content
+                text.append(INSERTION_PLACEHOLDER)
+                offset += childText.length - INSERTION_PLACEHOLDER.length
+            } else {
+                text.append(childText)
+            }
+        }
+        converter.insertionsInfo = insertionsInfo
+        return text.toString()
+    }
 
     private fun getEntryContent(entry: PsiElement): String = when (entry) {
         is KtSimpleNameStringTemplateEntry -> entry.firstChild.nextSibling.text
         is KtBlockStringTemplateEntry -> entry.text.removePrefix(entry.firstChild.text).removeSuffix(entry.lastChild.text)
         else -> entry.text
-    }
-
-    private fun createQuotationContent(): String {
-        val insertionsInfo = mutableMapOf<Int, String>()
-        val text = StringBuilder()
-        var offset = QUOTE_TOKEN_OFFSET
-
-        for (child in children) {
-            val content = getEntryContent(child)
-            if (child is KtSimpleNameStringTemplateEntry || child is KtBlockStringTemplateEntry) {
-                insertionsInfo.put(child.startOffsetInParent - offset, content)
-                text.append(INSERTION_PLACEHOLDER)
-                offset += child.text.length - INSERTION_PLACEHOLDER.length
-            } else {
-                text.append(child.text)
-            }
-        }
-        converter.insertionsInfo = insertionsInfo
-        return text.toString()
     }
 }

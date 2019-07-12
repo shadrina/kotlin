@@ -18,10 +18,11 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.psiUtil.*
 import java.util.*
 
-open class KastreeConverter {
+open class KastreeConverter() {
     lateinit var insertionsInfo: Map<Int, String>
+    var offsetGetter: (KtElement) -> Int = { e -> e.startOffsetInParent }
 
-    protected open fun onNode(node: Node, elem: PsiElement) { }
+    protected open fun onNode(node: Node, elem: PsiElement) {}
 
     open fun convertAnnotated(v: KtAnnotatedExpression) = Node.Expr.Annotated(
         anns = convertAnnotationSets(v),
@@ -57,9 +58,10 @@ open class KastreeConverter {
             is KtAnnotationEntry ->
                 listOf(
                     Node.Modifier.AnnotationSet(
-                    target = elem.useSiteTarget?.let(::convertAnnotationSetTarget),
-                    anns = listOf(convertAnnotation(elem))
-                ).map(elem))
+                        target = elem.useSiteTarget?.let(::convertAnnotationSetTarget),
+                        anns = listOf(convertAnnotation(elem))
+                    ).map(elem)
+                )
             is KtAnnotation ->
                 listOf(convertAnnotationSet(elem))
             is KtFileAnnotationList ->
@@ -154,6 +156,7 @@ open class KastreeConverter {
             is KtParenthesizedExpression -> if (allowParens) expression?.extractLambda(allowParens) else null
             else -> null
         }
+
         val expr = v.getArgumentExpression()?.extractLambda() ?: error("No lambda for $v")
         return Node.Expr.Call.TrailLambda(
             anns = anns,
@@ -184,8 +187,8 @@ open class KastreeConverter {
         delegationCall = if (v.hasImplicitDelegationCall()) null else v.getDelegationCall().let {
             Node.Decl.Constructor.DelegationCall(
                 target =
-                    if (it.isCallToThis) Node.Decl.Constructor.DelegationTarget.THIS
-                    else Node.Decl.Constructor.DelegationTarget.SUPER,
+                if (it.isCallToThis) Node.Decl.Constructor.DelegationTarget.THIS
+                else Node.Decl.Constructor.DelegationTarget.SUPER,
                 args = convertValueArgs(it.valueArgumentList)
             ).map(it)
         },
@@ -217,7 +220,7 @@ open class KastreeConverter {
         recv = v.receiverExpression?.let { convertDoubleColonRefRecv(it, v.questionMarks) }
     ).map(v)
 
-    open fun convertDoubleColonRefRecv(v: KtExpression, questionMarks: Int): Node.Expr.DoubleColonRef.Recv = when(v) {
+    open fun convertDoubleColonRefRecv(v: KtExpression, questionMarks: Int): Node.Expr.DoubleColonRef.Recv = when (v) {
         is KtSimpleNameExpression -> Node.Expr.DoubleColonRef.Recv.Type(
             type = Node.TypeRef.Simple(
                 listOf(Node.TypeRef.Simple.Piece(v.getReferencedName(), emptyList()).map(v))
@@ -227,11 +230,14 @@ open class KastreeConverter {
         is KtCallExpression ->
             if (v.valueArgumentList == null && v.lambdaArguments.isEmpty())
                 Node.Expr.DoubleColonRef.Recv.Type(
-                    type = Node.TypeRef.Simple(listOf(
-                        Node.TypeRef.Simple.Piece(
-                        name = v.calleeExpression?.text ?: error("Missing text for call ref type of $v"),
-                        typeParams = convertTypeParams(v.typeArgumentList)
-                    ).map(v))).map(v),
+                    type = Node.TypeRef.Simple(
+                        listOf(
+                            Node.TypeRef.Simple.Piece(
+                                name = v.calleeExpression?.text ?: error("Missing text for call ref type of $v"),
+                                typeParams = convertTypeParams(v.typeArgumentList)
+                            ).map(v)
+                        )
+                    ).map(v),
                     questionMarks = questionMarks
                 ).map(v)
             else Node.Expr.DoubleColonRef.Recv.Expr(convertExpr(v)).map(v)
@@ -312,11 +318,11 @@ open class KastreeConverter {
     open fun convertFunc(v: KtNamedFunction) = Node.Decl.Func(
         mods = convertModifiers(v),
         typeParams =
-            if (v.hasTypeParameterListBeforeFunctionName()) v.typeParameters.map(::convertTypeParam) else emptyList(),
+        if (v.hasTypeParameterListBeforeFunctionName()) v.typeParameters.map(::convertTypeParam) else emptyList(),
         receiverType = v.receiverTypeReference?.let(::convertType),
         name = v.name,
         paramTypeParams =
-            if (!v.hasTypeParameterListBeforeFunctionName()) v.typeParameters.map(::convertTypeParam) else emptyList(),
+        if (!v.hasTypeParameterListBeforeFunctionName()) v.typeParameters.map(::convertTypeParam) else emptyList(),
         params = v.valueParameters.map(::convertFuncParam),
         type = v.typeReference?.let(::convertType),
         typeConstraints = v.typeConstraints.map(::convertTypeConstraint),
@@ -379,8 +385,8 @@ open class KastreeConverter {
         }
     }.toList()
 
-    open fun convertName(v: KtSimpleNameExpression) = if (insertionsInfo.containsKey(v.startOffsetInParent)) Node.Expr.ExternalName(
-        name = insertionsInfo.getValue(v.startOffsetInParent)
+    open fun convertName(v: KtSimpleNameExpression) = if (insertionsInfo.containsKey(offsetGetter(v))) Node.Expr.ExternalName(
+        name = insertionsInfo.getValue(offsetGetter(v))
     ).map(v) else Node.Expr.Name(
         name = v.getReferencedName()
     ).map(v)
@@ -437,9 +443,10 @@ open class KastreeConverter {
         receiverType = v.receiverTypeReference?.let(::convertType),
         vars = listOf(
             Node.Decl.Property.Var(
-            name = v.name ?: error("No property name on $v"),
-            type = v.typeReference?.let(::convertType)
-        ).map(v)),
+                name = v.name ?: error("No property name on $v"),
+                type = v.typeReference?.let(::convertType)
+            ).map(v)
+        ),
         typeConstraints = v.typeConstraints.map(::convertTypeConstraint),
         delegated = v.hasDelegateExpression(),
         expr = v.delegateExpressionOrInitializer?.let(::convertExpr),
@@ -560,8 +567,8 @@ open class KastreeConverter {
     open fun convertTryCatch(v: KtCatchClause) = Node.Expr.Try.Catch(
         anns = v.catchParameter?.annotations?.map(::convertAnnotationSet) ?: emptyList(),
         varName = v.catchParameter?.name ?: error("No catch param name for $v"),
-        varType = v.catchParameter?.typeReference?.
-            let(::convertTypeRef) as? Node.TypeRef.Simple ?: error("Invalid catch param type for $v"),
+        varType = v.catchParameter?.typeReference?.let(::convertTypeRef) as? Node.TypeRef.Simple
+            ?: error("Invalid catch param type for $v"),
         block = convertBlock(v.catchBody as? KtBlockExpression ?: error("No catch block for $v"))
     ).map(v)
 
@@ -712,7 +719,7 @@ open class KastreeConverter {
         doWhile = v is KtDoWhileExpression
     ).map(v)
 
-    protected open fun <T: Node> T.map(v: PsiElement) = also { onNode(it, v) }
+    protected open fun <T : Node> T.map(v: PsiElement) = also { onNode(it, v) }
 
     class Unsupported(message: String) : UnsupportedOperationException(message)
 
@@ -814,7 +821,7 @@ open class KastreeConverter {
                     text = elem.text,
                     startsLine = ((elem.prevSibling ?: elem.prevLeaf()) as? PsiWhiteSpace)?.textContains('\n') == true,
                     endsLine = elem.tokenType == KtTokens.EOL_COMMENT ||
-                        ((elem.nextSibling ?: elem.nextLeaf()) as? PsiWhiteSpace)?.textContains('\n') == true
+                            ((elem.nextSibling ?: elem.nextLeaf()) as? PsiWhiteSpace)?.textContains('\n') == true
                 ).map(elem)
                 else -> null
             }
@@ -828,12 +835,15 @@ open class KastreeConverter {
         internal val typeTokensByText = Node.Expr.TypeOp.Token.values().map { it.str to it }.toMap()
 
         internal val KtTypeReference.names get() = (typeElement as? KtUserType)?.names ?: emptyList()
-        internal val KtUserType.names get(): List<String> =
-            referencedName?.let { (qualifier?.names ?: emptyList()) + it } ?: emptyList()
+        internal val KtUserType.names
+            get(): List<String> =
+                referencedName?.let { (qualifier?.names ?: emptyList()) + it } ?: emptyList()
         internal val KtExpression?.block get() = (this as? KtBlockExpression)?.statements ?: emptyList()
-        internal val KtDoubleColonExpression.questionMarks get() =
-            generateSequence(node.firstChildNode, ASTNode::getTreeNext).
-                takeWhile { it.elementType != KtTokens.COLONCOLON }.
-                count { it.elementType == KtTokens.QUEST }
+        internal val KtDoubleColonExpression.questionMarks
+            get() =
+                generateSequence(
+                    node.firstChildNode,
+                    ASTNode::getTreeNext
+                ).takeWhile { it.elementType != KtTokens.COLONCOLON }.count { it.elementType == KtTokens.QUEST }
     }
 }

@@ -77,6 +77,9 @@ public class KotlinHighlighter extends SyntaxHighlighterBase {
         keys1.put(KtTokens.ARROW, KotlinHighlightingColors.ARROW);
 
         keys1.put(KtTokens.QUOTE, KotlinHighlightingColors.STRING);
+        keys1.put(KtTokens.QUOTE_EXPRESSION, KotlinHighlightingColors.STRING);
+        keys1.put(KtTokens.QUOTE_DECLARATION, KotlinHighlightingColors.STRING);
+        keys1.put(KtTokens.QUOTE_TYPE, KotlinHighlightingColors.STRING);
         keys1.put(KtTokens.OPEN_QUOTE, KotlinHighlightingColors.STRING);
         keys1.put(KtTokens.CLOSING_QUOTE, KotlinHighlightingColors.STRING);
         keys1.put(KtTokens.REGULAR_STRING_PART, KotlinHighlightingColors.STRING);

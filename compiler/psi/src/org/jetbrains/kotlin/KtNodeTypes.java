@@ -95,24 +95,27 @@ public interface KtNodeTypes {
     IElementType LITERAL_STRING_TEMPLATE_ENTRY = KtStubElementTypes.LITERAL_STRING_TEMPLATE_ENTRY;
     IElementType ESCAPE_STRING_TEMPLATE_ENTRY  = KtStubElementTypes.ESCAPE_STRING_TEMPLATE_ENTRY;
 
-    IElementType PARENTHESIZED             = new KtNodeType("PARENTHESIZED", KtParenthesizedExpression.class);
-    IElementType RETURN                    = new KtNodeType("RETURN", KtReturnExpression.class);
-    IElementType THROW                     = new KtNodeType("THROW", KtThrowExpression.class);
-    IElementType CONTINUE                  = new KtNodeType("CONTINUE", KtContinueExpression.class);
-    IElementType BREAK                     = new KtNodeType("BREAK", KtBreakExpression.class);
-    IElementType IF                        = new KtNodeType("IF", KtIfExpression.class);
-    IElementType CONDITION                 = new KtNodeType("CONDITION", KtContainerNode.class);
-    IElementType THEN                      = new KtNodeType("THEN", KtContainerNodeForControlStructureBody.class);
-    IElementType ELSE                      = new KtNodeType("ELSE", KtContainerNodeForControlStructureBody.class);
-    IElementType TRY                       = new KtNodeType("TRY", KtTryExpression.class);
-    IElementType CATCH                     = new KtNodeType("CATCH", KtCatchClause.class);
-    IElementType FINALLY                   = new KtNodeType("FINALLY", KtFinallySection.class);
-    IElementType FOR                       = new KtNodeType("FOR", KtForExpression.class);
-    IElementType WHILE                     = new KtNodeType("WHILE", KtWhileExpression.class);
-    IElementType DO_WHILE                  = new KtNodeType("DO_WHILE", KtDoWhileExpression.class);
-    IElementType LOOP_RANGE                = new KtNodeType("LOOP_RANGE", KtContainerNode.class);
-    IElementType BODY                      = new KtNodeType("BODY", KtContainerNodeForControlStructureBody.class);
-    IElementType QUOTATION                 = new KtNodeType("QUOTATION", KtQuotation.class);
+    IElementType PARENTHESIZED              = new KtNodeType("PARENTHESIZED", KtParenthesizedExpression.class);
+    IElementType RETURN                     = new KtNodeType("RETURN", KtReturnExpression.class);
+    IElementType THROW                      = new KtNodeType("THROW", KtThrowExpression.class);
+    IElementType CONTINUE                   = new KtNodeType("CONTINUE", KtContinueExpression.class);
+    IElementType BREAK                      = new KtNodeType("BREAK", KtBreakExpression.class);
+    IElementType IF                         = new KtNodeType("IF", KtIfExpression.class);
+    IElementType CONDITION                  = new KtNodeType("CONDITION", KtContainerNode.class);
+    IElementType THEN                       = new KtNodeType("THEN", KtContainerNodeForControlStructureBody.class);
+    IElementType ELSE                       = new KtNodeType("ELSE", KtContainerNodeForControlStructureBody.class);
+    IElementType TRY                        = new KtNodeType("TRY", KtTryExpression.class);
+    IElementType CATCH                      = new KtNodeType("CATCH", KtCatchClause.class);
+    IElementType FINALLY                    = new KtNodeType("FINALLY", KtFinallySection.class);
+    IElementType FOR                        = new KtNodeType("FOR", KtForExpression.class);
+    IElementType WHILE                      = new KtNodeType("WHILE", KtWhileExpression.class);
+    IElementType DO_WHILE                   = new KtNodeType("DO_WHILE", KtDoWhileExpression.class);
+    IElementType LOOP_RANGE                 = new KtNodeType("LOOP_RANGE", KtContainerNode.class);
+    IElementType BODY                       = new KtNodeType("BODY", KtContainerNodeForControlStructureBody.class);
+    IElementType QUOTATION_WITH_FILE        = new KtNodeType("QUOTATION_WITH_FILE", KtQuotationWithFile.class);
+    IElementType QUOTATION_WITH_EXPRESSION  = new KtNodeType("QUOTATION_WITH_EXPRESSION", KtQuotationWithExpression.class);
+    IElementType QUOTATION_WITH_DECLARATION = new KtNodeType("QUOTATION_WITH_DECLARATION", KtQuotationWithDeclaration.class);
+    IElementType QUOTATION_WITH_TYPE        = new KtNodeType("QUOTATION_WITH_TYPE", KtQuotationWithType.class);
 
     IElementType BLOCK                     = new BlockExpressionElementType();
 

@@ -118,6 +118,12 @@ THREE_QUO = (\"\"\")
 THREE_OR_MORE_QUO = ({THREE_QUO}\"*)
 Q_QUO = (q\")
 Q_THREE_QUO = (q\"\"\")
+Q_QUO_EXPRESSION = (qe\")
+Q_THREE_QUO_EXPRESSION = (qe\"\"\")
+Q_QUO_DECLARATION = (qd\")
+Q_THREE_QUO_DECLARATION = (qd\"\"\")
+Q_QUO_TYPE = (qt\")
+Q_THREE_QUO_TYPE = (qt\"\"\")
 
 REGULAR_STRING_PART=[^\\\"\n\$]+
 SHORT_TEMPLATE_ENTRY=\${IDENTIFIER}
@@ -129,6 +135,9 @@ LONELY_BACKTICK=`
 
 // String templates
 
+{Q_THREE_QUO_TYPE}               { pushState(RAW_STRING); return KtTokens.QUOTE_TYPE; }
+{Q_THREE_QUO_DECLARATION}        { pushState(RAW_STRING); return KtTokens.QUOTE_DECLARATION; }
+{Q_THREE_QUO_EXPRESSION}         { pushState(RAW_STRING); return KtTokens.QUOTE_EXPRESSION; }
 {Q_THREE_QUO}                    { pushState(RAW_STRING); return KtTokens.QUOTE; }
 {THREE_QUO}                      { pushState(RAW_STRING); return KtTokens.OPEN_QUOTE; }
 <RAW_STRING> \n                  { return KtTokens.REGULAR_STRING_PART; }
@@ -146,6 +155,9 @@ LONELY_BACKTICK=`
                                     }
                                  }
 
+{Q_QUO_TYPE}                { pushState(STRING); return KtTokens.QUOTE_TYPE; }
+{Q_QUO_DECLARATION}         { pushState(STRING); return KtTokens.QUOTE_DECLARATION; }
+{Q_QUO_EXPRESSION}          { pushState(STRING); return KtTokens.QUOTE_EXPRESSION; }
 {Q_QUO}                     { pushState(STRING); return KtTokens.QUOTE; }
 \"                          { pushState(STRING); return KtTokens.OPEN_QUOTE; }
 <STRING> \n                 { popState(); yypushback(1); return KtTokens.DANGLING_NEWLINE; }

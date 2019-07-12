@@ -119,7 +119,11 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
             LBRACKET, // Collection literal expression
 
-            QUOTE // Quotation
+            // quotations
+            QUOTE,
+            QUOTE_EXPRESSION,
+            QUOTE_DECLARATION,
+            QUOTE_TYPE
     );
 
     public static final TokenSet STATEMENT_FIRST = TokenSet.orSet(
@@ -677,7 +681,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                     parseLocalDeclaration(/* rollbackIfDefinitelyNotExpression = */ myBuilder.newlineBeforeCurrentToken(), false)) {
             // declaration was parsed, do nothing
         }
-        else if (at(QUOTE)) {
+        else if (at(QUOTE) || at(QUOTE_EXPRESSION) || at(QUOTE_DECLARATION) || at(QUOTE_TYPE)) {
             parseQuotation();
         }
         else if (at(IDENTIFIER)) {
@@ -701,14 +705,86 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
     /*
      * quotation
-     *   : QUOTE stringTemplateElement* CLOSING_QUOTE
+     *   : quotationWithFile
+     *   : quotationWithExpression
+     *   : quotationWithDeclaration
+     *   : quotationWithType
      *   ;
      */
     private void parseQuotation() {
+        if (at(QUOTE)) {
+            parseQuotationWithFile();
+        } else if (at(QUOTE_EXPRESSION)) {
+            parseQuotationWithExpression();
+        } else if (at(QUOTE_DECLARATION)) {
+            parseQuotationWithDeclaration();
+        } else if (at(QUOTE_TYPE)) {
+            parseQuotationWithType();
+        }
+    }
+
+    /*
+     * quotationWithFile
+     *   : QUOTE stringTemplateElement* CLOSING_QUOTE
+     *   ;
+     */
+    private void parseQuotationWithFile() {
         assert _at(QUOTE);
+        PsiBuilder.Marker template = mark();
+        parseStringOrQuotationContent();
+        template.done(QUOTATION_WITH_FILE);
+    }
+
+    /*
+     * quotationWithExpression
+     *   : QUOTE_EXPRESSION stringTemplateElement* CLOSING_QUOTE
+     *   ;
+     */
+    private void parseQuotationWithExpression() {
+        assert _at(QUOTE_EXPRESSION);
+        PsiBuilder.Marker template = mark();
+        parseStringOrQuotationContent();
+        template.done(QUOTATION_WITH_EXPRESSION);
+    }
+
+    /*
+     * quotationWithDeclaration
+     *   : QUOTE_DECLARATION stringTemplateElement* CLOSING_QUOTE
+     *   ;
+     */
+    private void parseQuotationWithDeclaration() {
+        assert _at(QUOTE_DECLARATION);
+        PsiBuilder.Marker template = mark();
+        parseStringOrQuotationContent();
+        template.done(QUOTATION_WITH_DECLARATION);
+    }
+
+    /*
+     * quotationWithType
+     *   : QUOTE_TYPE stringTemplateElement* CLOSING_QUOTE
+     *   ;
+     */
+    private void parseQuotationWithType() {
+        assert _at(QUOTE_TYPE);
+        PsiBuilder.Marker template = mark();
+        parseStringOrQuotationContent();
+        template.done(QUOTATION_WITH_TYPE);
+    }
+
+    /*
+     * stringTemplate
+     *   : OPEN_QUOTE stringTemplateElement* CLOSING_QUOTE
+     *   ;
+     */
+    private void parseStringTemplate() {
+        assert _at(OPEN_QUOTE);
 
         PsiBuilder.Marker template = mark();
+        parseStringOrQuotationContent();
+        template.done(STRING_TEMPLATE);
+    }
 
+    private void parseStringOrQuotationContent() {
         advance();
 
         while (!eof()) {
@@ -724,35 +800,6 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         else {
             expect(CLOSING_QUOTE, "Expecting '\"'");
         }
-        template.done(QUOTATION);
-    }
-
-    /*
-     * stringTemplate
-     *   : OPEN_QUOTE stringTemplateElement* CLOSING_QUOTE
-     *   ;
-     */
-    private void parseStringTemplate() {
-        assert _at(OPEN_QUOTE);
-
-        PsiBuilder.Marker template = mark();
-
-        advance(); // OPEN_QUOTE
-
-        while (!eof()) {
-            if (at(CLOSING_QUOTE) || at(DANGLING_NEWLINE)) {
-                break;
-            }
-            parseStringTemplateElement();
-        }
-
-        if (at(DANGLING_NEWLINE)) {
-            errorAndAdvance("Expecting '\"'");
-        }
-        else {
-            expect(CLOSING_QUOTE, "Expecting '\"'");
-        }
-        template.done(STRING_TEMPLATE);
     }
 
     /*
