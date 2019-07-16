@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.psiUtil.*
 import java.util.*
 
-open class KastreeConverter() {
+open class KastreeConverter {
     lateinit var insertionsInfo: Map<Int, String>
     var offsetGetter: (KtElement) -> Int = { e -> e.startOffsetInParent }
 

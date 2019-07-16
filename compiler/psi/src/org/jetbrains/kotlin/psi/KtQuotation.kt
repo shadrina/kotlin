@@ -11,7 +11,7 @@ import java.lang.IllegalStateException
 import java.lang.StringBuilder
 import kotlin.meta.Node
 
-abstract class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
+abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node) {
     companion object {
         private const val INSERTION_PLACEHOLDER = "x"
     }
@@ -45,8 +45,12 @@ abstract class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
 
     private fun createQuotationContent(): String {
         val text = StringBuilder()
-        var offset = firstChild.text.length
+        var offset = firstChild.textLength
         val insertionsInfo = mutableMapOf<Int, String>()
+        if (!saveIndents) {
+            val firstChildWithContentText = firstChild.nextSibling.text
+            offset += (firstChildWithContentText.length - firstChildWithContentText.trimStart().length)
+        }
 
         for (child in children) {
             val content = getEntryContent(child)
@@ -60,7 +64,7 @@ abstract class KtQuotation(node: ASTNode) : KtExpressionImpl(node) {
             }
         }
         converter.insertionsInfo = insertionsInfo
-        return text.toString()
+        return (if (saveIndents) text else text.trim()).toString()
     }
 
     private fun getEntryContent(entry: PsiElement): String = when (entry) {
