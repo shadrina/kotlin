@@ -554,7 +554,7 @@ class DeclarationsChecker(
                 !languageVersionSettings.supportsFeature(LanguageFeature.NestedClassesInAnnotations)) {
                 // TODO: Check member is function with signature
                 // fun apply(node: Node): Node
-                trace.report(ANNOTATION_CLASS_MEMBER.on(declaration))
+                // trace.report(ANNOTATION_CLASS_MEMBER.on(declaration))
             }
         }
     }
