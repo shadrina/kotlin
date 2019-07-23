@@ -289,7 +289,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             throw new IllegalStateException("Inconsistent state: expression saved to a temporary variable is a selector");
         }
         if (selector instanceof KtQuotation) {
-            return genQualified(receiver, ((KtQuotation) selector).getRealPsi());
+            return genQualified(receiver, ((KtQuotation) selector).getHiddenPsi());
         }
         if (!(selector instanceof KtBlockExpression)) {
             markStartLineNumber(selector);

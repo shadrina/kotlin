@@ -7,43 +7,22 @@ package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
-import java.lang.IllegalStateException
 import java.lang.StringBuilder
-import kotlin.meta.Node
 
-abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node) {
+abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node), KtReplaceable {
     companion object {
         private const val INSERTION_PLACEHOLDER = "x"
     }
 
-    lateinit var realPsi: KtDotQualifiedExpression
-    protected lateinit var factory: KtPsiFactory
-    protected val converter = KastreeConverter()
+    override val replaceableTools = KtReplaceableTools(node)
+    override var hiddenPsi: KtDotQualifiedExpression? = null
 
-    abstract fun convertToCustomAST(quotationContent: String): Node
-
-    fun initializeRealPsi() {
-        // TODO: Consider blank line case
-        if (!::factory.isInitialized) {
-            factory = KtPsiFactory(node.psi.project, false)
-        }
-        try {
-            val quotationContent = createQuotationContent()
-            val converted = convertToCustomAST(quotationContent)
-            realPsi = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
-
-        } catch (e: Exception) {
-            when (e) {
-                is IllegalStateException, is ClassCastException -> return
-                else -> throw e
-            }
-        }
-    }
+    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
     fun getEntries(): List<PsiElement> =
         children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
 
-    private fun createQuotationContent(): String {
+    override fun createRealPsiContent(): String {
         val text = StringBuilder()
         var offset = firstChild.textLength
         val insertionsInfo = mutableMapOf<Int, String>()
@@ -63,7 +42,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
                 text.append(childText)
             }
         }
-        converter.insertionsInfo = insertionsInfo
+        replaceableTools.converter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
 
