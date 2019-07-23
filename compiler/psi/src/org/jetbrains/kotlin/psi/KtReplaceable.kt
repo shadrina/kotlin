@@ -13,13 +13,13 @@ interface KtReplaceable : KtElement {
     var hiddenPsi: KtDotQualifiedExpression?
     val replaceableTools: KtReplaceableTools
 
-    fun createRealPsiContent(): String
+    fun createHiddenPsiContent(): String
 
     fun convertToCustomAST(initialContent: String): Node
 
     fun initializeHiddenPsi() {
         try {
-            val converted = convertToCustomAST(createRealPsiContent())
+            val converted = convertToCustomAST(createHiddenPsiContent())
             hiddenPsi = replaceableTools.factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
 
         } catch (e: Exception) {

@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.psi.psiUtil.KtReplaceableTools
 import java.lang.StringBuilder
 
 abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node), KtReplaceable {
@@ -22,7 +23,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     fun getEntries(): List<PsiElement> =
         children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
 
-    override fun createRealPsiContent(): String {
+    override fun createHiddenPsiContent(): String {
         val text = StringBuilder()
         var offset = firstChild.textLength
         val insertionsInfo = mutableMapOf<Int, String>()
