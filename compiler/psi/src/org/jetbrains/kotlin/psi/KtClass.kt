@@ -57,3 +57,11 @@ fun KtClass.createPrimaryConstructorParameterListIfAbsent(): KtParameterList {
     if (parameterList != null) return parameterList
     return constructor.add(KtPsiFactory(project).createParameterList("()")) as KtParameterList
 }
+
+fun KtClass.isMacroDefinition(): Boolean {
+    if (isAnnotation() && declarations.size == 1) {
+        val decl = declarations[0]
+        return decl is KtNamedFunction && decl.name == "apply"
+    }
+    return false
+}

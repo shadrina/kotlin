@@ -23,25 +23,37 @@ class FilePreprocessor(
     fun preprocessFile(file: KtFile) {
         registerFileByPackage(file)
         initializeQuotations(file)
+        compileMacroDefinitions(file)
 
         for (extension in extensions) {
             extension.preprocessFile(file)
         }
     }
 
-    private fun initializeQuotations(file: KtFile) {
-        file.accept(object : PsiRecursiveElementWalkingVisitor() {
-            override fun visitElement(element: PsiElement?) {
-                super.visitElement(element)
-                if (element != null && element is KtQuotation) element.initializeRealPsi()
-            }
-        })
-    }
-
     private fun registerFileByPackage(file: KtFile) {
         // Register files corresponding to this package
         // The trace currently does not support bi-di multimaps that would handle this task nicer
         trace.addElementToSlice(PACKAGE_TO_FILES, file.packageFqName, file)
+    }
+
+    private fun initializeQuotations(file: KtFile) {
+        file.accept(object : PsiRecursiveElementWalkingVisitor() {
+            override fun visitElement(element: PsiElement?) {
+                super.visitElement(element)
+                if (element != null && element is KtQuotation) element.initializeHiddenPsi()
+            }
+        })
+    }
+
+    private fun compileMacroDefinitions(file: KtFile) {
+        file.accept(object : PsiRecursiveElementWalkingVisitor() {
+            override fun visitElement(element: PsiElement?) {
+                super.visitElement(element)
+                if (element != null && element is KtClass && element.isMacroDefinition()) {
+                    // Load macro definition into JVM
+                }
+            }
+        })
     }
 }
 

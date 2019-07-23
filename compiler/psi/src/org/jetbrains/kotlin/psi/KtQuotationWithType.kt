@@ -9,10 +9,8 @@ import com.intellij.lang.ASTNode
 import kotlin.meta.Node
 
 class KtQuotationWithType(node: ASTNode) : KtQuotation(node) {
-    override fun convertToCustomAST(quotationContent: String): Node {
-        val parsed = factory.createType(quotationContent)
-        return converter.convertType(parsed)
+    override fun convertToCustomAST(initialContent: String): Node {
+        val parsed = replaceableTools.factory.createType(initialContent)
+        return replaceableTools.converter.convertType(parsed)
     }
-
-    override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 }
