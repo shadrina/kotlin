@@ -109,7 +109,7 @@ abstract class KtClassOrObject :
 
     override fun getSecondaryConstructors(): List<KtSecondaryConstructor> = getBody()?.secondaryConstructors.orEmpty()
 
-    fun isAnnotation(): Boolean = hasModifier(KtTokens.ANNOTATION_KEYWORD)
+    open fun isAnnotation(): Boolean = hasModifier(KtTokens.ANNOTATION_KEYWORD)
 
     fun getDeclarationKeyword(): PsiElement? =
         findChildByType(
