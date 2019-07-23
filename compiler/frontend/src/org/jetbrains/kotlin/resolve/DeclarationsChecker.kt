@@ -155,7 +155,7 @@ class DeclarationsChecker(
         for (typeParameter in typeAliasDescriptor.declaredTypeParameters) {
             if (typeParameter !in usedTypeAliasParameters) {
                 val source = DescriptorToSourceUtils.descriptorToDeclaration(typeParameter) as? KtTypeParameter
-                        ?: throw AssertionError("No source element for type parameter $typeParameter of $typeAliasDescriptor")
+                    ?: throw AssertionError("No source element for type parameter $typeParameter of $typeAliasDescriptor")
                 trace.report(UNUSED_TYPEALIAS_PARAMETER.on(source, typeParameter, expandedType))
             }
         }
@@ -202,7 +202,7 @@ class DeclarationsChecker(
         declaration: KtTypeAlias
     ) : TypeAliasExpansionReportStrategy {
         private val typeReference = declaration.getTypeReference()
-                ?: throw AssertionError("Incorrect type alias declaration for $typeAliasDescriptor")
+            ?: throw AssertionError("Incorrect type alias declaration for $typeAliasDescriptor")
 
         override fun wrongNumberOfTypeArguments(typeAlias: TypeAliasDescriptor, numberOfParameters: Int) {
             // Do nothing: this should've been reported during type resolution.
@@ -432,7 +432,7 @@ class DeclarationsChecker(
             if (conflictingTypes.size <= 1) continue
 
             val containingDeclaration = typeParameterDescriptor.containingDeclaration as? ClassDescriptor
-                    ?: throw AssertionError("Not a class descriptor: " + typeParameterDescriptor.containingDeclaration)
+                ?: throw AssertionError("Not a class descriptor: " + typeParameterDescriptor.containingDeclaration)
             if (sourceElement is KtClassOrObject) {
                 val delegationSpecifierList = sourceElement.getSuperTypeList() ?: continue
                 trace.report(
@@ -551,10 +551,9 @@ class DeclarationsChecker(
     private fun checkAnnotationClassMembers(classOrObject: KtClassOrObject) {
         for (declaration in classOrObject.declarations) {
             if (declaration !is KtClassOrObject ||
-                !languageVersionSettings.supportsFeature(LanguageFeature.NestedClassesInAnnotations)) {
-                // TODO: Check member is function with signature
-                // fun apply(node: Node): Node
-                // trace.report(ANNOTATION_CLASS_MEMBER.on(declaration))
+                !languageVersionSettings.supportsFeature(LanguageFeature.NestedClassesInAnnotations)
+            ) {
+                trace.report(ANNOTATION_CLASS_MEMBER.on(declaration))
             }
         }
     }
@@ -649,7 +648,8 @@ class DeclarationsChecker(
                 }
             } else if (classDescriptor.kind == ClassKind.INTERFACE &&
                 modifierList.hasModifier(KtTokens.OPEN_KEYWORD) &&
-                propertyDescriptor.modality == Modality.ABSTRACT) {
+                propertyDescriptor.modality == Modality.ABSTRACT
+            ) {
                 trace.report(REDUNDANT_OPEN_IN_INTERFACE.on(property))
             }
         }
@@ -747,7 +747,8 @@ class DeclarationsChecker(
         val typeParameterList = function.typeParameterList
         val nameIdentifier = function.nameIdentifier
         if (typeParameterList != null && nameIdentifier != null &&
-            typeParameterList.textRange.startOffset > nameIdentifier.textRange.startOffset) {
+            typeParameterList.textRange.startOffset > nameIdentifier.textRange.startOffset
+        ) {
             trace.report(DEPRECATED_TYPE_PARAMETER_SYNTAX.on(typeParameterList))
         }
         checkTypeParameterConstraints(function)
@@ -778,12 +779,14 @@ class DeclarationsChecker(
                 }
             }
             if (!hasBody && !hasAbstractModifier && !hasExternalModifier && !inInterface && !isExpectClass &&
-                diagnosticSuppressor.shouldReportNoBody(functionDescriptor)) {
+                diagnosticSuppressor.shouldReportNoBody(functionDescriptor)
+            ) {
                 trace.report(NON_ABSTRACT_FUNCTION_WITH_NO_BODY.on(function, functionDescriptor))
             }
         } else /* top-level only */ {
             if (!function.hasBody() && !hasAbstractModifier && !hasExternalModifier && !functionDescriptor.isExpect &&
-                diagnosticSuppressor.shouldReportNoBody(functionDescriptor)) {
+                diagnosticSuppressor.shouldReportNoBody(functionDescriptor)
+            ) {
                 trace.report(NON_MEMBER_FUNCTION_NO_BODY.on(function, functionDescriptor))
             }
         }
@@ -886,7 +889,8 @@ class DeclarationsChecker(
         } else {
             if (propertyDescriptor.isOverridable
                 && accessorDescriptor.visibility == Visibilities.PRIVATE
-                && propertyDescriptor.visibility != Visibilities.PRIVATE) {
+                && propertyDescriptor.visibility != Visibilities.PRIVATE
+            ) {
                 if (propertyDescriptor.modality == Modality.ABSTRACT) {
                     reportVisibilityModifierDiagnostics(tokens.values, Errors.PRIVATE_SETTER_FOR_ABSTRACT_PROPERTY)
                 } else {
