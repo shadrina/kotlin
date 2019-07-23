@@ -23,7 +23,6 @@ class FilePreprocessor(
     fun preprocessFile(file: KtFile) {
         registerFileByPackage(file)
         initializeQuotations(file)
-        compileMacroDefinitions(file)
 
         for (extension in extensions) {
             extension.preprocessFile(file)
@@ -41,17 +40,6 @@ class FilePreprocessor(
             override fun visitElement(element: PsiElement?) {
                 super.visitElement(element)
                 if (element != null && element is KtQuotation) element.initializeHiddenPsi()
-            }
-        })
-    }
-
-    private fun compileMacroDefinitions(file: KtFile) {
-        file.accept(object : PsiRecursiveElementWalkingVisitor() {
-            override fun visitElement(element: PsiElement?) {
-                super.visitElement(element)
-                if (element != null && element is KtClass && element.isMacroDefinition) {
-                    // Load macro definition into JVM
-                }
             }
         })
     }

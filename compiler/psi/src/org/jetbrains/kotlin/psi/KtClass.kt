@@ -16,7 +16,7 @@ open class KtClass : KtClassOrObject {
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassStub) : super(stub, KtStubElementTypes.CLASS)
 
-    var isMacroDefinition = false
+    private var isMacroDefinition = false
         get() {
             if (super.isAnnotation() && declarations.size == 1) {
                 val decl = declarations[0]
