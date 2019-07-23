@@ -40,6 +40,10 @@ public class KtClassInfo extends KtClassOrObjectInfo<KtClass> {
         else if (element.isAnnotation()) {
             this.kind = ClassKind.ANNOTATION_CLASS;
         }
+        // TODO: Create MACRO_DEFINITION class kind
+        // else if (element.isMacroDefinition()) {
+        //     this.kind = ClassKind.MACRO_DEFINITION;
+        // }
         else {
             this.kind = ClassKind.CLASS;
         }

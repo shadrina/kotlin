@@ -14,6 +14,8 @@ import java.util.*
 // and may also have some additional entries
 enum class KotlinTarget(val description: String, val isDefault: Boolean = true) {
     CLASS("class"),                            // includes CLASS_ONLY, OBJECT, COMPANION_OBJECT, OBJECT_LITERAL, INTERFACE, *_CLASS but not ENUM_ENTRY
+    // TODO: Create MACRO_DEFINITION class kind
+    // MACRO_DEFINITION("annotation class"),
     ANNOTATION_CLASS("annotation class"),
     TYPE_PARAMETER("type parameter", false),
     PROPERTY("property"),                      // includes *_PROPERTY (with and without backing field), PROPERTY_PARAMETER, ENUM_ENTRY
@@ -79,6 +81,8 @@ enum class KotlinTarget(val description: String, val isDefault: Boolean = true) 
         val ALL_TARGET_SET: Set<KotlinTarget> = values().toSet()
 
         fun classActualTargets(descriptor: ClassDescriptor): List<KotlinTarget> = when (descriptor.kind) {
+            // TODO: Create MACRO_DEFINITION class kind
+            // ClassKind.MACRO_DEFINITION -> listOf(MACRO_DEFINITION)
             ClassKind.ANNOTATION_CLASS -> listOf(ANNOTATION_CLASS, CLASS)
             ClassKind.CLASS ->
                 // inner local classes should be CLASS_ONLY, not LOCAL_CLASS

@@ -49,7 +49,7 @@ class FilePreprocessor(
         file.accept(object : PsiRecursiveElementWalkingVisitor() {
             override fun visitElement(element: PsiElement?) {
                 super.visitElement(element)
-                if (element != null && element is KtClass && element.isMacroDefinition()) {
+                if (element != null && element is KtClass && element.isMacroDefinition) {
                     // Load macro definition into JVM
                 }
             }

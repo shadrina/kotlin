@@ -176,6 +176,8 @@ abstract class DescriptorRenderer {
                     ClassKind.ENUM_CLASS -> "enum class"
                     ClassKind.OBJECT -> "object"
                     ClassKind.ANNOTATION_CLASS -> "annotation class"
+					// TODO: Create MACRO_DEFINITION class kind
+                    // ClassKind.MACRO_DEFINITION -> "annotation class"
                     ClassKind.ENUM_ENTRY -> "enum entry"
                 }
             else ->

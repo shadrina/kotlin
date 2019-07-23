@@ -16,6 +16,15 @@ open class KtClass : KtClassOrObject {
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassStub) : super(stub, KtStubElementTypes.CLASS)
 
+    var isMacroDefinition = false
+        get() {
+            if (super.isAnnotation() && declarations.size == 1) {
+                val decl = declarations[0]
+                if (decl is KtNamedFunction && decl.name == "apply") field = true
+            }
+            return field
+        }
+
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitClass(this, data)
     }
@@ -34,6 +43,8 @@ open class KtClass : KtClassOrObject {
     fun isData(): Boolean = hasModifier(KtTokens.DATA_KEYWORD)
     fun isSealed(): Boolean = hasModifier(KtTokens.SEALED_KEYWORD)
     fun isInner(): Boolean = hasModifier(KtTokens.INNER_KEYWORD)
+
+    override fun isAnnotation(): Boolean = !isMacroDefinition && super.isAnnotation()
 
     override fun getCompanionObjects(): List<KtObjectDeclaration> = body?.allCompanionObjects.orEmpty()
 
@@ -56,12 +67,4 @@ fun KtClass.createPrimaryConstructorParameterListIfAbsent(): KtParameterList {
     val parameterList = constructor.valueParameterList
     if (parameterList != null) return parameterList
     return constructor.add(KtPsiFactory(project).createParameterList("()")) as KtParameterList
-}
-
-fun KtClass.isMacroDefinition(): Boolean {
-    if (isAnnotation() && declarations.size == 1) {
-        val decl = declarations[0]
-        return decl is KtNamedFunction && decl.name == "apply"
-    }
-    return false
 }
