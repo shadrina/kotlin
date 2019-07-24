@@ -1583,7 +1583,9 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         for (PsiElement entry : quotation.getEntries()) {
             entry.accept(visitor);
         }
-        return visitQualifiedExpression(quotation.getHiddenPsi(), context);
+
+        // TODO: What if null?
+        return visitQualifiedExpression((KtDotQualifiedExpression) quotation.getHiddenPsi(), context);
     }
 
     @Override
