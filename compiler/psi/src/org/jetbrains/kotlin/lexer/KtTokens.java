@@ -135,7 +135,6 @@ public interface KtTokens {
     KtKeywordToken NOT_IS      = KtKeywordToken.keyword("NOT_IS", "!is");
     KtSingleValueToken HASH        = new KtSingleValueToken("HASH", "#");
     KtSingleValueToken AT          = new KtSingleValueToken("AT", "@");
-    // KtSingleValueToken QUOTE       = new KtSingleValueToken("QUOTE", "q\"");
 
     KtSingleValueToken COMMA       = new KtSingleValueToken("COMMA", ",");
 
@@ -220,7 +219,7 @@ public interface KtTokens {
                                              LATEINIT_KEYWORD,
                                              DATA_KEYWORD, INLINE_KEYWORD, NOINLINE_KEYWORD, TAILREC_KEYWORD, EXTERNAL_KEYWORD,
                                              ANNOTATION_KEYWORD, CROSSINLINE_KEYWORD, CONST_KEYWORD, OPERATOR_KEYWORD, INFIX_KEYWORD,
-                                             SUSPEND_KEYWORD, HEADER_KEYWORD, IMPL_KEYWORD, EXPECT_KEYWORD, ACTUAL_KEYWORD
+                                             SUSPEND_KEYWORD, HEADER_KEYWORD, IMPL_KEYWORD, EXPECT_KEYWORD, ACTUAL_KEYWORD, MACRO_KEYWORD
     );
 
     /*
