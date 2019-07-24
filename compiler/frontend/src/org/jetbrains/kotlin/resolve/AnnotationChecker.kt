@@ -225,6 +225,7 @@ class AnnotationChecker(
         private val TARGET_ALLOWED_TARGETS = Name.identifier("allowedTargets")
 
         private fun applicableTargetSet(entry: KtAnnotationEntry, trace: BindingTrace): Set<KotlinTarget> {
+            if (entry.isMacroInvocation) return KotlinTarget.MACRO_TARGET_SET
             val descriptor = trace.get(BindingContext.ANNOTATION, entry) ?: return KotlinTarget.DEFAULT_TARGET_SET
             // For descriptor with error type, all targets are considered as possible
             if (descriptor.type.isError) return KotlinTarget.ALL_TARGET_SET

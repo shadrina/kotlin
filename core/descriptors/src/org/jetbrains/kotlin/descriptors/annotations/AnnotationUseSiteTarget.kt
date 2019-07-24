@@ -17,6 +17,7 @@
 package org.jetbrains.kotlin.descriptors.annotations
 
 enum class AnnotationUseSiteTarget(renderName: String? = null) {
+    MACRO("macro"),
     FIELD(),
     FILE(),
     PROPERTY(),

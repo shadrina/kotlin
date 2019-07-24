@@ -104,6 +104,9 @@ object AnnotationUseSiteTargetChecker {
                 AnnotationUseSiteTarget.RECEIVER ->
                     // annotation with use-site target `receiver` can be only on type reference, but not on declaration
                     reportDiagnosticOnce(WRONG_ANNOTATION_TARGET_WITH_USE_SITE_TARGET.on(annotation, "declaration", target.renderName))
+                AnnotationUseSiteTarget.MACRO -> {
+                    // TODO: Do we need to check something here?
+                }
             }
         }
     }
@@ -120,7 +123,8 @@ object AnnotationUseSiteTargetChecker {
         annotation: KtAnnotationEntry
     ) {
         if (annotated is KtProperty && annotated.hasDelegate() &&
-            descriptor is PropertyDescriptor && get(BindingContext.BACKING_FIELD_REQUIRED, descriptor) != true) {
+            descriptor is PropertyDescriptor && get(BindingContext.BACKING_FIELD_REQUIRED, descriptor) != true
+        ) {
             report(INAPPLICABLE_TARGET_PROPERTY_HAS_NO_BACKING_FIELD.on(annotation))
         }
     }

@@ -34,7 +34,10 @@ enum class KotlinTarget(val description: String, val isDefault: Boolean = true) 
     STAR_PROJECTION("star projection", false),
     PROPERTY_PARAMETER("property constructor parameter", false),
 
-    CLASS_ONLY("class", false),  // includes only top level classes and nested/inner classes (but not enums, objects, interfaces and local classes)
+    CLASS_ONLY(
+        "class",
+        false
+    ),  // includes only top level classes and nested/inner classes (but not enums, objects, interfaces and local classes)
     OBJECT("object", false),     // does not include OBJECT_LITERAL but DOES include COMPANION_OBJECT
     COMPANION_OBJECT("companion object", false),
     INTERFACE("interface", false),
@@ -77,6 +80,9 @@ enum class KotlinTarget(val description: String, val isDefault: Boolean = true) 
 
         val DEFAULT_TARGET_SET: Set<KotlinTarget> = values().filter { it.isDefault }.toSet()
 
+        // TODO: Determine which target can be replaced
+        val MACRO_TARGET_SET: Set<KotlinTarget> = values().toMutableSet().also { it.remove(MACRO_DEFINITION) }
+
         val ALL_TARGET_SET: Set<KotlinTarget> = values().toSet()
 
         fun classActualTargets(descriptor: ClassDescriptor): List<KotlinTarget> = when (descriptor.kind) {
@@ -86,38 +92,40 @@ enum class KotlinTarget(val description: String, val isDefault: Boolean = true) 
                 // inner local classes should be CLASS_ONLY, not LOCAL_CLASS
                 if (!descriptor.isInner && DescriptorUtils.isLocal(descriptor)) {
                     listOf(LOCAL_CLASS, CLASS)
-                }
-                else {
+                } else {
                     listOf(CLASS_ONLY, CLASS)
                 }
             ClassKind.OBJECT ->
                 if (descriptor.isCompanionObject) {
                     listOf(COMPANION_OBJECT, OBJECT, CLASS)
-                }
-                else {
+                } else {
                     listOf(OBJECT, CLASS)
                 }
             ClassKind.INTERFACE -> listOf(INTERFACE, CLASS)
             ClassKind.ENUM_CLASS ->
                 if (DescriptorUtils.isLocal(descriptor)) {
                     listOf(LOCAL_CLASS, CLASS)
-                }
-                else {
+                } else {
                     listOf(ENUM_CLASS, CLASS)
                 }
             ClassKind.ENUM_ENTRY -> listOf(ENUM_ENTRY, PROPERTY, FIELD)
         }
 
         val USE_SITE_MAPPING: Map<AnnotationUseSiteTarget, KotlinTarget> = mapOf(
-                AnnotationUseSiteTarget.CONSTRUCTOR_PARAMETER to VALUE_PARAMETER,
-                AnnotationUseSiteTarget.FIELD to FIELD,
-                AnnotationUseSiteTarget.PROPERTY to PROPERTY,
-                AnnotationUseSiteTarget.FILE to FILE,
-                AnnotationUseSiteTarget.PROPERTY_GETTER to PROPERTY_GETTER,
-                AnnotationUseSiteTarget.PROPERTY_SETTER to PROPERTY_SETTER,
-                AnnotationUseSiteTarget.RECEIVER to VALUE_PARAMETER,
-                AnnotationUseSiteTarget.SETTER_PARAMETER to VALUE_PARAMETER,
-                AnnotationUseSiteTarget.PROPERTY_DELEGATE_FIELD to FIELD)
+            AnnotationUseSiteTarget.CONSTRUCTOR_PARAMETER to VALUE_PARAMETER,
+            AnnotationUseSiteTarget.FIELD to FIELD,
+            AnnotationUseSiteTarget.PROPERTY to PROPERTY,
+            AnnotationUseSiteTarget.FILE to FILE,
+            AnnotationUseSiteTarget.PROPERTY_GETTER to PROPERTY_GETTER,
+            AnnotationUseSiteTarget.PROPERTY_SETTER to PROPERTY_SETTER,
+            AnnotationUseSiteTarget.RECEIVER to VALUE_PARAMETER,
+            AnnotationUseSiteTarget.SETTER_PARAMETER to VALUE_PARAMETER,
+            AnnotationUseSiteTarget.PROPERTY_DELEGATE_FIELD to FIELD,
+            AnnotationUseSiteTarget.MACRO to CLASS,
+            AnnotationUseSiteTarget.MACRO to FUNCTION,
+            AnnotationUseSiteTarget.MACRO to TOP_LEVEL_FUNCTION
+            // TODO: Determine all targets can be replaced
+        )
 
     }
 }

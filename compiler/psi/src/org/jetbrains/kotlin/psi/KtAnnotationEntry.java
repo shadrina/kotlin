@@ -21,6 +21,7 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.KtNodeTypes;
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.psi.stubs.KotlinAnnotationEntryStub;
@@ -41,6 +42,11 @@ public class KtAnnotationEntry extends KtElementImplStub<KotlinAnnotationEntrySt
     @Override
     public <R, D> R accept(@NotNull KtVisitor<R, D> visitor, D data) {
         return visitor.visitAnnotationEntry(this, data);
+    }
+
+    public boolean isMacroInvocation() {
+        KtAnnotationUseSiteTarget target = getUseSiteTarget();
+        return target != null && target.getAnnotationUseSiteTarget() == AnnotationUseSiteTarget.MACRO;
     }
 
 

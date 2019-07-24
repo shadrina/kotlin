@@ -42,6 +42,7 @@ class KtAnnotationUseSiteTarget : KtElementImplStub<KotlinAnnotationUseSiteTarge
 
         val node = firstChild.node
         return when (node.elementType) {
+            KtTokens.MACRO_KEYWORD -> AnnotationUseSiteTarget.MACRO
             KtTokens.FIELD_KEYWORD -> AnnotationUseSiteTarget.FIELD
             KtTokens.FILE_KEYWORD -> AnnotationUseSiteTarget.FILE
             KtTokens.PROPERTY_KEYWORD -> AnnotationUseSiteTarget.PROPERTY
