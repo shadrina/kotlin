@@ -91,8 +91,8 @@ object ProtoEnumFlags {
             ClassKind.ENUM_CLASS -> ProtoBuf.Class.Kind.ENUM_CLASS
             ClassKind.ENUM_ENTRY -> ProtoBuf.Class.Kind.ENUM_ENTRY
             ClassKind.ANNOTATION_CLASS -> ProtoBuf.Class.Kind.ANNOTATION_CLASS
-            // TODO: Create MACRO_DEFINITION class kind
-            // ClassKind.MACRO_DEFINITION -> ProtoBuf.Class.Kind.CLASS
+            // TODO: Check for side effects
+            ClassKind.MACRO_DEFINITION -> ProtoBuf.Class.Kind.CLASS
             ClassKind.OBJECT -> ProtoBuf.Class.Kind.OBJECT
         }
     }

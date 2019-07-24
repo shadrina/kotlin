@@ -137,7 +137,7 @@ public class AnnotationResolverImpl extends AnnotationResolver {
             if (descriptor instanceof ConstructorDescriptor) {
                 ConstructorDescriptor constructor = (ConstructorDescriptor)descriptor;
                 ClassDescriptor classDescriptor = constructor.getConstructedClass();
-                if (classDescriptor.getKind() != ClassKind.ANNOTATION_CLASS) {// && classDescriptor.getKind() != ClassKind.MACRO_DEFINITION) {
+                if (classDescriptor.getKind() != ClassKind.ANNOTATION_CLASS && classDescriptor.getKind() != ClassKind.MACRO_DEFINITION) {
                     trace.report(NOT_AN_ANNOTATION_CLASS.on(entryElement, classDescriptor));
                 }
             }

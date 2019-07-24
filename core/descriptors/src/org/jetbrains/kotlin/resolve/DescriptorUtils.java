@@ -403,7 +403,8 @@ public class DescriptorUtils {
         if (isAnonymousObject(classDescriptor)) {
             return Visibilities.DEFAULT_VISIBILITY;
         }
-        assert classKind == ClassKind.CLASS || classKind == ClassKind.INTERFACE || classKind == ClassKind.ANNOTATION_CLASS;
+        assert classKind == ClassKind.CLASS || classKind == ClassKind.INTERFACE || classKind == ClassKind.ANNOTATION_CLASS
+               || classKind == ClassKind.MACRO_DEFINITION;
         return Visibilities.PUBLIC;
     }
 

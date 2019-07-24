@@ -22,8 +22,7 @@ public enum ClassKind {
     ENUM_CLASS,
     ENUM_ENTRY,
     ANNOTATION_CLASS,
-    // TODO: Create MACRO_DEFINITION class kind
-    // MACRO_DEFINITION,
+    MACRO_DEFINITION,
     OBJECT;
 
     public boolean isSingleton() {
