@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public interface KtAnnotated extends KtElement {
+public interface KtAnnotated extends KtElement /*, KtReplaceable */ {
     @NotNull
     List<KtAnnotation> getAnnotations();
 

@@ -10,23 +10,12 @@ import java.lang.IllegalStateException
 import kotlin.meta.Node
 
 interface KtReplaceable : KtElement {
-    var hiddenPsi: KtDotQualifiedExpression?
+    var hiddenPsi: KtElement?
     val replaceableTools: KtReplaceableTools
 
     fun createHiddenPsiContent(): String
 
     fun convertToCustomAST(initialContent: String): Node
 
-    fun initializeHiddenPsi() {
-        try {
-            val converted = convertToCustomAST(createHiddenPsiContent())
-            hiddenPsi = replaceableTools.factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
-
-        } catch (e: Exception) {
-            when (e) {
-                is IllegalStateException, is ClassCastException -> return
-                else -> throw e
-            }
-        }
-    }
+    fun initializeHiddenPsi()
 }

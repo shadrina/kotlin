@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.psiUtil.KtReplaceableTools
+import java.lang.IllegalStateException
 import java.lang.StringBuilder
 
 abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node), KtReplaceable {
@@ -16,7 +17,20 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     }
 
     override val replaceableTools = KtReplaceableTools(node)
-    override var hiddenPsi: KtDotQualifiedExpression? = null
+    override var hiddenPsi: KtElement? = null
+
+    override fun initializeHiddenPsi() {
+        try {
+            val converted = convertToCustomAST(createHiddenPsiContent())
+            hiddenPsi = replaceableTools.factory.createExpression(converted.toCode())
+
+        } catch (e: Exception) {
+            when (e) {
+                is IllegalStateException, is ClassCastException -> return
+                else -> throw e
+            }
+        }
+    }
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
