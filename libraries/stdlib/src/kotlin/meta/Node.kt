@@ -1067,7 +1067,7 @@ sealed class Node {
             )
 
             enum class Target {
-                FIELD, FILE, PROPERTY, GET, SET, RECEIVER, PARAM, SETPARAM, DELEGATE;
+                FIELD, FILE, PROPERTY, GET, SET, RECEIVER, PARAM, SETPARAM, DELEGATE, MACRO;
 
                 fun toCode() = PREFIX + "Modifier.AnnotationSet.Target." + super.toString()
             }

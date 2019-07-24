@@ -154,6 +154,7 @@ public interface KtTokens {
     KtKeywordToken SET_KEYWORD       = KtKeywordToken.softKeyword("set");
     KtKeywordToken CONSTRUCTOR_KEYWORD = KtKeywordToken.softKeyword("constructor");
     KtKeywordToken INIT_KEYWORD        = KtKeywordToken.softKeyword("init");
+    KtKeywordToken MACRO_KEYWORD       = KtKeywordToken.softKeyword("macro");
 
     KtModifierKeywordToken ABSTRACT_KEYWORD  = KtModifierKeywordToken.softKeywordModifier("abstract");
     KtModifierKeywordToken ENUM_KEYWORD      = KtModifierKeywordToken.softKeywordModifier("enum");
