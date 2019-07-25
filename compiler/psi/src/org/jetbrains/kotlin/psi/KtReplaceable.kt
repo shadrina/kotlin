@@ -5,17 +5,16 @@
 
 package org.jetbrains.kotlin.psi
 
-import org.jetbrains.kotlin.psi.psiUtil.KtReplaceableTools
-import java.lang.IllegalStateException
+import org.jetbrains.kotlin.psi.psiUtil.ReplaceableTools
 import kotlin.meta.Node
 
 interface KtReplaceable : KtElement {
     var hiddenPsi: KtElement?
-    val replaceableTools: KtReplaceableTools
+    val replaceableTools: ReplaceableTools?
 
-    fun createHiddenPsiContent(): String
+    fun hiddenPsiContent(): String
 
-    fun convertToCustomAST(initialContent: String): Node
+    fun astByContent(content: String): Node
 
     fun initializeHiddenPsi()
 }

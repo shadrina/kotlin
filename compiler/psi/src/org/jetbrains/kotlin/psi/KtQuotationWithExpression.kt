@@ -9,8 +9,8 @@ import com.intellij.lang.ASTNode
 import kotlin.meta.Node
 
 class KtQuotationWithExpression(node: ASTNode) : KtQuotation(node, saveIndents = false) {
-    override fun convertToCustomAST(initialContent: String): Node {
-        val parsed = replaceableTools.factory.createExpression(initialContent)
+    override fun astByContent(content: String): Node {
+        val parsed = replaceableTools!!.factory.createExpression(content)
         return replaceableTools.converter.convertExpr(parsed)
     }
 }

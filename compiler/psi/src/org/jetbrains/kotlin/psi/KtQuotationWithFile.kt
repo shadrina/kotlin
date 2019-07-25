@@ -11,11 +11,11 @@ import kotlin.meta.Node
 
 class KtQuotationWithFile(node: ASTNode) : KtQuotation(node) {
     init {
-        replaceableTools.converter.offsetGetter = { e -> e.startOffset }
+        replaceableTools!!.converter.offsetGetter = { e -> e.startOffset }
     }
 
-    override fun convertToCustomAST(initialContent: String): Node {
-        val parsed = replaceableTools.factory.createFile(initialContent)
+    override fun astByContent(content: String): Node {
+        val parsed = replaceableTools!!.factory.createFile(content)
         return replaceableTools.converter.convertFile(parsed)
     }
 }

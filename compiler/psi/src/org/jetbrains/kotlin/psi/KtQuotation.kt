@@ -7,7 +7,7 @@ package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.psi.psiUtil.KtReplaceableTools
+import org.jetbrains.kotlin.psi.psiUtil.ReplaceableTools
 import java.lang.IllegalStateException
 import java.lang.StringBuilder
 
@@ -16,13 +16,14 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
         private const val INSERTION_PLACEHOLDER = "x"
     }
 
-    override val replaceableTools = KtReplaceableTools(node)
+    override val replaceableTools: ReplaceableTools? =
+        ReplaceableTools(node)
     override var hiddenPsi: KtElement? = null
 
     override fun initializeHiddenPsi() {
         try {
-            val converted = convertToCustomAST(createHiddenPsiContent())
-            hiddenPsi = replaceableTools.factory.createExpression(converted.toCode())
+            val converted = astByContent(hiddenPsiContent())
+            hiddenPsi = replaceableTools!!.factory.createExpression(converted.toCode())
 
         } catch (e: Exception) {
             when (e) {
@@ -37,7 +38,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     fun getEntries(): List<PsiElement> =
         children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
 
-    override fun createHiddenPsiContent(): String {
+    override fun hiddenPsiContent(): String {
         val text = StringBuilder()
         var offset = firstChild.textLength
         val insertionsInfo = mutableMapOf<Int, String>()
@@ -57,7 +58,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
                 text.append(childText)
             }
         }
-        replaceableTools.converter.insertionsInfo = insertionsInfo
+        replaceableTools!!.converter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
 
