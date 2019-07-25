@@ -9,7 +9,7 @@ import com.intellij.lang.ASTNode
 import kotlin.meta.Node
 
 class KtQuotationWithType(node: ASTNode) : KtQuotation(node) {
-    override fun astByContent(content: String): Node {
+    override fun astNodeByContent(content: String): Node {
         val parsed = replaceableTools!!.factory.createType(content)
         return replaceableTools.converter.convertType(parsed)
     }

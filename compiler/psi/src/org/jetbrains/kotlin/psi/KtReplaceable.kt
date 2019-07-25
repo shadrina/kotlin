@@ -9,12 +9,12 @@ import org.jetbrains.kotlin.psi.psiUtil.ReplaceableTools
 import kotlin.meta.Node
 
 interface KtReplaceable : KtElement {
-    var hiddenPsi: KtElement?
+    var hiddenElement: KtElement?
     val replaceableTools: ReplaceableTools?
 
-    fun hiddenPsiContent(): String
+    fun hiddenElementContent(): String
 
-    fun astByContent(content: String): Node
+    fun astNodeByContent(content: String): Node
 
-    fun initializeHiddenPsi()
+    fun initializeHiddenElement()
 }

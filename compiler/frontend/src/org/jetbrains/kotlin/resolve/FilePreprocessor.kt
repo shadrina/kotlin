@@ -39,7 +39,7 @@ class FilePreprocessor(
         file.accept(object : PsiRecursiveElementWalkingVisitor() {
             override fun visitElement(element: PsiElement?) {
                 super.visitElement(element)
-                if (element != null && element is KtQuotation) element.initializeHiddenPsi()
+                if (element != null && element is KtQuotation) element.initializeHiddenElement()
             }
         })
     }

@@ -1596,7 +1596,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         }
 
         // TODO: What if null?
-        return visitQualifiedExpression((KtDotQualifiedExpression) quotation.getHiddenPsi(), context);
+        return visitQualifiedExpression((KtDotQualifiedExpression) quotation.getHiddenElement(), context);
     }
 
     @Override
