@@ -196,7 +196,8 @@ class AnnotationChecker(
 
         fun checkWithUseSiteTargets(): Boolean {
             if (useSiteTarget == null) return false
-
+            // TODO: Check is not applicable to macro definition
+            if (useSiteTarget == AnnotationUseSiteTarget.MACRO) return true
             val useSiteMapping = KotlinTarget.USE_SITE_MAPPING[useSiteTarget]
             return actualTargets.onlyWithUseSiteTarget.any { it in applicableTargets && it == useSiteMapping }
         }

@@ -120,11 +120,7 @@ enum class KotlinTarget(val description: String, val isDefault: Boolean = true) 
             AnnotationUseSiteTarget.PROPERTY_SETTER to PROPERTY_SETTER,
             AnnotationUseSiteTarget.RECEIVER to VALUE_PARAMETER,
             AnnotationUseSiteTarget.SETTER_PARAMETER to VALUE_PARAMETER,
-            AnnotationUseSiteTarget.PROPERTY_DELEGATE_FIELD to FIELD,
-            AnnotationUseSiteTarget.MACRO to CLASS,
-            AnnotationUseSiteTarget.MACRO to FUNCTION,
-            AnnotationUseSiteTarget.MACRO to TOP_LEVEL_FUNCTION
-            // TODO: Determine all targets can be replaced
+            AnnotationUseSiteTarget.PROPERTY_DELEGATE_FIELD to FIELD
         )
 
     }
