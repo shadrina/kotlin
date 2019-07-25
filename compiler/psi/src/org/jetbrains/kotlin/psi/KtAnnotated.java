@@ -20,7 +20,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public interface KtAnnotated extends KtElement /*, KtReplaceable */ {
+// TODO: Extend KtReplaceable if necessary methods implemented in all subclasses
+public interface KtAnnotated extends KtElement /* KtReplaceable */ {
+    default boolean isMacroAnnotated() {
+        return getAnnotationEntries().size() == 1 && getAnnotationEntries().get(0).isMacroInvocation();
+    }
+
     @NotNull
     List<KtAnnotation> getAnnotations();
 
