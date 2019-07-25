@@ -131,13 +131,13 @@ public class AnnotationResolverImpl extends AnnotationResolver {
             @NotNull BindingTrace trace,
             @NotNull OverloadResolutionResults<FunctionDescriptor> results
     ) {
-        if (!results.isSingleResult()) return;
+        if (!results.isSingleResult() || entryElement.isMacroInvocation()) return;
         FunctionDescriptor descriptor = results.getResultingDescriptor();
         if (!ErrorUtils.isError(descriptor)) {
             if (descriptor instanceof ConstructorDescriptor) {
                 ConstructorDescriptor constructor = (ConstructorDescriptor)descriptor;
                 ClassDescriptor classDescriptor = constructor.getConstructedClass();
-                if (classDescriptor.getKind() != ClassKind.ANNOTATION_CLASS && classDescriptor.getKind() != ClassKind.MACRO_DEFINITION) {
+                if (classDescriptor.getKind() != ClassKind.ANNOTATION_CLASS) {
                     trace.report(NOT_AN_ANNOTATION_CLASS.on(entryElement, classDescriptor));
                 }
             }
