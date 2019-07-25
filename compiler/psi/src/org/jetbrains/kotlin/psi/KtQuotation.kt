@@ -18,12 +18,12 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
 
     override val replaceableTools: ReplaceableTools? =
         ReplaceableTools(node)
-    override var hiddenPsi: KtElement? = null
+    override var hiddenElement: KtElement? = null
 
-    override fun initializeHiddenPsi() {
+    override fun initializeHiddenElement() {
         try {
-            val converted = astByContent(hiddenPsiContent())
-            hiddenPsi = replaceableTools!!.factory.createExpression(converted.toCode())
+            val converted = astNodeByContent(hiddenElementContent())
+            hiddenElement = replaceableTools!!.factory.createExpression(converted.toCode())
 
         } catch (e: Exception) {
             when (e) {
@@ -38,7 +38,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     fun getEntries(): List<PsiElement> =
         children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
 
-    override fun hiddenPsiContent(): String {
+    override fun hiddenElementContent(): String {
         val text = StringBuilder()
         var offset = firstChild.textLength
         val insertionsInfo = mutableMapOf<Int, String>()

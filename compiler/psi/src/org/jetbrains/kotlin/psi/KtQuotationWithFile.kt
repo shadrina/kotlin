@@ -14,7 +14,7 @@ class KtQuotationWithFile(node: ASTNode) : KtQuotation(node) {
         replaceableTools!!.converter.offsetGetter = { e -> e.startOffset }
     }
 
-    override fun astByContent(content: String): Node {
+    override fun astNodeByContent(content: String): Node {
         val parsed = replaceableTools!!.factory.createFile(content)
         return replaceableTools.converter.convertFile(parsed)
     }
