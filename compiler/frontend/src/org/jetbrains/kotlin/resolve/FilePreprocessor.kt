@@ -22,7 +22,9 @@ class FilePreprocessor(
 ) {
     fun preprocessFile(file: KtFile) {
         registerFileByPackage(file)
-        initializeQuotations(file)
+
+        file.traverse({ it is KtQuotation }, { (it as KtQuotation).initializeHiddenElement() })
+        file.traverse({ it is KtAnnotated && it is KtReplaceable }, { (it as KtReplaceable).initializeHiddenElement() })
 
         for (extension in extensions) {
             extension.preprocessFile(file)
@@ -35,11 +37,11 @@ class FilePreprocessor(
         trace.addElementToSlice(PACKAGE_TO_FILES, file.packageFqName, file)
     }
 
-    private fun initializeQuotations(file: KtFile) {
-        file.accept(object : PsiRecursiveElementWalkingVisitor() {
+    private fun KtFile.traverse(condition: (PsiElement) -> Boolean, action: (PsiElement) -> Unit) {
+        this.accept(object : PsiRecursiveElementWalkingVisitor() {
             override fun visitElement(element: PsiElement?) {
                 super.visitElement(element)
-                if (element != null && element is KtQuotation) element.initializeHiddenElement()
+                if (element != null && condition(element)) action(element)
             }
         })
     }

@@ -9,12 +9,24 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.psiUtil.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinClassStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 
-open class KtClass : KtClassOrObject {
-    constructor(node: ASTNode) : super(node)
+open class KtClass : KtClassOrObject, KtReplaceable {
+    override lateinit var hiddenElement: KtElement
+    final override lateinit var metaTools: MetaTools
+
+    constructor(node: ASTNode) : super(node) {
+        metaTools = MetaTools(node)
+    }
+
     constructor(stub: KotlinClassStub) : super(stub, KtStubElementTypes.CLASS)
+
+    override fun initializeHiddenElement() {
+        if (!::metaTools.isInitialized) return
+        TODO()
+    }
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitClass(this, data)
