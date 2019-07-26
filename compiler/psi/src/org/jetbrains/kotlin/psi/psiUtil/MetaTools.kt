@@ -9,7 +9,7 @@ import com.intellij.lang.ASTNode
 import org.jetbrains.kotlin.psi.KastreeConverter
 import org.jetbrains.kotlin.psi.KtPsiFactory
 
-class ReplaceableTools(node: ASTNode) {
-    val factory by lazy { KtPsiFactory(node.psi.project, false) }
+class MetaTools(node: ASTNode) {
+    val factory by lazy { KtPsiFactory(node.psi, false) }
     val converter by lazy { KastreeConverter() }
 }

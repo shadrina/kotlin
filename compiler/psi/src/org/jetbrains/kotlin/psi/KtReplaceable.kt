@@ -5,16 +5,11 @@
 
 package org.jetbrains.kotlin.psi
 
-import org.jetbrains.kotlin.psi.psiUtil.ReplaceableTools
-import kotlin.meta.Node
+import org.jetbrains.kotlin.psi.psiUtil.MetaTools
 
 interface KtReplaceable : KtElement {
-    var hiddenElement: KtElement?
-    val replaceableTools: ReplaceableTools?
-
-    fun hiddenElementContent(): String
-
-    fun astNodeByContent(content: String): Node
+    var hiddenElement: KtElement
+    var metaTools: MetaTools
 
     fun initializeHiddenElement()
 }

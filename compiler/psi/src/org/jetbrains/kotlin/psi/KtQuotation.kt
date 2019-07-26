@@ -7,23 +7,25 @@ package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.psi.psiUtil.ReplaceableTools
+import org.jetbrains.kotlin.psi.psiUtil.MetaTools
 import java.lang.IllegalStateException
 import java.lang.StringBuilder
+import kotlin.meta.Node
 
 abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node), KtReplaceable {
     companion object {
         private const val INSERTION_PLACEHOLDER = "x"
     }
 
-    override val replaceableTools: ReplaceableTools? =
-        ReplaceableTools(node)
-    override var hiddenElement: KtElement? = null
+    override var metaTools = MetaTools(node)
+    override lateinit var hiddenElement: KtElement
+
+    abstract fun astNodeByContent(content: String): Node
 
     override fun initializeHiddenElement() {
         try {
             val converted = astNodeByContent(hiddenElementContent())
-            hiddenElement = replaceableTools!!.factory.createExpression(converted.toCode())
+            hiddenElement = metaTools.factory.createExpression(converted.toCode())
 
         } catch (e: Exception) {
             when (e) {
@@ -38,7 +40,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     fun getEntries(): List<PsiElement> =
         children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
 
-    override fun hiddenElementContent(): String {
+    private fun hiddenElementContent(): String {
         val text = StringBuilder()
         var offset = firstChild.textLength
         val insertionsInfo = mutableMapOf<Int, String>()
@@ -58,7 +60,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
                 text.append(childText)
             }
         }
-        replaceableTools!!.converter.insertionsInfo = insertionsInfo
+        metaTools.converter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
 
