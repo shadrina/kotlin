@@ -1595,7 +1595,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             entry.accept(visitor);
         }
 
-        // TODO: What if null?
+        // TODO: What if not initialized?
         return visitQualifiedExpression((KtDotQualifiedExpression) quotation.getHiddenElement(), context);
     }
 

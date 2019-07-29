@@ -11,5 +11,5 @@ import org.jetbrains.kotlin.psi.KtPsiFactory
 
 class MetaTools(node: ASTNode) {
     val factory by lazy { KtPsiFactory(node.psi, false) }
-    val converter by lazy { KastreeConverter() }
+    val converter = KastreeConverter()
 }
