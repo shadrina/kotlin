@@ -106,9 +106,11 @@ class LocalClassifierAnalyzer(
             analyzerServices
         )
 
+        // TODO: Fill dependencies for macro expansion
         container.get<LazyTopDownAnalyzer>().analyzeDeclarations(
             TopDownAnalysisMode.LocalDeclarations,
             listOf(classOrObject),
+            listOf(),
             context.dataFlowInfo
         )
     }

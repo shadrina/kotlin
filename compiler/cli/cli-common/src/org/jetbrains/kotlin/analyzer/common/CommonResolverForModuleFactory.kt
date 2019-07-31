@@ -145,7 +145,8 @@ class CommonResolverForModuleFactory(
             val moduleDescriptor = resolver.descriptorForModule(moduleInfo)
             val container = resolver.resolverForModule(moduleInfo).componentProvider
 
-            container.get<LazyTopDownAnalyzer>().analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files)
+            // TODO: Fill dependencies for macro expansion
+            container.get<LazyTopDownAnalyzer>().analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files, listOf())
 
             return AnalysisResult.success(container.get<BindingTrace>().bindingContext, moduleDescriptor)
         }

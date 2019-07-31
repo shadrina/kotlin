@@ -16,10 +16,14 @@
 
 package org.jetbrains.kotlin.idea.caches.resolve
 
+import com.intellij.openapi.compiler.ex.CompilerPathsEx
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.OrderEnumerator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.analyzer.AnalysisResult
@@ -213,7 +217,13 @@ private object KotlinResolveDataProvider {
                 IdeaModuleStructureOracle()
             ).get<LazyTopDownAnalyzer>()
 
-            lazyTopDownAnalyzer.analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, listOf(analyzableElement))
+            val modules = ModuleManager.getInstance(project).modules
+            fun Module.outputPaths() = CompilerPathsEx.getOutputPaths(arrayOf(this))
+            fun Module.dependenciesPaths() = OrderEnumerator.orderEntries(this).recursively().pathsList.pathList
+            val dependencies = modules.fold(mutableListOf<String>()) { acc, m
+                -> acc.also { it.addAll(m.outputPaths() + m.dependenciesPaths()) } }
+
+            lazyTopDownAnalyzer.analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, listOf(analyzableElement), dependencies)
 
             return AnalysisResult.success(trace.bindingContext, moduleDescriptor)
         } catch (e: ProcessCanceledException) {

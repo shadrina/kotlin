@@ -548,6 +548,9 @@ object KotlinToJVMBytecodeCompiler {
             val moduleOutputs = environment.configuration.get(JVMConfigurationKeys.MODULES)?.mapNotNullTo(hashSetOf()) { module ->
                 environment.findLocalFile(module.getOutputDirectory())
             }.orEmpty()
+            val dependencies = environment.configuration.get(JVMConfigurationKeys.MODULES)?.fold(mutableListOf<String>()) { acc, m ->
+                acc.also { it.addAll(m.getClasspathRoots()) }
+            }.orEmpty()
             val sourcesOnly = TopDownAnalyzerFacadeForJVM.newModuleSearchScope(project, sourceFiles)
             // To support partial and incremental compilation, we add the scope which contains binaries from output directories
             // of the compiled modules (.class) to the list of scopes of the source module
@@ -558,6 +561,7 @@ object KotlinToJVMBytecodeCompiler {
                 NoScopeRecordCliBindingTrace(),
                 environment.configuration,
                 environment::createPackagePartProvider,
+                dependencies,
                 sourceModuleSearchScope = scope
             )
         }

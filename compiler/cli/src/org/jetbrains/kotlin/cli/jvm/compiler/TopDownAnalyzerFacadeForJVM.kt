@@ -77,6 +77,7 @@ object TopDownAnalyzerFacadeForJVM {
         trace: BindingTrace,
         configuration: CompilerConfiguration,
         packagePartProvider: (GlobalSearchScope) -> PackagePartProvider,
+        dependencies: Collection<String>,
         declarationProviderFactory: (StorageManager, Collection<KtFile>) -> DeclarationProviderFactory = ::FileBasedDeclarationProviderFactory,
         sourceModuleSearchScope: GlobalSearchScope = newModuleSearchScope(project, files)
     ): AnalysisResult {
@@ -108,7 +109,7 @@ object TopDownAnalyzerFacadeForJVM {
             }
         }
 
-        container.get<LazyTopDownAnalyzer>().analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files)
+        container.get<LazyTopDownAnalyzer>().analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files, dependencies)
 
         invokeExtensionsOnAnalysisComplete()?.let { return it }
 
