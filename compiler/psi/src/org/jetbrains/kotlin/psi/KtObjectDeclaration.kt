@@ -21,10 +21,14 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.psi.psiUtil.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinObjectStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 
 class KtObjectDeclaration : KtClassOrObject {
+    override lateinit var hiddenElement: KtElement
+    override lateinit var metaTools: MetaTools
+
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinObjectStub) : super(stub, KtStubElementTypes.OBJECT_DECLARATION)
 

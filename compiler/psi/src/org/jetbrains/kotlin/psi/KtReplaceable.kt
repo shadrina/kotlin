@@ -12,4 +12,7 @@ interface KtReplaceable : KtElement {
     var metaTools: MetaTools
 
     fun initializeHiddenElement()
+
+    // To check if hiddenElement is initialized from java
+    fun hasHiddenElementInitialized(): Boolean
 }
