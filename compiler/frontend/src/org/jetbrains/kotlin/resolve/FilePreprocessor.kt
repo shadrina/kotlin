@@ -21,12 +21,12 @@ class FilePreprocessor(
     private val trace: BindingTrace,
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
-    fun preprocessFile(file: KtFile, dependencies: Collection<String>) {
+    fun preprocessFile(file: KtFile, dependencies: Collection<String>, expandMacros: Boolean = false) {
         MacroExpander.dependencies = dependencies
         registerFileByPackage(file)
 
         file.traverse { if (it is KtQuotation) it.initializeHiddenElement() }
-        file.traverse { if (it is KtAnnotated && it is KtReplaceable) it.initializeHiddenElement() }
+        if (expandMacros) file.traverse { if (it is KtAnnotated && it is KtReplaceable) it.initializeHiddenElement() }
 
         for (extension in extensions) {
             extension.preprocessFile(file)

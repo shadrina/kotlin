@@ -58,6 +58,7 @@ class LazyTopDownAnalyzer(
         topDownAnalysisMode: TopDownAnalysisMode,
         declarations: Collection<PsiElement>,
         dependencies: Collection<String>,
+        expandMacros: Boolean = false,
         outerDataFlowInfo: DataFlowInfo = DataFlowInfo.EMPTY
     ): TopDownAnalysisContext {
         val c = TopDownAnalysisContext(topDownAnalysisMode, outerDataFlowInfo, declarationScopeProvider)
@@ -93,7 +94,7 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitKtFile(file: KtFile) {
-                    filePreprocessor.preprocessFile(file, dependencies)
+                    filePreprocessor.preprocessFile(file, dependencies, expandMacros)
                     registerDeclarations(file.declarations)
                     val packageDirective = file.packageDirective
                     assert(file.isScript() || packageDirective != null) { "No package in a non-script file: " + file }
