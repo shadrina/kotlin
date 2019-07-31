@@ -27,8 +27,7 @@ object MacroExpander {
             val applyMethods = klass.declaredMethods.filter { it.name == "apply" }
             // TODO: Overload resolution
             val method = applyMethods.getOrNull(0)?.also { it.isAccessible = true } ?: return null
-            val result = method.invoke(ctor.newInstance(), node)
-            return result as Node
+            return method.invoke(ctor.newInstance(), node) as Node
 
         } catch (e: ClassNotFoundException) {
             // TODO: Report an error
