@@ -15,7 +15,7 @@ import org.jetbrains.kotlin.psi.stubs.KotlinClassStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import kotlin.meta.Writer
 
-open class KtClass : KtClassOrObject, KtReplaceable {
+open class KtClass : KtClassOrObject {
     override lateinit var hiddenElement: KtElement
     final override lateinit var metaTools: MetaTools
 
@@ -32,6 +32,8 @@ open class KtClass : KtClassOrObject, KtReplaceable {
         val convertedText = Writer.write(converted)
         hiddenElement = metaTools.factory.createClass(convertedText)
     }
+
+    override fun hasHiddenElementInitialized(): Boolean = ::hiddenElement.isInitialized
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitClass(this, data)
