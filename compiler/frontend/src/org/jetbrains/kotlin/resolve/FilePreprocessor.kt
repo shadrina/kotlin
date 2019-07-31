@@ -9,6 +9,7 @@ import com.google.common.collect.Sets
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementWalkingVisitor
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.MacroExpander
 import org.jetbrains.kotlin.resolve.BindingContext.PACKAGE_TO_FILES
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice
 
@@ -20,11 +21,12 @@ class FilePreprocessor(
     private val trace: BindingTrace,
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
-    fun preprocessFile(file: KtFile) {
+    fun preprocessFile(file: KtFile, dependencies: Collection<String>) {
+        MacroExpander.dependencies = dependencies
         registerFileByPackage(file)
 
-        file.traverse({ it is KtQuotation }, { (it as KtQuotation).initializeHiddenElement() })
-        file.traverse({ it is KtAnnotated && it is KtReplaceable }, { (it as KtReplaceable).initializeHiddenElement() })
+        file.traverse { if (it is KtQuotation) it.initializeHiddenElement() }
+        file.traverse { if (it is KtAnnotated && it is KtReplaceable) it.initializeHiddenElement() }
 
         for (extension in extensions) {
             extension.preprocessFile(file)
@@ -37,11 +39,11 @@ class FilePreprocessor(
         trace.addElementToSlice(PACKAGE_TO_FILES, file.packageFqName, file)
     }
 
-    private fun KtFile.traverse(condition: (PsiElement) -> Boolean, action: (PsiElement) -> Unit) =
+    private fun KtFile.traverse(action: (PsiElement) -> Unit) =
         accept(object : PsiRecursiveElementWalkingVisitor() {
             override fun visitElement(element: PsiElement?) {
                 super.visitElement(element)
-                if (element != null && condition(element)) action(element)
+                if (element != null) action(element)
             }
         })
 }

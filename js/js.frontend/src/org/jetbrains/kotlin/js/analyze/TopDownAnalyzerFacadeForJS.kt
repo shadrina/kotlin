@@ -110,7 +110,8 @@ abstract class AbstractTopDownAnalyzerFacadeForJS {
             expectActualTracker,
             additionalPackages + listOfNotNull(packageFragment)
         )
-        analyzerForJs.analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files)
+        // TODO: Fill dependencies for macro expansion
+        analyzerForJs.analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files, listOf())
         return JsAnalysisResult.success(trace, moduleContext.module)
     }
 

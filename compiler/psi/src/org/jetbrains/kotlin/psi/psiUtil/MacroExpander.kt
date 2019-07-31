@@ -5,10 +5,6 @@
 
 package org.jetbrains.kotlin.psi.psiUtil
 
-import com.intellij.openapi.compiler.ex.CompilerPathsEx
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
-import com.intellij.openapi.roots.OrderEnumerator
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import java.lang.reflect.InvocationTargetException
 import java.net.URL
@@ -16,17 +12,13 @@ import java.net.URLClassLoader
 import kotlin.meta.Node
 
 object MacroExpander {
+    var dependencies: Collection<String> = emptyList()
+
     fun run(annotationEntry: KtAnnotationEntry, node: Node): Node? {
-        val modules = ModuleManager.getInstance(annotationEntry.project).modules
-
-        fun Module.outputPaths() = CompilerPathsEx.getOutputPaths(arrayOf(this))
-        fun Module.dependenciesPaths() = OrderEnumerator.orderEntries(this).recursively().pathsList.pathList
-
-        val urls = modules
-            .fold(mutableListOf<String>(), { acc, m -> acc.also { it.addAll(m.outputPaths() + m.dependenciesPaths()) } })
+        if (dependencies.isEmpty()) return null
+        val urls = dependencies
             .map { URL("file:///$it") }
             .toTypedArray()
-
         val urlClassLoader = URLClassLoader(urls)
         try {
             val name = annotationEntry.shortName ?: return null
@@ -36,17 +28,17 @@ object MacroExpander {
             // TODO: Overload resolution
             val method = applyMethods.getOrNull(0)?.also { it.isAccessible = true } ?: return null
             val result = method.invoke(ctor.newInstance(), node)
-            return null
-            // TODO:
-            // return result as Node
+            return result as Node
 
         } catch (e: ClassNotFoundException) {
             // TODO: Report an error
+            throw e
         } catch (e: InvocationTargetException) {
             // TODO: Report an error
+            throw e
         } catch (e: Exception) {
             // TODO: Report an error
+            throw e
         }
-        return null
     }
 }
