@@ -10,7 +10,7 @@ import kotlin.meta.Node
 
 class KtQuotationWithExpression(node: ASTNode) : KtQuotation(node, saveIndents = false) {
     override fun astNodeByContent(content: String): Node {
-        val parsed = metaTools.factory.createExpression(content)
-        return metaTools.converter.convertExpr(parsed)
+        val parsed = factory.createExpression(content)
+        return converter.convertExpr(parsed)
     }
 }

@@ -10,7 +10,7 @@ import kotlin.meta.Node
 
 class KtQuotationWithType(node: ASTNode) : KtQuotation(node) {
     override fun astNodeByContent(content: String): Node {
-        val parsed = metaTools.factory.createType(content)
-        return metaTools.converter.convertType(parsed)
+        val parsed = factory.createType(content)
+        return converter.convertType(parsed)
     }
 }

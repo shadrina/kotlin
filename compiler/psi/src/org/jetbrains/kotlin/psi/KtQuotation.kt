@@ -28,7 +28,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     override fun initializeHiddenElement() {
         try {
             val converted = astNodeByContent(hiddenElementContent())
-            hiddenElement = metaTools.factory.createExpression(converted.toCode())
+            hiddenElement = factory.createExpression(converted.toCode())
 
         } catch (e: Exception) {
             when (e) {
@@ -65,7 +65,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
                 text.append(childText)
             }
         }
-        metaTools.converter.insertionsInfo = insertionsInfo
+        converter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
 
