@@ -6,10 +6,9 @@
 package org.jetbrains.kotlin.resolve
 
 import com.google.common.collect.Sets
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiRecursiveElementWalkingVisitor
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.MacroExpander
+import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
 import org.jetbrains.kotlin.resolve.BindingContext.PACKAGE_TO_FILES
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice
 
@@ -22,11 +21,13 @@ class FilePreprocessor(
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
     fun preprocessFile(file: KtFile, dependencies: Collection<String>, expandMacros: Boolean = false) {
-        MacroExpander.dependencies = dependencies
         registerFileByPackage(file)
 
-        file.traverse { if (it is KtQuotation) it.initializeHiddenElement() }
-        if (expandMacros) file.traverse { if (it is KtAnnotated && it is KtReplaceable) it.initializeHiddenElement() }
+        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement() })
+        if (expandMacros) {
+            MacroExpander.dependencies = dependencies
+            file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> { if (it is KtReplaceable) it.initializeHiddenElement() })
+        }
 
         for (extension in extensions) {
             extension.preprocessFile(file)
@@ -38,14 +39,6 @@ class FilePreprocessor(
         // The trace currently does not support bi-di multimaps that would handle this task nicer
         trace.addElementToSlice(PACKAGE_TO_FILES, file.packageFqName, file)
     }
-
-    private fun KtFile.traverse(action: (PsiElement) -> Unit) =
-        accept(object : PsiRecursiveElementWalkingVisitor() {
-            override fun visitElement(element: PsiElement?) {
-                super.visitElement(element)
-                if (element != null) action(element)
-            }
-        })
 }
 
 fun <K, T> BindingTrace.addElementToSlice(

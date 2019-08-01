@@ -99,8 +99,10 @@ public class PackageCodegenImpl implements PackageCodegen {
                 }
 
                 KtClassOrObject classOrObject = (KtClassOrObject) declaration;
-                if (state.getGenerateDeclaredClassFilter().shouldGenerateClass(classOrObject)) {
+                if (!classOrObject.hasHiddenElementInitialized() && state.getGenerateDeclaredClassFilter().shouldGenerateClass(classOrObject)) {
                     classOrObjects.add(classOrObject);
+                } else if (classOrObject.hasHiddenElementInitialized()) {
+                    classOrObjects.add((KtClassOrObject) classOrObject.getHiddenElement());
                 }
             }
             else if (declaration instanceof KtScript) {

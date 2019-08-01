@@ -18,7 +18,10 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     }
 
     override var metaTools = MetaTools(node)
+    override var replacedElement: KtElement = this
     override lateinit var hiddenElement: KtElement
+    override var isHidden = false
+    override var isRoot = false
 
     abstract fun astNodeByContent(content: String): Node
 
