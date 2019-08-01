@@ -11,12 +11,12 @@ import kotlin.meta.Node
 
 class KtQuotationWithDeclaration(node: ASTNode) : KtQuotation(node) {
     init {
-        metaTools.converter.offsetGetter = { e -> e.startOffset }
+        converter.offsetGetter = { e -> e.startOffset }
     }
 
     override fun astNodeByContent(content: String): Node {
         // TODO: Explain the choice of generic type
-        val parsed = metaTools.factory.createDeclaration<KtNamedDeclaration>(content)
-        return metaTools.converter.convertDecl(parsed)
+        val parsed = factory.createDeclaration<KtNamedDeclaration>(content)
+        return converter.convertDecl(parsed)
     }
 }

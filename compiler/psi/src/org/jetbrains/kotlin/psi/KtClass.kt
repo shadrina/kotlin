@@ -27,10 +27,10 @@ open class KtClass : KtClassOrObject {
 
     override fun initializeHiddenElement() {
         if (!::metaTools.isInitialized || !isMacroAnnotated) return
-        val nodeToConvert = metaTools.converter.convertStructured(this)
+        val nodeToConvert = converter.convertStructured(this)
         val converted = MacroExpander.run(annotationEntries[0], nodeToConvert) ?: return
         val convertedText = Writer.write(converted)
-        hiddenElement = metaTools.factory.createClass(convertedText).also {
+        hiddenElement = factory.createClass(convertedText).also {
             it.markHidden()
             it.isRoot = true
             it.replacedElement = this
