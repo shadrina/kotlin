@@ -6,13 +6,19 @@
 package org.jetbrains.kotlin.psi
 
 import org.jetbrains.kotlin.psi.psiUtil.MetaTools
+import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
 
 interface KtReplaceable : KtElement {
+    var replacedElement: KtElement
     var hiddenElement: KtElement
     var metaTools: MetaTools
 
+    var isHidden: Boolean
+    var isRoot: Boolean
+
     fun initializeHiddenElement()
 
-    // To check if hiddenElement is initialized from java
     fun hasHiddenElementInitialized(): Boolean
 }
+
+fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true })

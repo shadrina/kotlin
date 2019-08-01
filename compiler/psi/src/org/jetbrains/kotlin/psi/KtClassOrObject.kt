@@ -35,6 +35,10 @@ abstract class KtClassOrObject :
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassOrObjectStub<out KtClassOrObject>, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
+    override var replacedElement: KtElement = this
+    override var isHidden = false
+    override var isRoot = false
+
     override fun initializeHiddenElement() {
     }
 
