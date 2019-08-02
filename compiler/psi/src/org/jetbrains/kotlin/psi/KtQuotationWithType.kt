@@ -11,6 +11,6 @@ import kotlin.meta.Node
 class KtQuotationWithType(node: ASTNode) : KtQuotation(node) {
     override fun astNodeByContent(content: String): Node {
         val parsed = factory.createType(content)
-        return converter.convertType(parsed)
+        return kastreeConverter.convertType(parsed)
     }
 }

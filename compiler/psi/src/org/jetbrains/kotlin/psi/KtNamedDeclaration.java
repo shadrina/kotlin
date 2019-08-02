@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.name.Name;
 
-public interface KtNamedDeclaration extends KtDeclaration, PsiNameIdentifierOwner, KtStatementExpression, KtNamed {
+public interface KtNamedDeclaration extends KtDeclaration, PsiNameIdentifierOwner, KtStatementExpression, KtNamed, KtReplaceable {
     @NotNull
     Name getNameAsSafeName();
 

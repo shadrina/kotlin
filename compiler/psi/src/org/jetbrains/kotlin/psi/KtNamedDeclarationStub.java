@@ -34,6 +34,7 @@ import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt;
+import org.jetbrains.kotlin.psi.psiUtil.MetaTools;
 import org.jetbrains.kotlin.psi.stubs.KotlinStubWithFqName;
 import org.jetbrains.kotlin.types.expressions.OperatorConventions;
 import org.jetbrains.kotlin.util.OperatorNameConventions;
@@ -49,6 +50,63 @@ abstract class KtNamedDeclarationStub<T extends KotlinStubWithFqName<?>> extends
 
     public KtNamedDeclarationStub(@NotNull ASTNode node) {
         super(node);
+    }
+
+    @NotNull
+    @Override
+    public KtElement getReplacedElement() {
+        return this;
+    }
+
+    @Override
+    public void setReplacedElement(@NotNull KtElement element) {
+    }
+
+    @NotNull
+    @Override
+    public KtElement getHiddenElement() {
+        throw new IllegalStateException("Hidden element isn't initialized");
+    }
+
+    @Override
+    public void setHiddenElement(@NotNull KtElement element) {
+    }
+
+    @NotNull
+    @Override
+    public MetaTools getMetaTools() {
+        throw new IllegalStateException("Meta tools aren't initialized");
+    }
+
+    @Override
+    public void setMetaTools(@NotNull MetaTools tools) {
+    }
+
+    @Override
+    public boolean hasHiddenElementInitialized() {
+        return false;
+    }
+
+    @Override
+    public boolean isHidden() {
+        return false;
+    }
+
+    @Override
+    public void setHidden(boolean b) {
+    }
+
+    @Override
+    public boolean isRoot() {
+        return false;
+    }
+
+    @Override
+    public void setRoot(boolean b) {
+    }
+
+    @Override
+    public void initializeHiddenElement() {
     }
 
     @Override

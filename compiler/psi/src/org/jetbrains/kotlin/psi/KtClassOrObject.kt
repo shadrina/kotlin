@@ -31,18 +31,12 @@ import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 
 abstract class KtClassOrObject :
     KtTypeParameterListOwnerStub<KotlinClassOrObjectStub<out KtClassOrObject>>, KtDeclarationContainer, KtNamedDeclaration,
-    KtPureClassOrObject, KtReplaceable {
+    KtPureClassOrObject {
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassOrObjectStub<out KtClassOrObject>, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
-    override var replacedElement: KtElement = this
-    override var isHidden = false
-    override var isRoot = false
-
-    override fun initializeHiddenElement() {
-    }
-
-    override fun hasHiddenElementInitialized(): Boolean = false
+    val factory: KtPsiFactory get() = metaTools.factory
+    val kastreeConverter: KastreeConverter get() = metaTools.converter
 
     fun getSuperTypeList(): KtSuperTypeList? = getStubOrPsiChild(KtStubElementTypes.SUPER_TYPE_LIST)
 

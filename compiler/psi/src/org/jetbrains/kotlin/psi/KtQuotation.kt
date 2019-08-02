@@ -23,6 +23,9 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     override var isHidden = false
     override var isRoot = false
 
+    val factory: KtPsiFactory get() = metaTools.factory
+    val kastreeConverter: KastreeConverter get() = metaTools.converter
+
     abstract fun astNodeByContent(content: String): Node
 
     override fun initializeHiddenElement() {
@@ -65,7 +68,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
                 text.append(childText)
             }
         }
-        converter.insertionsInfo = insertionsInfo
+        kastreeConverter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
 

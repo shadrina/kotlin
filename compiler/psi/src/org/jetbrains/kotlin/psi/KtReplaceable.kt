@@ -13,11 +13,6 @@ interface KtReplaceable : KtElement {
     var hiddenElement: KtElement
     var metaTools: MetaTools
 
-    val factory: KtPsiFactory
-        get() = metaTools.factory
-    val converter: KastreeConverter
-        get() = metaTools.converter
-
     var isHidden: Boolean
     var isRoot: Boolean
 
