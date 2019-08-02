@@ -27,7 +27,7 @@ open class KtClass : KtClassOrObject {
 
     override fun initializeHiddenElement() {
         if (!::metaTools.isInitialized || !isMacroAnnotated) return
-        val nodeToConvert = converter.convertStructured(this)
+        val nodeToConvert = kastreeConverter.convertStructured(this)
         val converted = MacroExpander.run(annotationEntries[0], nodeToConvert) ?: return
         val convertedText = Writer.write(converted)
         hiddenElement = factory.createClass(convertedText).also {

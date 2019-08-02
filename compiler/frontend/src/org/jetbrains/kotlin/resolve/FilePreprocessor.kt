@@ -28,6 +28,7 @@ class FilePreprocessor(
         if (expandMacros) {
             MacroExpander.dependencies = dependencies
             file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
+                // TODO: Only classes & objects so far
                 if (it is KtReplaceable && it.isMacroAnnotated) {
                     it.initializeHiddenElement()
                     val hidden = it.hiddenElement as KtDeclaration

@@ -11,6 +11,6 @@ import kotlin.meta.Node
 class KtQuotationWithExpression(node: ASTNode) : KtQuotation(node, saveIndents = false) {
     override fun astNodeByContent(content: String): Node {
         val parsed = factory.createExpression(content)
-        return converter.convertExpr(parsed)
+        return kastreeConverter.convertExpr(parsed)
     }
 }
