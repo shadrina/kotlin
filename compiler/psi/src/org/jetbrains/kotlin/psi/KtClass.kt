@@ -33,7 +33,6 @@ open class KtClass : KtClassOrObject {
         hiddenElement = factory.createClass(convertedText).also {
             it.markHidden()
             it.isRoot = true
-            it.replacedElement = this
         }
     }
 
