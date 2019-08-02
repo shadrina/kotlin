@@ -21,4 +21,4 @@ interface KtReplaceable : KtElement {
     fun hasHiddenElementInitialized(): Boolean
 }
 
-fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true })
+fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true; it.replacedElement = this })
