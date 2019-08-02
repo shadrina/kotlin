@@ -20,18 +20,34 @@ class FilePreprocessor(
     private val trace: BindingTrace,
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
-    fun preprocessFile(file: KtFile, dependencies: Collection<String>, expandMacros: Boolean = false) {
+    fun preprocessFile(file: KtFile, dependencies: Collection<String>, expandMacros: Boolean = false): Collection<KtDeclaration> {
+        val hiddenDeclarations = mutableListOf<KtDeclaration>()
         registerFileByPackage(file)
 
         file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement() })
         if (expandMacros) {
             MacroExpander.dependencies = dependencies
-            file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> { if (it is KtReplaceable) it.initializeHiddenElement() })
+            file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
+                if (it is KtReplaceable && it.isMacroAnnotated) {
+                    it.initializeHiddenElement()
+                    val hidden = it.hiddenElement as KtDeclaration
+                    if (it is KtDeclaration) {
+                        val declarations =
+                            trace.get(BindingContext.HIDDEN_ELEMENT, hidden.name) ?: mutableListOf<KtDeclaration>().also { list ->
+                                trace.record(BindingContext.HIDDEN_ELEMENT, hidden.name, list)
+                            }
+                        declarations.add(hidden)
+                        hiddenDeclarations.add(hidden)
+                    }
+                }
+            })
         }
 
         for (extension in extensions) {
             extension.preprocessFile(file)
         }
+
+        return hiddenDeclarations
     }
 
     private fun registerFileByPackage(file: KtFile) {

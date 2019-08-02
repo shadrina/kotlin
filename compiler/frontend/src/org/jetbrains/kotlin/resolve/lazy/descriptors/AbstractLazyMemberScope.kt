@@ -21,9 +21,12 @@ import org.jetbrains.kotlin.incremental.components.LookupLocation
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.calls.components.InferenceSession
 import org.jetbrains.kotlin.resolve.lazy.LazyClassContext
+import org.jetbrains.kotlin.resolve.lazy.data.KtClassInfoUtil
+import org.jetbrains.kotlin.resolve.lazy.data.KtClassOrObjectInfo
 import org.jetbrains.kotlin.resolve.lazy.declarations.AbstractPsiBasedDeclarationProvider
 import org.jetbrains.kotlin.resolve.lazy.declarations.DeclarationProvider
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
@@ -61,7 +64,11 @@ protected constructor(
         mainScope?.classDescriptors?.invoke(name)?.let { return it }
 
         val result = linkedSetOf<ClassDescriptor>()
-        declarationProvider.getClassOrObjectDeclarations(name).mapTo(result) {
+        val classOrObjectDeclarations = declarationProvider.getClassOrObjectDeclarations(name) +
+                (trace.get(BindingContext.HIDDEN_ELEMENT, name.identifier)
+                    ?.filterIsInstance<KtClassOrObject>()
+                    ?.map { KtClassInfoUtil.createClassOrObjectInfo(it) } ?: emptyList<KtClassOrObjectInfo<*>>())
+        classOrObjectDeclarations.mapTo(result) {
             val isExternal = it.modifierList?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: false
             LazyClassDescriptor(c, thisDescriptor, name, it, isExternal)
         }
@@ -85,6 +92,12 @@ protected constructor(
             if (result == null) result = typeAlias
         }
         return result
+    }
+
+    override fun syncHiddenElementsInTraces(trace: Any, key: String) {
+        if (trace !is BindingTrace) return
+        val value = trace.get(BindingContext.HIDDEN_ELEMENT, key)
+        if (value != null) this.trace.record(BindingContext.HIDDEN_ELEMENT, key, value)
     }
 
     override fun getContributedFunctions(name: Name, location: LookupLocation): Collection<SimpleFunctionDescriptor> {
@@ -266,7 +279,7 @@ protected constructor(
     abstract override fun toString(): String
 
     fun toProviderString() = (declarationProvider as? AbstractPsiBasedDeclarationProvider)?.toInfoString()
-            ?: declarationProvider.toString()
+        ?: declarationProvider.toString()
 
     override fun printScopeStructure(p: Printer) {
         p.println(this::class.java.simpleName, " {")

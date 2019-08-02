@@ -161,7 +161,9 @@ open class IncrementalJvmCache(
             }
             KotlinClassHeader.Kind.CLASS -> {
                 assert(sourceFiles.size == 1) { "Class is expected to have only one source file: $sourceFiles" }
-                addToClassStorage(kotlinClass, sourceFiles.first())
+                // TODO: Uncomment
+                // Throws unexpected exception
+                // addToClassStorage(kotlinClass, sourceFiles.first())
 
                 protoMap.process(kotlinClass, changesCollector)
                 constantsMap.process(kotlinClass, changesCollector)

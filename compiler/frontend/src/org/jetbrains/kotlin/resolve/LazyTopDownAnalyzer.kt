@@ -94,8 +94,8 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitKtFile(file: KtFile) {
-                    filePreprocessor.preprocessFile(file, dependencies, expandMacros)
-                    registerDeclarations(file.declarations)
+                    val hiddenDeclarations = filePreprocessor.preprocessFile(file, dependencies, expandMacros)
+                    registerDeclarations(file.declarations + hiddenDeclarations)
 
                     val packageDirective = file.packageDirective
                     assert(file.isScript() || packageDirective != null) { "No package in a non-script file: " + file }

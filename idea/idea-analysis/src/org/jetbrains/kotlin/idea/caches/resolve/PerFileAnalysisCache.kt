@@ -163,9 +163,9 @@ private object KotlinResolveDataProvider {
         if (analyzableElement is KtClassInitializer) return analyzableElement.containingDeclaration
         return analyzableElement
         // if none of the above worked, take the outermost declaration
-                ?: PsiTreeUtil.getTopmostParentOfType(element, KtDeclaration::class.java)
-                // if even that didn't work, take the whole file
-                ?: element.containingKtFile
+            ?: PsiTreeUtil.getTopmostParentOfType(element, KtDeclaration::class.java)
+            // if even that didn't work, take the whole file
+            ?: element.containingKtFile
     }
 
     fun analyze(
@@ -220,8 +220,9 @@ private object KotlinResolveDataProvider {
             val modules = ModuleManager.getInstance(project).modules
             fun Module.outputPaths() = CompilerPathsEx.getOutputPaths(arrayOf(this))
             fun Module.dependenciesPaths() = OrderEnumerator.orderEntries(this).recursively().pathsList.pathList
-            val dependencies = modules.fold(mutableListOf<String>()) { acc, m
-                -> acc.also { it.addAll(m.outputPaths() + m.dependenciesPaths()) } }
+            val dependencies = modules.fold(mutableListOf<String>()) { acc, m ->
+                acc.also { it.addAll(m.outputPaths() + m.dependenciesPaths()) }
+            }
 
             lazyTopDownAnalyzer.analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, listOf(analyzableElement), dependencies)
 
