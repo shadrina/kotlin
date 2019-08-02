@@ -416,8 +416,9 @@ private object KotlinResolveDataProvider {
             val modules = ModuleManager.getInstance(project).modules
             fun Module.outputPaths() = CompilerPathsEx.getOutputPaths(arrayOf(this))
             fun Module.dependenciesPaths() = OrderEnumerator.orderEntries(this).recursively().pathsList.pathList
-            val dependencies = modules.fold(mutableListOf<String>()) { acc, m
-                -> acc.also { it.addAll(m.outputPaths() + m.dependenciesPaths()) } }
+            val dependencies = modules.fold(mutableListOf<String>()) { acc, m ->
+                acc.also { it.addAll(m.outputPaths() + m.dependenciesPaths()) }
+            }
 
             lazyTopDownAnalyzer.analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, listOf(analyzableElement), dependencies)
 

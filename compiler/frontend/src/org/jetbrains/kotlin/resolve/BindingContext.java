@@ -89,6 +89,8 @@ public interface BindingContext {
         }
     };
 
+    WritableSlice<String, Collection<KtDeclaration>> HIDDEN_ELEMENT = Slices.createSimpleSlice();
+
     WritableSlice<KtAnnotationEntry, AnnotationDescriptor> ANNOTATION = Slices.createSimpleSlice();
 
     WritableSlice<KtExpression, CompileTimeConstant<?>> COMPILE_TIME_VALUE = new BasicWritableSlice<>(COMPILE_TIME_VALUE_REWRITE_POLICY);

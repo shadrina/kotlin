@@ -48,8 +48,8 @@ interface ResolutionScope {
      * (that means that the implementation is not obliged to use the filters but may do so when it gives any performance advantage).
      */
     fun getContributedDescriptors(
-            kindFilter: DescriptorKindFilter = DescriptorKindFilter.ALL,
-            nameFilter: (Name) -> Boolean = MemberScope.ALL_NAME_FILTER
+        kindFilter: DescriptorKindFilter = DescriptorKindFilter.ALL,
+        nameFilter: (Name) -> Boolean = MemberScope.ALL_NAME_FILTER
     ): Collection<DeclarationDescriptor>
 
     fun definitelyDoesNotContainName(name: Name): Boolean = false
@@ -57,4 +57,9 @@ interface ResolutionScope {
     fun recordLookup(name: Name, location: LookupLocation) {
         getContributedFunctions(name, location)
     }
+
+    /**
+     * Kind of patch for hidden element descriptors creation
+     */
+    fun syncHiddenElementsInTraces(trace: Any, key: String) {}
 }

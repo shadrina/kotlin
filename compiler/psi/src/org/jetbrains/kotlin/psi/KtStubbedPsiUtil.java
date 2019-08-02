@@ -27,7 +27,12 @@ import org.jetbrains.annotations.Nullable;
 public final class KtStubbedPsiUtil {
     @Nullable
     public static KtDeclaration getContainingDeclaration(@NotNull PsiElement element) {
-        return getPsiOrStubParent(element, KtDeclaration.class, true);
+        PsiElement e = element;
+        if (element instanceof KtReplaceable) {
+            KtReplaceable replaceable = (KtReplaceable) element;
+            if (replaceable.isHidden() && replaceable.isRoot()) e = replaceable.getReplacedElement();
+        }
+        return getPsiOrStubParent(e, KtDeclaration.class, true);
     }
 
     @Nullable

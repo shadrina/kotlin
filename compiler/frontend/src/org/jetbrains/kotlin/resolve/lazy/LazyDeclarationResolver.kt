@@ -70,6 +70,10 @@ open class LazyDeclarationResolver constructor(
     ): ClassDescriptor? {
         val scope = getMemberScopeDeclaredIn(classObjectOrScript, location)
 
+        if (classObjectOrScript is KtReplaceable && classObjectOrScript.isHidden) {
+            scope.syncHiddenElementsInTraces(trace, classObjectOrScript.nameAsSafeName.identifier)
+        }
+
         // Why not use the result here. Because it may be that there is a redeclaration:
         //     class A {} class A { fun foo(): A<completion here>}
         // and if we find the class by name only, we may b-not get the right one.
