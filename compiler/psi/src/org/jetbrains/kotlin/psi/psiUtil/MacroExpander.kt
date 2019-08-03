@@ -15,11 +15,10 @@ object MacroExpander {
     var dependencies: Collection<String> = emptyList()
 
     fun run(annotationEntry: KtAnnotationEntry, node: Node): Node? {
-        if (dependencies.isEmpty()) return null
         val urls = dependencies
             .map { URL("file:///$it") }
             .toTypedArray()
-        val urlClassLoader = URLClassLoader(urls)
+        val urlClassLoader = URLClassLoader(urls, this::class.java.classLoader)
         try {
             val name = annotationEntry.shortName ?: return null
             val klass = urlClassLoader.loadClass(name.identifier) // TODO: How to get fully qualified name?

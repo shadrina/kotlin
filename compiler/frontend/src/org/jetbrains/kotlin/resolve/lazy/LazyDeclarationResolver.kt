@@ -70,7 +70,7 @@ open class LazyDeclarationResolver constructor(
     ): ClassDescriptor? {
         val scope = getMemberScopeDeclaredIn(classObjectOrScript, location)
 
-        if (classObjectOrScript is KtReplaceable && classObjectOrScript.isHidden) {
+        if (classObjectOrScript.isHidden) {
             scope.syncHiddenElementsInTraces(trace, classObjectOrScript.nameAsSafeName.identifier)
         }
 

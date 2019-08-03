@@ -58,7 +58,6 @@ class LazyTopDownAnalyzer(
         topDownAnalysisMode: TopDownAnalysisMode,
         declarations: Collection<PsiElement>,
         dependencies: Collection<String>,
-        expandMacros: Boolean = false,
         outerDataFlowInfo: DataFlowInfo = DataFlowInfo.EMPTY
     ): TopDownAnalysisContext {
         val c = TopDownAnalysisContext(topDownAnalysisMode, outerDataFlowInfo, declarationScopeProvider)
@@ -94,7 +93,7 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitKtFile(file: KtFile) {
-                    val hiddenDeclarations = filePreprocessor.preprocessFile(file, dependencies, expandMacros)
+                    val hiddenDeclarations = filePreprocessor.preprocessFile(file, dependencies)
                     registerDeclarations(file.declarations + hiddenDeclarations)
 
                     val packageDirective = file.packageDirective

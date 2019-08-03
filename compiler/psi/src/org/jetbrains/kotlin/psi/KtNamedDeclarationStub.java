@@ -83,7 +83,7 @@ abstract class KtNamedDeclarationStub<T extends KotlinStubWithFqName<?>> extends
     }
 
     @Override
-    public boolean hasHiddenElementInitialized() {
+    public boolean getHasHiddenElementInitialized() {
         return false;
     }
 

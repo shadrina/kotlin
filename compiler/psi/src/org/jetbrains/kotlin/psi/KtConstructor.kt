@@ -35,7 +35,7 @@ abstract class KtConstructor<T : KtConstructor<T>> : KtDeclarationStub<KotlinPla
     override lateinit var hiddenElement: KtElement
     override lateinit var metaTools: MetaTools
 
-    override fun hasHiddenElementInitialized(): Boolean = false
+    override val hasHiddenElementInitialized: Boolean = false
     override var isHidden: Boolean = false
     override var isRoot: Boolean = false
 

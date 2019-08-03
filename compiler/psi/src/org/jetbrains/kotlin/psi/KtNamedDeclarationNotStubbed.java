@@ -65,7 +65,7 @@ abstract class KtNamedDeclarationNotStubbed extends KtDeclarationImpl implements
     }
 
     @Override
-    public boolean hasHiddenElementInitialized() {
+    public boolean getHasHiddenElementInitialized() {
         return false;
     }
 
