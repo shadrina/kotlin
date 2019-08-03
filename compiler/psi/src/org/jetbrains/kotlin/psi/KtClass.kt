@@ -19,6 +19,8 @@ open class KtClass : KtClassOrObject {
     override lateinit var hiddenElement: KtElement
     final override lateinit var metaTools: MetaTools
 
+    override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized
+
     constructor(node: ASTNode) : super(node) {
         metaTools = MetaTools(node)
     }
@@ -35,8 +37,6 @@ open class KtClass : KtClassOrObject {
             it.isRoot = true
         }
     }
-
-    override fun hasHiddenElementInitialized(): Boolean = ::hiddenElement.isInitialized
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitClass(this, data)

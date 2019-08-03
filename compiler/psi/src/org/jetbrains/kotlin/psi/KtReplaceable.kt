@@ -13,12 +13,11 @@ interface KtReplaceable : KtElement {
     var hiddenElement: KtElement
     var metaTools: MetaTools
 
+    val hasHiddenElementInitialized: Boolean
     var isHidden: Boolean
     var isRoot: Boolean
 
     fun initializeHiddenElement()
-
-    fun hasHiddenElementInitialized(): Boolean
 }
 
 fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true; it.replacedElement = this })

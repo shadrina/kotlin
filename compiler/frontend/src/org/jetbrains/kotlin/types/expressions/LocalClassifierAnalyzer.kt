@@ -111,7 +111,6 @@ class LocalClassifierAnalyzer(
             TopDownAnalysisMode.LocalDeclarations,
             listOf(classOrObject),
             listOf(),
-            expandMacros = false,
             outerDataFlowInfo = context.dataFlowInfo
         )
     }

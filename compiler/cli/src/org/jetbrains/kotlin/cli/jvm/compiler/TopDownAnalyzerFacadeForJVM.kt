@@ -109,12 +109,7 @@ object TopDownAnalyzerFacadeForJVM {
             }
         }
 
-        container.get<LazyTopDownAnalyzer>().analyzeDeclarations(
-            TopDownAnalysisMode.TopLevelDeclarations,
-            files,
-            dependencies,
-            expandMacros = true
-        )
+        container.get<LazyTopDownAnalyzer>().analyzeDeclarations(TopDownAnalysisMode.TopLevelDeclarations, files, dependencies)
 
         invokeExtensionsOnAnalysisComplete()?.let { return it }
 

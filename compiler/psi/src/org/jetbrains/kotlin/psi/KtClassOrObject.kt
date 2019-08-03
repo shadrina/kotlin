@@ -35,6 +35,10 @@ abstract class KtClassOrObject :
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassOrObjectStub<out KtClassOrObject>, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
+    override var replacedElement: KtElement = this
+    override var isHidden: Boolean = false
+    override var isRoot: Boolean = false
+
     val factory: KtPsiFactory get() = metaTools.factory
     val kastreeConverter: KastreeConverter get() = metaTools.converter
 

@@ -41,7 +41,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
         }
     }
 
-    override fun hasHiddenElementInitialized(): Boolean = ::hiddenElement.isInitialized
+    override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
