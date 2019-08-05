@@ -70,6 +70,9 @@ open class LazyDeclarationResolver constructor(
     ): ClassDescriptor? {
         val scope = getMemberScopeDeclaredIn(classObjectOrScript, location)
 
+        if (classObjectOrScript.hasHiddenElementInitialized) {
+            return findClassDescriptorIfAny(classObjectOrScript.hiddenElement as KtNamedDeclaration, location)
+        }
         if (classObjectOrScript.isHidden) {
             scope.syncHiddenElementsInTraces(trace, classObjectOrScript.nameAsSafeName.identifier)
         }
@@ -78,8 +81,11 @@ open class LazyDeclarationResolver constructor(
         //     class A {} class A { fun foo(): A<completion here>}
         // and if we find the class by name only, we may b-not get the right one.
         // This call is only needed to make sure the classes are written to trace
-        scope.getContributedClassifier(classObjectOrScript.nameAsSafeName, location)
+        val classifier = scope.getContributedClassifier(classObjectOrScript.nameAsSafeName, location)
         val descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, classObjectOrScript)
+
+        // TODO: Do we really need that?
+        if (descriptor == null && classifier != null) return classifier as? ClassDescriptor
 
         return descriptor as? ClassDescriptor
     }
@@ -89,7 +95,7 @@ open class LazyDeclarationResolver constructor(
         location: LookupLocation
     ): ClassDescriptor =
         findClassDescriptorIfAny(classObjectOrScript, location)
-                ?: (absentDescriptorHandler.diagnoseDescriptorNotFound(classObjectOrScript) as ClassDescriptor)
+            ?: (absentDescriptorHandler.diagnoseDescriptorNotFound(classObjectOrScript) as ClassDescriptor)
 
     fun resolveToDescriptor(declaration: KtDeclaration): DeclarationDescriptor =
         resolveToDescriptor(declaration, /*track =*/true) ?: absentDescriptorHandler.diagnoseDescriptorNotFound(declaration)
@@ -108,7 +114,7 @@ open class LazyDeclarationResolver constructor(
 
             override fun visitTypeParameter(parameter: KtTypeParameter, data: Nothing?): DeclarationDescriptor? {
                 val ownerElement = PsiTreeUtil.getParentOfType(parameter, KtTypeParameterListOwner::class.java)
-                        ?: error("Owner not found for type parameter: " + parameter.text)
+                    ?: error("Owner not found for type parameter: " + parameter.text)
                 val ownerDescriptor = resolveToDescriptor(ownerElement, /*track =*/false) ?: return null
 
                 val typeParameters: List<TypeParameterDescriptor>
@@ -120,7 +126,7 @@ open class LazyDeclarationResolver constructor(
 
                 val name = parameter.nameAsSafeName
                 return typeParameters.firstOrNull { it.name == name }
-                        ?: throw IllegalStateException("Type parameter $name not found for $ownerDescriptor")
+                    ?: throw IllegalStateException("Type parameter $name not found for $ownerDescriptor")
             }
 
             override fun visitNamedFunction(function: KtNamedFunction, data: Nothing?): DeclarationDescriptor? {
@@ -147,7 +153,7 @@ open class LazyDeclarationResolver constructor(
                             }
                             else -> {
                                 val constructor = classDescriptor.unsubstitutedPrimaryConstructor
-                                        ?: error("There are constructor parameters found, so a constructor should also exist")
+                                    ?: error("There are constructor parameters found, so a constructor should also exist")
                                 constructor.valueParameters
                                 bindingContext.get(BindingContext.VALUE_PARAMETER, parameter)
                             }

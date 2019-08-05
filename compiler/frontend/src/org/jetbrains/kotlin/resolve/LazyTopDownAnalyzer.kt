@@ -76,7 +76,11 @@ class LazyTopDownAnalyzer(
             visitor = ExceptionWrappingKtVisitorVoid(object : KtVisitorVoid() {
                 private fun registerDeclarations(declarations: List<KtDeclaration>) {
                     for (jetDeclaration in declarations) {
-                        jetDeclaration.accept(visitor!!)
+                        if (jetDeclaration is KtReplaceable && jetDeclaration.hasHiddenElementInitialized) {
+                            jetDeclaration.hiddenElement.accept(visitor!!)
+                        } else {
+                            jetDeclaration.accept(visitor!!)
+                        }
                     }
                 }
 
@@ -94,7 +98,8 @@ class LazyTopDownAnalyzer(
 
                 override fun visitKtFile(file: KtFile) {
                     val hiddenDeclarations = filePreprocessor.preprocessFile(file, dependencies)
-                    registerDeclarations(file.declarations + hiddenDeclarations)
+                    // TODO: What if we have new names at the top level?
+                    registerDeclarations(file.declarations)
 
                     val packageDirective = file.packageDirective
                     assert(file.isScript() || packageDirective != null) { "No package in a non-script file: " + file }
