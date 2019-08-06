@@ -166,7 +166,9 @@ private fun <T> PsiElement.collectInfos(c: ModuleInfoCollector<T>): T {
     }
 
     containingKtFile?.doNotAnalyze?.let {
-        return c.onFailure("Should not analyze element: $text in file ${containingKtFile.name}\n$it")
+        if (!(this is KtNamedDeclaration && isHidden)) {
+            return c.onFailure("Should not analyze element: $text in file ${containingKtFile.name}\n$it")
+        }
     }
 
     val explicitModuleInfo = containingKtFile?.forcedModuleInfo ?: (containingKtFile?.originalFile as? KtFile)?.forcedModuleInfo
