@@ -46,7 +46,7 @@ open class KtClass : KtClassOrObject {
         get() = stub as? KotlinClassStub
 
     // TODO: Check argument & return types
-    private fun KtNamedFunction.isMacroFunction(): Boolean = name == "apply"
+    private fun KtNamedFunction.isMacroFunction(): Boolean = name == "invoke"
 
     fun isMacroDefinition(): Boolean =
         if (super.isAnnotation() && declarations.size == 1) declarations[0].let { it is KtNamedFunction && it.isMacroFunction() } else false
