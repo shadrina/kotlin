@@ -6,13 +6,6 @@
 package kotlin.meta
 
 sealed class Node {
-
-    /**
-     * Author didn't forget about the existence of reflection.
-     * The use of reflection in stdlib is prohibited, so the author resorts
-     * to such terrible methods. =(
-     */
-
     var tag: Any? = null
 
     companion object {
@@ -20,10 +13,10 @@ sealed class Node {
     }
 
     abstract fun toCode(): String
-    
+
     protected fun List<Node?>.toCode() = "listOf(${this.joinToString(", ") { it?.toCode() ?: it.toString() }})"
-    
-    protected fun stringify(s: String?)       = if (s == null) s.toString() else "\"" + s + "\""
+
+    protected fun stringify(s: String?) = if (s == null) s.toString() else "\"" + s + "\""
     protected fun stringify(l: List<String?>) = l.map { "\"" + l.toString() + "\"" }.toString()
     protected fun stringRepresentation(className: String, vararg args: Pair<String, String?>) =
         "$PREFIX$className(${args.joinToString(", ") { "${it.first}=${it.second}" }})"
