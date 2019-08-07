@@ -40,6 +40,11 @@ import java.util.*
 
 // NOTE: in this file we collect only Kotlin-specific methods working with PSI and not modifying it
 
+// ----------- Macros ----------------------------------------------------------------------------------------------------------------------
+
+// TODO: Small workaround until all the elements are replaceable
+fun PsiElement.isHidden(): Boolean = (this is KtNamedDeclaration && isHidden) || (parent?.isHidden() ?: false)
+
 // ----------- Calls and qualified expressions ---------------------------------------------------------------------------------------------
 
 fun KtCallElement.getCallNameExpression(): KtSimpleNameExpression? {
