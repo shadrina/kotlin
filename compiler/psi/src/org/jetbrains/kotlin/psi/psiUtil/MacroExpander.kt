@@ -23,7 +23,7 @@ object MacroExpander {
             val name = annotationEntry.shortName ?: return null
             val klass = urlClassLoader.loadClass(name.identifier) // TODO: How to get fully qualified name?
             val ctor = klass.declaredConstructors[0].also { it.isAccessible = true }
-            val applyMethods = klass.declaredMethods.filter { it.name == "apply" }
+            val applyMethods = klass.declaredMethods.filter { it.name == "invoke" }
             // TODO: Overload resolution
             val method = applyMethods.getOrNull(0)?.also { it.isAccessible = true } ?: return null
             return method.invoke(ctor.newInstance(), node) as Node
