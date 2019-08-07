@@ -20,7 +20,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtElement;
-import org.jetbrains.kotlin.psi.KtNamedDeclaration;
 import org.jetbrains.kotlin.psi.psiUtil.PsiUtilsKt;
 import org.jetbrains.kotlin.resolve.constants.ConstantValueFactoryKt;
 import org.jetbrains.kotlin.resolve.constants.IntegerValueTypeConstant;
@@ -28,6 +27,8 @@ import org.jetbrains.kotlin.types.TypeUtils;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt.isHidden;
 
 public class Slices {
     private static final Logger LOG = Logger.getInstance(Slices.class);
@@ -43,15 +44,10 @@ public class Slices {
             if (!((oldValue == null && newValue == null) || (oldValue != null && oldValue.equals(newValue))
                   // TODO: Patch
                   // For some reason equals works weird for hidden element descriptors
-                  || (key instanceof PsiElement && keyIsHidden((PsiElement) key)))) {
+                  || (key instanceof PsiElement && isHidden((PsiElement) key)))) {
                 logErrorAboutRewritingNonEqualObjects(slice, key, oldValue, newValue);
             }
             return true;
-        }
-
-        // TODO: Small workaround until all the elements are replaceable
-        private boolean keyIsHidden(PsiElement key) {
-            return (key instanceof KtNamedDeclaration && ((KtNamedDeclaration) key).isHidden()) || keyIsHidden(key.getParent());
         }
     };
 
