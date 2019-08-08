@@ -45,6 +45,9 @@ import java.util.*
 // TODO: Small workaround until all the elements are replaceable
 fun PsiElement.isHidden(): Boolean = (this is KtNamedDeclaration && isHidden) || (parent?.isHidden() ?: false)
 
+fun PsiElement.replacedParent(): PsiElement =
+    if (this is KtNamedDeclaration && isHidden && isRoot) replacedElement else parent.replacedParent()
+
 // ----------- Calls and qualified expressions ---------------------------------------------------------------------------------------------
 
 fun KtCallElement.getCallNameExpression(): KtSimpleNameExpression? {
