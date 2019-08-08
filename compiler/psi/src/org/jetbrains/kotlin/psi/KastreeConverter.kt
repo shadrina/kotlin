@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.psi.psiUtil.*
 import java.util.*
 
 open class KastreeConverter {
-    lateinit var insertionsInfo: Map<Int, String>
+    var insertionsInfo = mapOf<Int, String>()
     var offsetGetter: (KtElement) -> Int = { e -> e.startOffsetInParent }
 
     protected open fun onNode(node: Node, elem: PsiElement) {}
