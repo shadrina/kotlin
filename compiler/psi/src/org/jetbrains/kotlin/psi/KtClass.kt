@@ -34,6 +34,7 @@ open class KtClass : KtClassOrObject {
         val convertedText = Writer.write(converted)
         hiddenElement = factory.createClass(convertedText).also {
             it.markHidden()
+            it.replacedElement = this
             it.isRoot = true
         }
     }

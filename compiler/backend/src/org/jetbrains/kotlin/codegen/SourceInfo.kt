@@ -20,20 +20,23 @@ import org.jetbrains.kotlin.backend.common.CodegenUtil
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.psiUtil.isHidden
+import org.jetbrains.kotlin.psi.psiUtil.replacedParent
 
 data class SourceInfo(val source: String, val pathOrCleanFQN: String, val linesInFile: Int) {
 
     companion object {
         fun createInfo(element: KtElement?, internalClassName: String): SourceInfo {
             assert(element != null) { "Couldn't create source mapper for null element $internalClassName" }
-            val lineNumbers = CodegenUtil.getLineNumberForElement(element!!.containingFile, true)
-                    ?: error("Couldn't extract line count in ${element.containingFile}")
+            val elementToAnalyze = (if (element!!.isHidden()) element.replacedParent() else element) as KtElement
+            val lineNumbers = CodegenUtil.getLineNumberForElement(elementToAnalyze.containingFile, true)
+                ?: error("Couldn't extract line count in ${elementToAnalyze.containingFile}")
 
             //TODO hack condition for package parts cleaning
-            val isTopLevel = element is KtFile || (element is KtNamedFunction && element.getParent() is KtFile)
+            val isTopLevel = elementToAnalyze is KtFile || (elementToAnalyze is KtNamedFunction && elementToAnalyze.getParent() is KtFile)
             val cleanedClassFqName = if (!isTopLevel) internalClassName else internalClassName.substringBefore('$')
 
-            return SourceInfo(element.containingKtFile.name, cleanedClassFqName, lineNumbers)
+            return SourceInfo(elementToAnalyze.containingKtFile.name, cleanedClassFqName, lineNumbers)
         }
 
         fun createInfoForIr(lineNumbers: Int, internalClassName: String, containingFileName: String): SourceInfo {
