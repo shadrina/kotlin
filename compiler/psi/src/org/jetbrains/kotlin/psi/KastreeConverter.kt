@@ -22,6 +22,16 @@ open class KastreeConverter {
     var insertionsInfo = mapOf<Int, String>()
     var offsetGetter: (KtElement) -> Int = { e -> e.startOffsetInParent }
 
+    private fun convertName(s: String, offset: Int) =
+        if (insertionsInfo.containsKey(offset)) Node.Expr.Name(
+            value = insertionsInfo.getValue(offset),
+            isExternal = true
+        ) else Node.Expr.Name(
+            value = s
+        )
+
+    private fun KtNamedDeclaration.nameOffset() = nameIdentifier?.startOffsetInParent ?: error("Can't count identifier offset")
+
     protected open fun onNode(node: Node, elem: PsiElement) {}
 
     open fun convertAnnotated(v: KtAnnotatedExpression) = Node.Expr.Annotated(
@@ -257,7 +267,7 @@ open class KastreeConverter {
 
     open fun convertEnumEntry(v: KtEnumEntry) = Node.Decl.EnumEntry(
         mods = convertModifiers(v),
-        name = v.name ?: error("Unnamed enum"),
+        name = convertName(v.name ?: error("Unnamed enum"), v.nameOffset()),
         args = convertValueArgs((v.superTypeListEntries.firstOrNull() as? KtSuperTypeCallEntry)?.valueArgumentList),
         members = v.declarations.map(::convertDecl)
     ).map(v)
@@ -321,7 +331,7 @@ open class KastreeConverter {
         typeParams =
         if (v.hasTypeParameterListBeforeFunctionName()) v.typeParameters.map(::convertTypeParam) else emptyList(),
         receiverType = v.receiverTypeReference?.let(::convertType),
-        name = v.name,
+        name = v.name?.let { convertName(it, v.nameOffset()) },
         paramTypeParams =
         if (!v.hasTypeParameterListBeforeFunctionName()) v.typeParameters.map(::convertTypeParam) else emptyList(),
         params = v.valueParameters.map(::convertFuncParam),
@@ -337,7 +347,7 @@ open class KastreeConverter {
     open fun convertFuncParam(v: KtParameter) = Node.Decl.Func.Param(
         mods = convertModifiers(v),
         readOnly = if (v.hasValOrVar()) !v.isMutable else null,
-        name = v.name ?: error("No param name"),
+        name = convertName(v.name ?: error("No param name"), v.nameOffset()),
         type = v.typeReference?.let(::convertType),
         default = v.defaultValue?.let(::convertExpr)
     ).map(v)
@@ -386,10 +396,9 @@ open class KastreeConverter {
         }
     }.toList()
 
-    open fun convertName(v: KtSimpleNameExpression) = if (insertionsInfo.containsKey(offsetGetter(v))) Node.Expr.ExternalName(
-        name = insertionsInfo.getValue(offsetGetter(v))
-    ).map(v) else Node.Expr.Name(
-        name = v.getReferencedName()
+    open fun convertName(v: KtSimpleNameExpression) = convertName(
+        v.getReferencedName(),
+        offsetGetter(v)
     ).map(v)
 
     open fun convertObject(v: KtObjectLiteralExpression) = Node.Expr.Object(
@@ -444,7 +453,7 @@ open class KastreeConverter {
         receiverType = v.receiverTypeReference?.let(::convertType),
         vars = listOf(
             Node.Decl.Property.Var(
-                name = v.name ?: error("No property name on $v"),
+                name = convertName(v.name ?: error("No property name on $v"), v.nameOffset()),
                 type = v.typeReference?.let(::convertType)
             ).map(v)
         ),
@@ -467,7 +476,7 @@ open class KastreeConverter {
         ).map(v) else Node.Decl.Property.Accessor.Set(
             mods = convertModifiers(v),
             paramMods = v.parameter?.let(::convertModifiers) ?: emptyList(),
-            paramName = v.parameter?.name,
+            paramName = v.parameter?.let { it.name?.let { name -> convertName(name, it.nameOffset()) } },
             paramType = v.parameter?.typeReference?.let(::convertType),
             body = v.bodyExpression?.let(::convertFuncBody)
         ).map(v)
@@ -482,14 +491,14 @@ open class KastreeConverter {
 
     open fun convertPropertyVar(v: KtDestructuringDeclarationEntry) =
         if (v.name == "_") null else Node.Decl.Property.Var(
-            name = v.name ?: error("No property name on $v"),
+            name = convertName(v.name ?: error("No property name on $v"), v.nameOffset()),
             type = v.typeReference?.let(::convertType)
         ).map(v)
 
     open fun convertPropertyVars(v: KtParameter) =
         v.destructuringDeclaration?.entries?.map(::convertPropertyVar) ?: listOf(
             if (v.name == "_") null else Node.Decl.Property.Var(
-                name = v.name ?: error("No property name on $v"),
+                name = convertName(v.name ?: error("No property name on $v"), v.nameOffset()),
                 type = v.typeReference?.let(::convertType)
             ).map(v)
         )
@@ -536,7 +545,7 @@ open class KastreeConverter {
                 else Node.Decl.Structured.Form.OBJECT
             else -> error("Unknown type of $v")
         },
-        name = v.name ?: error("Missing name"),
+        name = convertName(v.name ?: error("Missing name"), v.nameOffset()),
         typeParams = v.typeParameters.map(::convertTypeParam),
         primaryConstructor = v.primaryConstructor?.let(::convertPrimaryConstructor),
         // TODO: this
@@ -589,7 +598,7 @@ open class KastreeConverter {
 
     open fun convertTypeAlias(v: KtTypeAlias) = Node.Decl.TypeAlias(
         mods = convertModifiers(v),
-        name = v.name ?: error("No type alias name for $v"),
+        name = convertName(v.name ?: error("No type alias name for $v"), v.nameOffset()),
         typeParams = v.typeParameters.map(::convertTypeParam),
         type = convertType(v.getTypeReference() ?: error("No type alias ref for $v"))
     ).map(v)

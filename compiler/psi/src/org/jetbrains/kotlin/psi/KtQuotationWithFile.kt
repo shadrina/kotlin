@@ -6,16 +6,13 @@
 package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
-import org.jetbrains.kotlin.psi.psiUtil.startOffset
+import org.jetbrains.kotlin.psi.psiUtil.getStartOffsetIn
 import kotlin.meta.Node
 
 class KtQuotationWithFile(node: ASTNode) : KtQuotation(node) {
-    init {
-        kastreeConverter.offsetGetter = { e -> e.startOffset }
-    }
-
     override fun astNodeByContent(content: String): Node {
         val parsed = factory.createFile(content)
+        kastreeConverter.offsetGetter = { e -> e.getStartOffsetIn(parsed) }
         return kastreeConverter.convertFile(parsed)
     }
 }

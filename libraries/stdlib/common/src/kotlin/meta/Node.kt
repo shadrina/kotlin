@@ -93,7 +93,7 @@ sealed class Node {
         data class Structured(
             override val mods: List<Modifier>,
             val form: Form,
-            val name: String,
+            val name: Expr.Name,
             val typeParams: List<TypeParam>,
             val primaryConstructor: PrimaryConstructor?,
             val parentAnns: List<Modifier.AnnotationSet>,
@@ -106,7 +106,7 @@ sealed class Node {
                 "Decl.Structured",
                 "mods" to mods.toCode(),
                 "form" to form.toCode(),
-                "name" to stringify(name),
+                "name" to name.toCode(),
                 "typeParams" to typeParams.toCode(),
                 "primaryConstructor" to primaryConstructor?.toCode(),
                 "parentAnns" to parentAnns.toCode(),
@@ -173,7 +173,7 @@ sealed class Node {
             val typeParams: List<TypeParam>,
             val receiverType: Type?,
             // Name not present on anonymous functions
-            val name: String?,
+            val name: Expr.Name?,
             val paramTypeParams: List<TypeParam>,
             val params: List<Param>,
             val type: Type?,
@@ -185,7 +185,7 @@ sealed class Node {
                 "mods" to mods.toCode(),
                 "typeParams" to typeParams.toCode(),
                 "receiverType" to receiverType?.toCode(),
-                "name" to stringify(name),
+                "name" to name?.toCode(),
                 "paramTypeParams" to paramTypeParams.toCode(),
                 "params" to params.toCode(),
                 "type" to type?.toCode(),
@@ -196,7 +196,7 @@ sealed class Node {
             data class Param(
                 override val mods: List<Modifier>,
                 val readOnly: Boolean?,
-                val name: String,
+                val name: Expr.Name,
                 // Type can be null for anon functions
                 val type: Type?,
                 val default: Expr?
@@ -205,7 +205,7 @@ sealed class Node {
                     "Decl.Func.Param",
                     "mods" to mods.toCode(),
                     "readOnly" to readOnly.toString(),
-                    "name" to stringify(name),
+                    "name" to name.toCode(),
                     "type" to type?.toCode(),
                     "default" to default?.toCode()
                 )
@@ -254,12 +254,12 @@ sealed class Node {
             )
 
             data class Var(
-                val name: String,
+                val name: Expr.Name,
                 val type: Type?
             ) : Node() {
                 override fun toCode() = stringRepresentation(
                     "Decl.Property.Var",
-                    "name" to stringify(name),
+                    "name" to name.toCode(),
                     "type" to type?.toCode()
                 )
             }
@@ -292,7 +292,7 @@ sealed class Node {
                 data class Set(
                     override val mods: List<Modifier>,
                     val paramMods: List<Modifier>,
-                    val paramName: String?,
+                    val paramName: Expr.Name?,
                     val paramType: Type?,
                     val body: Func.Body?
                 ) : Accessor() {
@@ -300,7 +300,7 @@ sealed class Node {
                         "Decl.Property.Accessor.Set",
                         "mods" to mods.toCode(),
                         "paramMods" to paramMods.toCode(),
-                        "paramName" to stringify(paramName),
+                        "paramName" to paramName?.toCode(),
                         "paramType" to paramType?.toCode(),
                         "body" to body?.toCode()
                     )
@@ -310,14 +310,14 @@ sealed class Node {
 
         data class TypeAlias(
             override val mods: List<Modifier>,
-            val name: String,
+            val name: Expr.Name,
             val typeParams: List<TypeParam>,
             val type: Type
         ) : Decl(), WithModifiers {
             override fun toCode() = stringRepresentation(
                 "Decl.TypeAlias",
                 "mods" to mods.toCode(),
-                "name" to stringify(name),
+                "name" to name.toCode(),
                 "typeParams" to typeParams.toCode(),
                 "type" to type.toCode()
             )
@@ -357,14 +357,14 @@ sealed class Node {
 
         data class EnumEntry(
             override val mods: List<Modifier>,
-            val name: String,
+            val name: Expr.Name,
             val args: List<ValueArg>,
             val members: List<Decl>
         ) : Decl(), WithModifiers {
             override fun toCode() = stringRepresentation(
                 "Decl.EnumEntry",
                 "mods" to mods.toCode(),
-                "name" to stringify(name),
+                "name" to name.toCode(),
                 "args" to args.toCode(),
                 "members" to members.toCode()
             )
@@ -930,18 +930,14 @@ sealed class Node {
         }
 
         data class Name(
-            val name: String
+            val value: String,
+            val isExternal: Boolean = false
         ) : Expr() {
-            override fun toCode() = stringRepresentation(
+            override fun toCode() = if (isExternal) value else stringRepresentation(
                 "Expr.Name",
-                "name" to stringify(name)
+                "value" to stringify(value),
+                "isExternal" to isExternal.toString()
             )
-        }
-
-        data class ExternalName(
-            val name: String
-        ) : Expr() {
-            override fun toCode() = name
         }
 
         data class Labeled(
