@@ -1583,9 +1583,10 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         for (PsiElement entry : quotation.getEntries()) {
             entry.accept(visitor);
         }
-
-        // TODO: What if not initialized?
-        return visitQualifiedExpression((KtDotQualifiedExpression) quotation.getHiddenElement(), context);
+        if (!quotation.getHasHiddenElementInitialized()) {
+            return TypeInfoFactoryKt.noTypeInfo(context);
+        }
+        return quotation.getHiddenElement().accept(this, context);
     }
 
     @Override

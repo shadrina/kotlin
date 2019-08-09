@@ -46,7 +46,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
     fun getEntries(): List<PsiElement> =
-        children.filter { it is KtSimpleNameStringTemplateEntry || it is KtBlockStringTemplateEntry }.toList()
+        children.filterIsInstance<KtStringTemplateEntryWithExpression>().toList()
 
     private fun hiddenElementContent(): String {
         val text = StringBuilder()
@@ -56,25 +56,30 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
             val firstChildWithContentText = firstChild.nextSibling.text
             offset += (firstChildWithContentText.length - firstChildWithContentText.trimStart().length)
         }
-
         for (child in children) {
-            val content = getEntryContent(child)
+            child as KtStringTemplateEntry
+            val content = child.content()
             val childText = child.text
-            if (child is KtSimpleNameStringTemplateEntry || child is KtBlockStringTemplateEntry) {
-                insertionsInfo[child.startOffsetInParent - offset] = content
-                text.append(INSERTION_PLACEHOLDER)
-                offset += childText.length - INSERTION_PLACEHOLDER.length
-            } else {
-                text.append(childText)
+            when (child) {
+                is KtStringTemplateEntryWithExpression -> {
+                    insertionsInfo[child.startOffsetInParent - offset] = content
+                    text.append(INSERTION_PLACEHOLDER)
+                    offset += childText.length - INSERTION_PLACEHOLDER.length
+                }
+                is KtEscapeStringTemplateEntry -> {
+                    text.append(child.unescapedValue)
+                    offset++
+                }
+                else -> text.append(childText)
             }
         }
         kastreeConverter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
 
-    private fun getEntryContent(entry: PsiElement): String = when (entry) {
-        is KtSimpleNameStringTemplateEntry -> entry.firstChild.nextSibling.text
-        is KtBlockStringTemplateEntry -> entry.text.removePrefix(entry.firstChild.text).removeSuffix(entry.lastChild.text)
-        else -> entry.text
+    private fun KtStringTemplateEntry.content(): String = when (this) {
+        is KtSimpleNameStringTemplateEntry -> firstChild.nextSibling.text
+        is KtBlockStringTemplateEntry -> text.removePrefix(firstChild.text).removeSuffix(lastChild.text)
+        else -> text
     }
 }
