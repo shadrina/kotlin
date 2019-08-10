@@ -34,10 +34,10 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
             hiddenElement = factory.createExpression(converted.toCode())
             hiddenElement.containingKtFile.analysisContext = containingKtFile
 
-        } catch (e: Exception) {
-            when (e) {
-                is IllegalStateException, is ClassCastException -> return
-                else -> throw e
+        } catch (t: Throwable) {
+            when (t) {
+                is IllegalStateException, is ClassCastException, is AssertionError -> return
+                else -> throw t
             }
         }
     }
