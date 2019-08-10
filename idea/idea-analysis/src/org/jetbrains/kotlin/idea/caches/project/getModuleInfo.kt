@@ -29,8 +29,6 @@ import org.jetbrains.kotlin.idea.util.isKotlinBinary
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
-import org.jetbrains.kotlin.psi.psiUtil.isHidden
-import org.jetbrains.kotlin.scripting.definitions.findScriptDefinitionByFileName
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.jetbrains.kotlin.utils.sure
@@ -168,7 +166,7 @@ private fun <T> PsiElement.collectInfos(c: ModuleInfoCollector<T>): T {
     }
 
     containingKtFile?.doNotAnalyze?.let {
-        if (!isHidden()) return c.onFailure("Should not analyze element: $text in file ${containingKtFile.name}\n$it")
+        return c.onFailure("Should not analyze element: $text in file ${containingKtFile.name}\n$it")
     }
 
     val explicitModuleInfo = containingKtFile?.forcedModuleInfo ?: (containingKtFile?.originalFile as? KtFile)?.forcedModuleInfo
@@ -183,9 +181,7 @@ private fun <T> PsiElement.collectInfos(c: ModuleInfoCollector<T>): T {
     }
 
     val virtualFile = containingFile.originalFile.virtualFile
-    if (virtualFile == null && !isHidden()) {
-        return c.onFailure("Analyzing element of type ${this::class.java} in non-physical file $containingFile of type ${containingFile::class.java}\nText:\n$text")
-    }
+        ?: return c.onFailure("Analyzing element of type ${this::class.java} in non-physical file $containingFile of type ${containingFile::class.java}\nText:\n$text")
 
     if (containingKtFile?.isScript() == true) {
         getModuleRelatedModuleInfo(project, virtualFile)?.let {
