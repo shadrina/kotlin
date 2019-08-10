@@ -84,9 +84,7 @@ open class LazyDeclarationResolver constructor(
         val classifier = scope.getContributedClassifier(classObjectOrScript.nameAsSafeName, location)
         val descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, classObjectOrScript)
 
-        // TODO: Do we really need that?
         if (descriptor == null && classifier != null) return classifier as? ClassDescriptor
-
         return descriptor as? ClassDescriptor
     }
 
@@ -132,8 +130,10 @@ open class LazyDeclarationResolver constructor(
             override fun visitNamedFunction(function: KtNamedFunction, data: Nothing?): DeclarationDescriptor? {
                 val location = lookupLocationFor(function, function.isTopLevel)
                 val scopeForDeclaration = getMemberScopeDeclaredIn(function, location)
-                scopeForDeclaration.getContributedFunctions(function.nameAsSafeName, location)
+                val descriptors = scopeForDeclaration.getContributedFunctions(function.nameAsSafeName, location)
                 return bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, function)
+                    // TODO: Overload resolution
+                    ?: descriptors.firstOrNull()
             }
 
             override fun visitParameter(parameter: KtParameter, data: Nothing?): DeclarationDescriptor? {

@@ -32,6 +32,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
         try {
             val converted = astNodeByContent(hiddenElementContent())
             hiddenElement = factory.createExpression(converted.toCode())
+            hiddenElement.containingKtFile.analysisContext = containingKtFile
 
         } catch (e: Exception) {
             when (e) {
