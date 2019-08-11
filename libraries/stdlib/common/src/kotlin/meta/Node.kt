@@ -19,7 +19,7 @@ sealed class Node {
     protected fun stringify(s: String?) = if (s == null) s.toString() else "\"" + s + "\""
     protected fun stringify(l: List<String?>) = l.map { "\"" + l.toString() + "\"" }.toString()
     protected fun stringRepresentation(className: String, vararg args: Pair<String, String?>) =
-        "$PREFIX$className(${args.joinToString(", ") { "${it.first}=${it.second}" }})"
+        "$PREFIX$className(${args.joinToString(", ") { "${it.first} = ${it.second}" }})"
 
     interface WithAnnotations {
         val anns: List<Modifier.AnnotationSet>
@@ -1089,7 +1089,7 @@ sealed class Node {
             TAILREC, OPERATOR, INFIX, INLINE, EXTERNAL, SUSPEND, CONST,
             ACTUAL, EXPECT;
 
-            fun toCode() = PREFIX + "Modifier.Keyword" + super.toString()
+            fun toCode() = PREFIX + "Modifier.Keyword." + super.toString()
         }
     }
 
