@@ -96,7 +96,8 @@ abstract class KtClassOrObject :
 
     override fun isLocal(): Boolean = stub?.isLocal() ?: KtPsiUtil.isLocal(this)
 
-    override fun getDeclarations(): List<KtDeclaration> = getBody()?.declarations.orEmpty()
+    override fun getDeclarations(): List<KtDeclaration> =
+        (if (hasHiddenElementInitialized) hiddenElement as KtClassOrObject else this).body?.declarations.orEmpty()
 
     override fun getPresentation(): ItemPresentation? = ItemPresentationProviders.getItemPresentation(this)
 

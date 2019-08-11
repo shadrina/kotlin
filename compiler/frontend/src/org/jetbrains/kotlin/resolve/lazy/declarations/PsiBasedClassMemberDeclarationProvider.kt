@@ -16,7 +16,6 @@
 
 package org.jetbrains.kotlin.resolve.lazy.declarations
 
-import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.resolve.lazy.data.KtClassLikeInfo
 import org.jetbrains.kotlin.storage.StorageManager
 
@@ -26,13 +25,7 @@ class PsiBasedClassMemberDeclarationProvider(
 ) : AbstractPsiBasedDeclarationProvider(storageManager), ClassMemberDeclarationProvider {
 
     override fun doCreateIndex(index: AbstractPsiBasedDeclarationProvider.Index) {
-        // Put new elements declared by macro invocations
-        val psi = ownerInfo.correspondingClassOrObject
-        var declarations = ownerInfo.declarations
-        if (psi != null && psi.hasHiddenElementInitialized) {
-            declarations = (psi.hiddenElement as KtClass).declarations
-        }
-        for (declaration in declarations) {
+        for (declaration in ownerInfo.declarations) {
             index.putToIndex(declaration)
         }
 

@@ -24,7 +24,6 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.stubs.KotlinPlaceHolderStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes.*
-import java.util.*
 
 class KtClassBody : KtElementImplStub<KotlinPlaceHolderStub<KtClassBody>>, KtDeclarationContainer {
     constructor(node: ASTNode) : super(node)

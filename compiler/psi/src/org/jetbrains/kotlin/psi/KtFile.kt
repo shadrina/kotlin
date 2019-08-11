@@ -142,8 +142,13 @@ open class KtFile(viewProvider: FileViewProvider, val isCompiled: Boolean) :
 
     override fun getDeclarations(): List<KtDeclaration> {
         val stub = stub
-        return stub?.getChildrenByType(KtStubElementTypes.DECLARATION_TYPES, KtDeclaration.ARRAY_FACTORY)?.toList()
-                ?: PsiTreeUtil.getChildrenOfTypeAsList(this, KtDeclaration::class.java)
+        val declarations = mutableListOf<KtDeclaration>().apply {
+            addAll(
+                stub?.getChildrenByType(KtStubElementTypes.DECLARATION_TYPES, KtDeclaration.ARRAY_FACTORY)?.toList()
+                    ?: PsiTreeUtil.getChildrenOfTypeAsList(this@KtFile, KtDeclaration::class.java)
+            )
+        }
+        return declarations.map { if (it is KtReplaceable && it.hasHiddenElementInitialized) it.hiddenElement as KtDeclaration else it }
     }
 
     fun <T : KtElementImplStub<out StubElement<*>>> findChildByTypeOrClass(
