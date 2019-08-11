@@ -20,8 +20,7 @@ class FilePreprocessor(
     private val trace: BindingTrace,
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
-    fun preprocessFile(file: KtFile, dependencies: Collection<String>): Collection<KtDeclaration> {
-        val hiddenDeclarations = mutableListOf<KtDeclaration>()
+    fun preprocessFile(file: KtFile, dependencies: Collection<String>) {
         registerFileByPackage(file)
 
         file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement() })
@@ -36,7 +35,6 @@ class FilePreprocessor(
                             trace.record(BindingContext.HIDDEN_ELEMENT, hidden.name, list)
                         }
                     declarations.add(hidden)
-                    hiddenDeclarations.add(hidden)
                 }
             }
         })
@@ -44,8 +42,6 @@ class FilePreprocessor(
         for (extension in extensions) {
             extension.preprocessFile(file)
         }
-
-        return hiddenDeclarations
     }
 
     private fun registerFileByPackage(file: KtFile) {

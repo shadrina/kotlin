@@ -97,8 +97,7 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitKtFile(file: KtFile) {
-                    val hiddenDeclarations = filePreprocessor.preprocessFile(file, dependencies)
-                    // TODO: What if we have new names at the top level?
+                    filePreprocessor.preprocessFile(file, dependencies)
                     registerDeclarations(file.declarations)
 
                     val packageDirective = file.packageDirective

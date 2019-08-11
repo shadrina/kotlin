@@ -64,10 +64,7 @@ protected constructor(
         mainScope?.classDescriptors?.invoke(name)?.let { return it }
 
         val result = linkedSetOf<ClassDescriptor>()
-        val classOrObjectDeclarations = declarationProvider.getClassOrObjectDeclarations(name) +
-                (trace.get(BindingContext.HIDDEN_ELEMENT, name.identifier)
-                    ?.filterIsInstance<KtClassOrObject>()
-                    ?.map { KtClassInfoUtil.createClassOrObjectInfo(it) } ?: emptyList<KtClassOrObjectInfo<*>>())
+        val classOrObjectDeclarations = declarationProvider.getClassOrObjectDeclarations(name)
         classOrObjectDeclarations.mapTo(result) {
             val isExternal = it.modifierList?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: false
             LazyClassDescriptor(c, thisDescriptor, name, it, isExternal)
