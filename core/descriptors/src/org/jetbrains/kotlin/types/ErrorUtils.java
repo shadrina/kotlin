@@ -254,11 +254,6 @@ public class ErrorUtils {
         public void printScopeStructure(@NotNull Printer p) {
             p.println(getClass().getSimpleName(), ": ", debugMessage);
         }
-
-        @Override
-        public void syncHiddenElementsInTraces(@NotNull Object trace, @NotNull String key) {
-
-        }
     }
 
     private static class ThrowingScope implements MemberScope {
@@ -339,11 +334,6 @@ public class ErrorUtils {
         @Override
         public void printScopeStructure(@NotNull Printer p) {
             p.println(getClass().getSimpleName(), ": ", debugMessage);
-        }
-
-        @Override
-        public void syncHiddenElementsInTraces(@NotNull Object trace, @NotNull String key) {
-
         }
     }
 

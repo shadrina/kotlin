@@ -73,9 +73,6 @@ open class LazyDeclarationResolver constructor(
         if (classObjectOrScript.hasHiddenElementInitialized) {
             return findClassDescriptorIfAny(classObjectOrScript.hiddenElement as KtNamedDeclaration, location)
         }
-        if (classObjectOrScript.isHidden) {
-            scope.syncHiddenElementsInTraces(trace, classObjectOrScript.nameAsSafeName.identifier)
-        }
 
         // Why not use the result here. Because it may be that there is a redeclaration:
         //     class A {} class A { fun foo(): A<completion here>}
