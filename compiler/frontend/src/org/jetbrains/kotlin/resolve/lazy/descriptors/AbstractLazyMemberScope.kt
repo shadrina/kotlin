@@ -91,14 +91,6 @@ protected constructor(
         return result
     }
 
-    override fun syncHiddenElementsInTraces(trace: Any, key: String) {
-        if (trace !is BindingTrace) return
-        val value = trace.get(BindingContext.HIDDEN_ELEMENT, key)
-        if (value != null && this.trace.get(BindingContext.HIDDEN_ELEMENT, key) == null) {
-            this.trace.record(BindingContext.HIDDEN_ELEMENT, key, value)
-        }
-    }
-
     override fun getContributedFunctions(name: Name, location: LookupLocation): Collection<SimpleFunctionDescriptor> {
         recordLookup(name, location)
         return functionDescriptors(name)

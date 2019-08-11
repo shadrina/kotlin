@@ -57,9 +57,4 @@ interface ResolutionScope {
     fun recordLookup(name: Name, location: LookupLocation) {
         getContributedFunctions(name, location)
     }
-
-    /**
-     * Kind of patch for hidden element descriptors creation
-     */
-    fun syncHiddenElementsInTraces(trace: Any, key: String) {}
 }

@@ -26,17 +26,7 @@ class FilePreprocessor(
         file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement() })
         MacroExpander.dependencies = dependencies
         file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
-            if (it is KtReplaceable && it.isMacroAnnotated) {
-                it.initializeHiddenElement()
-                val hidden = it.hiddenElement as KtDeclaration
-                if (it is KtDeclaration) {
-                    val declarations =
-                        trace.get(BindingContext.HIDDEN_ELEMENT, hidden.name) ?: mutableListOf<KtDeclaration>().also { list ->
-                            trace.record(BindingContext.HIDDEN_ELEMENT, hidden.name, list)
-                        }
-                    declarations.add(hidden)
-                }
-            }
+            if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement()
         })
 
         for (extension in extensions) {
