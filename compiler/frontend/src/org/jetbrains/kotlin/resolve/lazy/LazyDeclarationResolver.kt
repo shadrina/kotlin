@@ -186,8 +186,10 @@ open class LazyDeclarationResolver constructor(
             override fun visitProperty(property: KtProperty, data: Nothing?): DeclarationDescriptor? {
                 val location = lookupLocationFor(property, property.isTopLevel)
                 val scopeForDeclaration = getMemberScopeDeclaredIn(property, location)
-                scopeForDeclaration.getContributedVariables(property.nameAsSafeName, location)
+                val descriptors = scopeForDeclaration.getContributedVariables(property.nameAsSafeName, location)
                 return bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, property)
+                    // TODO: What if descriptors.size > 1?
+                    ?: descriptors.firstOrNull()
             }
 
             override fun visitDestructuringDeclarationEntry(
