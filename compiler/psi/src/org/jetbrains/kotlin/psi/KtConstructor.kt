@@ -22,7 +22,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.util.IncorrectOperationException
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.psiUtil.MetaTools
+import org.jetbrains.kotlin.psi.macros.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinPlaceHolderStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtPlaceHolderStubElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
@@ -39,7 +40,7 @@ abstract class KtConstructor<T : KtConstructor<T>> : KtDeclarationStub<KotlinPla
     override var isHidden: Boolean = false
     override var isRoot: Boolean = false
 
-    override fun initializeHiddenElement() {
+    override fun initializeHiddenElement(macroExpander: MacroExpander?) {
     }
 
     abstract fun getContainingClassOrObject(): KtClassOrObject

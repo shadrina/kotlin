@@ -21,9 +21,11 @@ import com.intellij.psi.PsiElement;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.lexer.KtTokens;
-import org.jetbrains.kotlin.psi.psiUtil.MetaTools;
+import org.jetbrains.kotlin.psi.macros.MacroExpander;
+import org.jetbrains.kotlin.psi.macros.MetaTools;
 
 import static org.jetbrains.kotlin.psi.KtPsiFactoryKt.KtPsiFactory;
 
@@ -88,7 +90,7 @@ abstract class KtNamedDeclarationNotStubbed extends KtDeclarationImpl implements
     }
 
     @Override
-    public void initializeHiddenElement() {
+    public void initializeHiddenElement(@Nullable MacroExpander macroExpander) {
     }
 
     @Override

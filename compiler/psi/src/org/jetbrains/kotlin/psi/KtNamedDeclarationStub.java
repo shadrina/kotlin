@@ -33,8 +33,9 @@ import org.jetbrains.kotlin.idea.KotlinFileType;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.name.Name;
+import org.jetbrains.kotlin.psi.macros.MacroExpander;
 import org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt;
-import org.jetbrains.kotlin.psi.psiUtil.MetaTools;
+import org.jetbrains.kotlin.psi.macros.MetaTools;
 import org.jetbrains.kotlin.psi.stubs.KotlinStubWithFqName;
 import org.jetbrains.kotlin.types.expressions.OperatorConventions;
 import org.jetbrains.kotlin.util.OperatorNameConventions;
@@ -106,7 +107,7 @@ abstract class KtNamedDeclarationStub<T extends KotlinStubWithFqName<?>> extends
     }
 
     @Override
-    public void initializeHiddenElement() {
+    public void initializeHiddenElement(@Nullable MacroExpander macroExpander) {
     }
 
     @Override

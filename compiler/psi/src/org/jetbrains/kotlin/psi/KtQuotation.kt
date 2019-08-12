@@ -7,7 +7,8 @@ package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.psi.psiUtil.MetaTools
+import org.jetbrains.kotlin.psi.macros.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MetaTools
 import java.lang.IllegalStateException
 import java.lang.StringBuilder
 import kotlin.meta.Node
@@ -28,7 +29,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
 
     abstract fun astNodeByContent(content: String): Node
 
-    override fun initializeHiddenElement() {
+    override fun initializeHiddenElement(macroExpander: MacroExpander?) {
         try {
             val converted = astNodeByContent(hiddenElementContent())
             hiddenElement = factory.createExpression(converted.toCode())

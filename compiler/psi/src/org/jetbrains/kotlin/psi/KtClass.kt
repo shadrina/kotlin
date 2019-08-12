@@ -9,8 +9,8 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.psiUtil.MacroExpander
-import org.jetbrains.kotlin.psi.psiUtil.MetaTools
+import org.jetbrains.kotlin.psi.macros.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinClassStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import kotlin.meta.Writer
@@ -27,16 +27,16 @@ open class KtClass : KtClassOrObject {
 
     constructor(stub: KotlinClassStub) : super(stub, KtStubElementTypes.CLASS)
 
-    override fun initializeHiddenElement() {
-        if (!::metaTools.isInitialized || !isMacroAnnotated) return
+    override fun initializeHiddenElement(macroExpander: MacroExpander?) {
+        if (!::metaTools.isInitialized || !isMacroAnnotated || macroExpander == null) return
         val nodeToConvert = kastreeConverter.convertStructured(this)
-        val converted = MacroExpander.run(annotationEntries[0], nodeToConvert) ?: return
+        val converted = macroExpander.run(annotationEntries[0], nodeToConvert) ?: return
         val convertedText = Writer.write(converted)
-        hiddenElement = factory.createClass(convertedText).also {
-            it.markHidden()
-            it.isRoot = true
-            it.replacedElement = this
-            it.containingKtFile.analysisContext = containingKtFile
+        hiddenElement = factory.createClass(convertedText).apply {
+            markHidden()
+            isRoot = true
+            replacedElement = this@KtClass
+            containingKtFile.analysisContext = this@KtClass.containingKtFile
         }
     }
 
