@@ -41,6 +41,8 @@ class LazyJavaAnnotationDescriptor(
     private val c: LazyJavaResolverContext,
     private val javaAnnotation: JavaAnnotation
 ) : AnnotationDescriptor, PossiblyExternalAnnotationDescriptor {
+    override val isMacroAnnotation: Boolean
+        get() = false
     override val fqName by c.storageManager.createNullableLazyValue {
         javaAnnotation.classId?.asSingleFqName()
     }

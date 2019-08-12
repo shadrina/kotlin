@@ -5,7 +5,8 @@
 
 package org.jetbrains.kotlin.psi
 
-import org.jetbrains.kotlin.psi.psiUtil.MetaTools
+import org.jetbrains.kotlin.psi.macros.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
 
 interface KtReplaceable : KtElement {
@@ -17,7 +18,7 @@ interface KtReplaceable : KtElement {
     var isHidden: Boolean
     var isRoot: Boolean
 
-    fun initializeHiddenElement()
+    fun initializeHiddenElement(macroExpander: MacroExpander?)
 }
 
 fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true; it.replacedElement = this })

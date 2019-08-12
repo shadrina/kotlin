@@ -7,7 +7,7 @@ package org.jetbrains.kotlin.resolve
 
 import com.google.common.collect.Sets
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
 import org.jetbrains.kotlin.resolve.BindingContext.PACKAGE_TO_FILES
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice
@@ -20,13 +20,12 @@ class FilePreprocessor(
     private val trace: BindingTrace,
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
-    fun preprocessFile(file: KtFile, dependencies: Collection<String>) {
+    fun preprocessFile(file: KtFile, macroExpander: MacroExpander) {
         registerFileByPackage(file)
 
-        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement() })
-        MacroExpander.dependencies = dependencies
+        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement(null) })
         file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
-            if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement()
+            if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement(macroExpander)
         })
 
         for (extension in extensions) {

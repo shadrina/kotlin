@@ -70,4 +70,9 @@ public class AnnotationDescriptorImpl implements AnnotationDescriptor {
     public String toString() {
         return DescriptorRenderer.FQ_NAMES_IN_TYPES.renderAnnotation(this, null);
     }
+
+    @Override
+    public boolean isMacroAnnotation() {
+        return false;
+    }
 }

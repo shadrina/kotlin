@@ -29,6 +29,8 @@ class BuiltInAnnotationDescriptor(
         override val fqName: FqName,
         override val allValueArguments: Map<Name, ConstantValue<*>>
 ) : AnnotationDescriptor {
+    override val isMacroAnnotation: Boolean
+        get() = false
     override val type: KotlinType by lazy(PUBLICATION) {
         builtIns.getBuiltInClassByFqName(fqName).defaultType
     }

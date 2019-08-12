@@ -72,6 +72,8 @@ class LazyAnnotationDescriptor(
     val c: LazyAnnotationsContext,
     val annotationEntry: KtAnnotationEntry
 ) : AnnotationDescriptor, LazyEntity {
+    override val isMacroAnnotation: Boolean
+        get() = annotationEntry.isMacroInvocation
 
     init {
         c.trace.record(BindingContext.ANNOTATION, annotationEntry, this)

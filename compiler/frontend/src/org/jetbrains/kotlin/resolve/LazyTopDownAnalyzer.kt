@@ -26,10 +26,12 @@ import org.jetbrains.kotlin.incremental.KotlinLookupLocation
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.macros.MacroExpanderImpl
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.checkers.ClassifierUsageChecker
 import org.jetbrains.kotlin.resolve.checkers.ClassifierUsageCheckerContext
 import org.jetbrains.kotlin.resolve.checkers.checkClassifierUsages
+import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
 import org.jetbrains.kotlin.resolve.deprecation.DeprecationResolver
 import org.jetbrains.kotlin.resolve.lazy.*
 import org.jetbrains.kotlin.resolve.lazy.descriptors.LazyClassDescriptor
@@ -69,6 +71,12 @@ class LazyTopDownAnalyzer(
         val typeAliases = ArrayList<KtTypeAlias>()
         val destructuringDeclarations = ArrayList<KtDestructuringDeclaration>()
 
+        val macroExpander = MacroExpanderImpl(
+            trace,
+            ConstantExpressionEvaluator(moduleDescriptor, languageVersionSettings, declarations.first().project),
+            dependencies
+        )
+
         // fill in the context
         for (declaration in declarations) {
             // The 'visitor' variable is used inside
@@ -94,7 +102,7 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitKtFile(file: KtFile) {
-                    filePreprocessor.preprocessFile(file, dependencies)
+                    filePreprocessor.preprocessFile(file, macroExpander)
                     registerDeclarations(file.declarations)
 
                     val packageDirective = file.packageDirective

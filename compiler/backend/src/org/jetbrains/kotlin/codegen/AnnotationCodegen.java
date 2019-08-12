@@ -105,6 +105,7 @@ public abstract class AnnotationCodegen {
         Annotations annotations = annotated.getAnnotations();
 
         for (AnnotationDescriptor annotation : annotations) {
+            if (annotation.isMacroAnnotation()) continue;
             Set<KotlinTarget> applicableTargets = AnnotationChecker.applicableTargetSet(annotation);
             if (annotated instanceof AnonymousFunctionDescriptor
                 && !applicableTargets.contains(KotlinTarget.FUNCTION)

@@ -105,6 +105,8 @@ open class JavaAnnotationDescriptor(
     annotation: JavaAnnotation?,
     override val fqName: FqName
 ) : AnnotationDescriptor, PossiblyExternalAnnotationDescriptor {
+    override val isMacroAnnotation: Boolean
+        get() = false
     override val source: SourceElement = annotation?.let { c.components.sourceElementFactory.source(it) } ?: SourceElement.NO_SOURCE
 
     override val type: SimpleType by c.storageManager.createLazyValue { c.module.builtIns.getBuiltInClassByFqName(fqName).defaultType }
