@@ -23,7 +23,7 @@ class FilePreprocessor(
     fun preprocessFile(file: KtFile, macroExpander: MacroExpander) {
         registerFileByPackage(file)
 
-        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement(null) })
+        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement(macroExpander) })
         file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
             if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement(macroExpander)
         })

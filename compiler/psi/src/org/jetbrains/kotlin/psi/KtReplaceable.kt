@@ -18,7 +18,7 @@ interface KtReplaceable : KtElement {
     var isHidden: Boolean
     var isRoot: Boolean
 
-    fun initializeHiddenElement(macroExpander: MacroExpander?)
+    fun initializeHiddenElement(macroExpander: MacroExpander)
 }
 
 fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true; it.replacedElement = this })
