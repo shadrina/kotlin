@@ -34,6 +34,8 @@ class KtClassBody : KtElementImplStub<KotlinPlaceHolderStub<KtClassBody>>, KtDec
 
     override fun getDeclarations() = listOf(*getStubOrPsiChildren(DECLARATION_TYPES, KtDeclaration.ARRAY_FACTORY))
 
+    override fun getDeclarationsFromSource() = declarations
+
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D) = visitor.visitClassBody(this, data)
 
     val anonymousInitializers: List<KtAnonymousInitializer>

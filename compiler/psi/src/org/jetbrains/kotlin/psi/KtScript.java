@@ -65,6 +65,12 @@ public class KtScript extends KtNamedDeclarationStub<KotlinScriptStub> implement
     }
 
     @Override
+    @NotNull
+    public List<KtDeclaration> getDeclarationsFromSource() {
+        return PsiTreeUtil.getChildrenOfTypeAsList(getBlockExpression(), KtDeclaration.class);
+    }
+
+    @Override
     public <R, D> R accept(@NotNull KtVisitor<R, D> visitor, D data) {
         return visitor.visitScript(this, data);
     }

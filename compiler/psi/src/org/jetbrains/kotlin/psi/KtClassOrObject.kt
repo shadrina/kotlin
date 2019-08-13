@@ -99,6 +99,8 @@ abstract class KtClassOrObject :
     override fun getDeclarations(): List<KtDeclaration> =
         (if (hasHiddenElementInitialized) hiddenElement as KtClassOrObject else this).body?.declarations.orEmpty()
 
+    override fun getDeclarationsFromSource() = this.body?.declarations.orEmpty()
+
     override fun getPresentation(): ItemPresentation? = ItemPresentationProviders.getItemPresentation(this)
 
     override fun getPrimaryConstructor(): KtPrimaryConstructor? = getStubOrPsiChild(KtStubElementTypes.PRIMARY_CONSTRUCTOR)

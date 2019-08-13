@@ -25,4 +25,8 @@ public interface KtDeclarationContainer {
     @NotNull
     @ReadOnly
     List<KtDeclaration> getDeclarations();
+
+    @NotNull
+    @ReadOnly
+    List<KtDeclaration> getDeclarationsFromSource();
 }

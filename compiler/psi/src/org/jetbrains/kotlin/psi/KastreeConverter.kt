@@ -269,7 +269,7 @@ open class KastreeConverter {
         mods = convertModifiers(v),
         name = convertName(v.name ?: error("Unnamed enum"), v.nameOffset()),
         args = convertValueArgs((v.superTypeListEntries.firstOrNull() as? KtSuperTypeCallEntry)?.valueArgumentList),
-        members = v.declarations.map(::convertDecl)
+        members = v.declarationsFromSource.map(::convertDecl)
     ).map(v)
 
     open fun convertExpr(v: KtExpression): Node.Expr = when (v) {
@@ -316,7 +316,7 @@ open class KastreeConverter {
         anns = convertAnnotationSets(v),
         pkg = v.packageDirective?.takeIf { it.packageNames.isNotEmpty() }?.let(::convertPackage),
         imports = v.importDirectives.map(::convertImport),
-        decls = v.declarations.map(::convertDecl)
+        decls = v.declarationsFromSource.map(::convertDecl)
     ).map(v)
 
     open fun convertFor(v: KtForExpression) = Node.Expr.For(
@@ -403,7 +403,7 @@ open class KastreeConverter {
 
     open fun convertObject(v: KtObjectLiteralExpression) = Node.Expr.Object(
         parents = v.objectDeclaration.superTypeListEntries.map(::convertParent),
-        members = v.objectDeclaration.declarations.map(::convertDecl)
+        members = v.objectDeclaration.declarationsFromSource.map(::convertDecl)
     ).map(v)
 
     open fun convertPackage(v: KtPackageDirective) = Node.Package(
@@ -552,7 +552,7 @@ open class KastreeConverter {
         parentAnns = emptyList(),
         parents = v.superTypeListEntries.map(::convertParent),
         typeConstraints = v.typeConstraints.map(::convertTypeConstraint),
-        members = v.declarations.map(::convertDecl)
+        members = v.declarationsFromSource.map(::convertDecl)
     ).map(v)
 
     open fun convertSuper(v: KtSuperExpression) = Node.Expr.Super(

@@ -57,6 +57,12 @@ public abstract class KtClassOrObjectInfo<E extends KtClassOrObject> implements 
         return element.getDeclarations();
     }
 
+    @Override
+    @NotNull
+    public List<KtDeclaration> getDeclarationsFromSource() {
+        return element.getDeclarationsFromSource();
+    }
+
     @NotNull
     @Override
     public List<KtObjectDeclaration> getCompanionObjects() {

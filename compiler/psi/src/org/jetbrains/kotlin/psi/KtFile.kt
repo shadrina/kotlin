@@ -151,6 +151,10 @@ open class KtFile(viewProvider: FileViewProvider, val isCompiled: Boolean) :
         return declarations.map { if (it is KtReplaceable && it.hasHiddenElementInitialized) it.hiddenElement as KtDeclaration else it }
     }
 
+    override fun getDeclarationsFromSource() =
+        stub?.getChildrenByType(KtStubElementTypes.DECLARATION_TYPES, KtDeclaration.ARRAY_FACTORY)?.toList()
+            ?: PsiTreeUtil.getChildrenOfTypeAsList(this, KtDeclaration::class.java)
+
     fun <T : KtElementImplStub<out StubElement<*>>> findChildByTypeOrClass(
         elementType: KtPlaceHolderStubElementType<T>,
         elementClass: Class<T>
