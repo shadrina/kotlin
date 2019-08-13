@@ -107,7 +107,7 @@ abstract class KtNamedDeclarationStub<T extends KotlinStubWithFqName<?>> extends
     }
 
     @Override
-    public void initializeHiddenElement(@Nullable MacroExpander macroExpander) {
+    public void initializeHiddenElement(@NotNull MacroExpander macroExpander) {
     }
 
     @Override

@@ -29,7 +29,7 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
 
     abstract fun astNodeByContent(content: String): Node
 
-    override fun initializeHiddenElement(macroExpander: MacroExpander?) {
+    override fun initializeHiddenElement(macroExpander: MacroExpander) {
         try {
             val converted = astNodeByContent(hiddenElementContent())
             hiddenElement = factory.createExpression(converted.toCode())

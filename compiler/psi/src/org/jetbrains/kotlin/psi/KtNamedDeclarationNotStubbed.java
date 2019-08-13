@@ -90,7 +90,7 @@ abstract class KtNamedDeclarationNotStubbed extends KtDeclarationImpl implements
     }
 
     @Override
-    public void initializeHiddenElement(@Nullable MacroExpander macroExpander) {
+    public void initializeHiddenElement(@NotNull MacroExpander macroExpander) {
     }
 
     @Override

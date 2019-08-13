@@ -40,7 +40,7 @@ abstract class KtConstructor<T : KtConstructor<T>> : KtDeclarationStub<KotlinPla
     override var isHidden: Boolean = false
     override var isRoot: Boolean = false
 
-    override fun initializeHiddenElement(macroExpander: MacroExpander?) {
+    override fun initializeHiddenElement(macroExpander: MacroExpander) {
     }
 
     abstract fun getContainingClassOrObject(): KtClassOrObject
