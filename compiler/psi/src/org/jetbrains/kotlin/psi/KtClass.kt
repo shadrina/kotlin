@@ -50,8 +50,7 @@ open class KtClass : KtClassOrObject {
     // TODO: Check argument & return types
     private fun KtNamedFunction.isMacroFunction(): Boolean = name == "invoke"
 
-    fun isMacroDefinition(): Boolean =
-        if (super.isAnnotation() && declarations.size == 1) declarations[0].let { it is KtNamedFunction && it.isMacroFunction() } else false
+    fun isMacroDefinition(): Boolean = super.isAnnotation() && declarations.any { it is KtNamedFunction && it.isMacroFunction() }
 
     fun getColon(): PsiElement? = findChildByType(KtTokens.COLON)
 

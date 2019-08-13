@@ -154,6 +154,7 @@ class SyntheticClassOrObjectDescriptor(
         override fun isLocal(): Boolean = false
 
         override fun getDeclarations(): List<KtDeclaration> = emptyList()
+        override fun getDeclarationsFromSource(): List<KtDeclaration> = emptyList()
         override fun getSuperTypeListEntries(): List<KtSuperTypeListEntry> = emptyList()
         override fun getCompanionObjects(): List<KtObjectDeclaration> = emptyList()
 
