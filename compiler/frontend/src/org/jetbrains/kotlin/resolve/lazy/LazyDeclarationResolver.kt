@@ -174,8 +174,9 @@ open class LazyDeclarationResolver constructor(
             }
 
             override fun visitSecondaryConstructor(constructor: KtSecondaryConstructor, data: Nothing?): DeclarationDescriptor? {
-                getClassDescriptorIfAny(constructor.parent.parent as KtClassOrObject, lookupLocationFor(constructor, false))?.constructors
+                val constructors = getClassDescriptorIfAny(constructor.parent.parent as KtClassOrObject, lookupLocationFor(constructor, false))?.constructors
                 return bindingContext.get(BindingContext.CONSTRUCTOR, constructor)
+                    ?: constructors?.firstOrNull()
             }
 
             override fun visitPrimaryConstructor(constructor: KtPrimaryConstructor, data: Nothing?): DeclarationDescriptor? {
