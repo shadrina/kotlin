@@ -221,7 +221,7 @@ open class Writer(
                 is Node.TypeRef.Simple ->
                     children(pieces, ".")
                 is Node.TypeRef.Simple.Piece ->
-                    appendName(name).also { bracketedChildren(typeParams) }
+                    appendName(name.value).also { bracketedChildren(typeParams) }
                 is Node.TypeRef.Nullable ->
                     children(type).append('?')
                 is Node.TypeRef.Dynamic ->

@@ -442,13 +442,13 @@ sealed class Node {
             )
 
             data class Piece(
-                val name: String,
+                val name: Expr.Name,
                 // Null means any
                 val typeParams: List<Type?>
             ) : Node() {
                 override fun toCode() = stringRepresentation(
                     "TypeRef.Simple.Piece",
-                    "name" to stringify(name),
+                    "name" to name.toCode(),
                     "typeParams" to typeParams.toCode()
                 )
             }

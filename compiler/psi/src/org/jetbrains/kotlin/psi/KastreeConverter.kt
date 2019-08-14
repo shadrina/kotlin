@@ -234,7 +234,7 @@ open class KastreeConverter {
     open fun convertDoubleColonRefRecv(v: KtExpression, questionMarks: Int): Node.Expr.DoubleColonRef.Recv = when (v) {
         is KtSimpleNameExpression -> Node.Expr.DoubleColonRef.Recv.Type(
             type = Node.TypeRef.Simple(
-                listOf(Node.TypeRef.Simple.Piece(v.getReferencedName(), emptyList()).map(v))
+                listOf(Node.TypeRef.Simple.Piece(convertName(v.getReferencedName(), v.parent.startOffsetInParent), emptyList()).map(v))
             ).map(v),
             questionMarks = questionMarks
         ).map(v)
@@ -244,7 +244,7 @@ open class KastreeConverter {
                     type = Node.TypeRef.Simple(
                         listOf(
                             Node.TypeRef.Simple.Piece(
-                                name = v.calleeExpression?.text ?: error("Missing text for call ref type of $v"),
+                                name = v.calleeExpression?.text?.let { convertName(it, v.parent.startOffsetInParent) } ?: error("Missing text for call ref type of $v"),
                                 typeParams = convertTypeParams(v.typeArgumentList)
                             ).map(v)
                         )
@@ -665,7 +665,7 @@ open class KastreeConverter {
         is KtUserType -> Node.TypeRef.Simple(
             pieces = generateSequence(v) { it.qualifier }.toList().reversed().map {
                 Node.TypeRef.Simple.Piece(
-                    name = it.referencedName ?: error("No type name for $it"),
+                    name = it.referencedName?.let { convertName(it, v.parent.startOffsetInParent) } ?: error("No type name for $it"),
                     typeParams = convertTypeParams(it.typeArgumentList)
                 ).map(it)
             }
