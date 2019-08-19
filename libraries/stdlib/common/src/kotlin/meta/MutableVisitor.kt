@@ -32,6 +32,7 @@ open class MutableVisitor {
                     is Node.Import -> this
                     is Node.Decl.Structured -> copy(
                         mods = visitChildren(mods, newCh),
+                        name = visitChildren(name, newCh),
                         typeParams = visitChildren(typeParams, newCh),
                         primaryConstructor = visitChildren(primaryConstructor, newCh),
                         parentAnns = visitChildren(parentAnns, newCh),
@@ -60,6 +61,7 @@ open class MutableVisitor {
                         mods = visitChildren(mods, newCh),
                         typeParams = visitChildren(typeParams, newCh),
                         receiverType = visitChildren(receiverType, newCh),
+                        name = visitChildren(name, newCh),
                         paramTypeParams = visitChildren(paramTypeParams, newCh),
                         params = visitChildren(params, newCh),
                         type = visitChildren(type, newCh),
@@ -68,6 +70,7 @@ open class MutableVisitor {
                     )
                     is Node.Decl.Func.Param -> copy(
                         mods = visitChildren(mods, newCh),
+                        name = visitChildren(name, newCh),
                         type = visitChildren(type, newCh),
                         default = visitChildren(default, newCh)
                     )
@@ -87,6 +90,7 @@ open class MutableVisitor {
                         accessors = visitChildren(accessors, newCh)
                     )
                     is Node.Decl.Property.Var -> copy(
+                        name = visitChildren(name, newCh),
                         type = visitChildren(type, newCh)
                     )
                     is Node.Decl.Property.Accessors -> copy(
@@ -101,11 +105,13 @@ open class MutableVisitor {
                     is Node.Decl.Property.Accessor.Set -> copy(
                         mods = visitChildren(mods, newCh),
                         paramMods = visitChildren(paramMods, newCh),
+                        paramName = visitChildren(paramName, newCh),
                         paramType = visitChildren(paramType, newCh),
                         body = visitChildren(body, newCh)
                     )
                     is Node.Decl.TypeAlias -> copy(
                         mods = visitChildren(mods, newCh),
+                        name = visitChildren(name, newCh),
                         typeParams = visitChildren(typeParams, newCh),
                         type = visitChildren(type, newCh)
                     )
@@ -120,6 +126,7 @@ open class MutableVisitor {
                     )
                     is Node.Decl.EnumEntry -> copy(
                         mods = visitChildren(mods, newCh),
+                        name = visitChildren(name, newCh),
                         args = visitChildren(args, newCh),
                         members = visitChildren(members, newCh)
                     )
@@ -147,6 +154,7 @@ open class MutableVisitor {
                         pieces = visitChildren(pieces, newCh)
                     )
                     is Node.TypeRef.Simple.Piece -> copy(
+                        name = visitChildren(name, newCh),
                         typeParams = visitChildren(typeParams, newCh)
                     )
                     is Node.TypeRef.Nullable -> copy(
