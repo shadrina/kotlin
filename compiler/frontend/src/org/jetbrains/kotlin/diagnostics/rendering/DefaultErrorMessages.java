@@ -892,7 +892,6 @@ public class DefaultErrorMessages {
         MAP.put(MACRO_ANNOTATION_CLASS_NOT_FOUND, "Macro definition class not found");
         MAP.put(MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR, "No matching constructor for macro definition class");
         MAP.put(MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND, "Macro definition has no appropriate 'invoke' method");
-        MAP.put(MACRO_ANNOTATION_INVOCATION_EXCEPTION, "Invocation exception during macro expansion");
 
         MAP.put(RESTRICTED_RETENTION_FOR_EXPRESSION_ANNOTATION,
                 "Expression annotations with retention other than SOURCE are prohibited");
