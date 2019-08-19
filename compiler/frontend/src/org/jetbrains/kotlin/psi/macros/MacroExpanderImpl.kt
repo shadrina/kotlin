@@ -45,17 +45,16 @@ class MacroExpanderImpl(
             val instance = klass.declaredConstructors.newInstance(args)
             val invokeMethod = klass.declaredMethods.invokeMethod().apply { isAccessible = true }
             return invokeMethod.invoke(instance, node) as Node
-
-        } catch (e: ClassNotFoundException) {
-            trace.report(MACRO_ANNOTATION_CLASS_NOT_FOUND.on(annotationEntry))
-        } catch (e: IllegalArgumentException) {
-            trace.report(MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR.on(annotationEntry))
-        } catch (e: NoSuchMethodException) {
-            trace.report(MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND.on(annotationEntry))
-        } catch (e: InvocationTargetException) {
-            trace.report(MACRO_ANNOTATION_INVOCATION_EXCEPTION.on(annotationEntry))
         } catch (e: Exception) {
-            throw e
+            trace.report(
+                (when (e) {
+                    is ClassNotFoundException -> MACRO_ANNOTATION_CLASS_NOT_FOUND
+                    is IllegalArgumentException -> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
+                    is NoSuchMethodException -> MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
+                    is InvocationTargetException -> MACRO_ANNOTATION_INVOCATION_EXCEPTION
+                    else -> throw e
+                }).on(annotationEntry)
+            )
         }
         return null
     }
