@@ -9,6 +9,10 @@ import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
 import org.jetbrains.kotlin.types.TypeUtils
+import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_CLASS_NOT_FOUND
+import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
+import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
+import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_INVOCATION_EXCEPTION
 import java.lang.IllegalArgumentException
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
@@ -43,15 +47,17 @@ class MacroExpanderImpl(
             return invokeMethod.invoke(instance, node) as Node
 
         } catch (e: ClassNotFoundException) {
-            // TODO: Report an error
-            throw e
+            trace.report(MACRO_ANNOTATION_CLASS_NOT_FOUND.on(annotationEntry))
+        } catch (e: IllegalArgumentException) {
+            trace.report(MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR.on(annotationEntry))
+        } catch (e: NoSuchMethodException) {
+            trace.report(MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND.on(annotationEntry))
         } catch (e: InvocationTargetException) {
-            // TODO: Report an error
-            throw e
+            trace.report(MACRO_ANNOTATION_INVOCATION_EXCEPTION.on(annotationEntry))
         } catch (e: Exception) {
-            // TODO: Report an error
             throw e
         }
+        return null
     }
 
     private fun KtAnnotationEntry.fullName(): String? {
@@ -80,10 +86,9 @@ class MacroExpanderImpl(
             } catch (e: Exception) {
             }
         }
-        throw IllegalArgumentException("No matching constructor found")
+        throw IllegalArgumentException()
     }
 
     // TODO: Overload resolution
-    private fun Array<Method>.invokeMethod(): Method = singleOrNull { it.name == "invoke" }
-        ?: throw NoSuchMethodException("No invoke method for macro invocation")
+    private fun Array<Method>.invokeMethod(): Method = singleOrNull { it.name == "invoke" } ?: throw NoSuchMethodException()
 }
