@@ -108,7 +108,8 @@ class ReplCodeAnalyzer(environment: KotlinCoreEnvironment) {
         )
         replState.submitLine(linePsi, codeLine)
 
-        val context = topDownAnalyzer.analyzeDeclarations(topDownAnalysisContext.topDownAnalysisMode, listOf(linePsi) + importedScripts)
+        // TODO: Fill dependencies for macro expansion
+        val context = topDownAnalyzer.analyzeDeclarations(topDownAnalysisContext.topDownAnalysisMode, listOf(linePsi) + importedScripts, listOf())
 
         val diagnostics = trace.bindingContext.diagnostics
         val hasErrors = diagnostics.any { it.severity == Severity.ERROR }

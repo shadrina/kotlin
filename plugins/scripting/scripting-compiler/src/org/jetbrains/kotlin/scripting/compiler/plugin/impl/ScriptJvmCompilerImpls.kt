@@ -188,7 +188,9 @@ private fun analyze(sourceFiles: Collection<KtFile>, environment: KotlinCoreEnvi
             sourceFiles,
             NoScopeRecordCliBindingTrace(),
             environment.configuration,
-            environment::createPackagePartProvider
+            environment::createPackagePartProvider,
+            // TODO: Fill dependencies for macro expansion
+            listOf()
         )
     }
     return analyzerWithCompilerReport.analysisResult

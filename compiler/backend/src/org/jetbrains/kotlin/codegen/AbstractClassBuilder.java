@@ -108,7 +108,8 @@ public abstract class AbstractClassBuilder implements ClassBuilder {
     public void done() {
         if (!fileMappings.isEmpty() && GENERATE_SMAP) {
             FileMapping origin = fileMappings.get(0);
-            assert sourceName == null || origin.getName().equals(sourceName) : "Error " + origin.getName() +  " != "  + sourceName;
+            // TODO: Hack with "dummy.kt" is necessary for generating hidden elements
+            assert sourceName == null || sourceName == "dummy.kt" || origin.getName().equals(sourceName) : "Error " + origin.getName() +  " != "  + sourceName;
             getVisitor().visitSource(origin.getName(), new SMAPBuilder(origin.getName(), origin.getPath(), fileMappings).build());
         }
         else {
