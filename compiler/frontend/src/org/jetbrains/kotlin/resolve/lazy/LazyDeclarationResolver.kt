@@ -143,10 +143,10 @@ open class LazyDeclarationResolver constructor(
                         return when {
                             classDescriptor == null -> null
                             parameter.hasValOrVar() -> {
-                                classDescriptor.defaultType.memberScope.getContributedVariables(
+                                val classifiers = classDescriptor.defaultType.memberScope.getContributedVariables(
                                     parameter.nameAsSafeName, lookupLocationFor(parameter, false)
                                 )
-                                bindingContext.get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, parameter)
+                                bindingContext.get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, parameter) ?: classifiers.singleOrNull()
                             }
                             else -> {
                                 val constructor = classDescriptor.unsubstitutedPrimaryConstructor

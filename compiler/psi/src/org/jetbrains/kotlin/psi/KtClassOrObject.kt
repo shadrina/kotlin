@@ -103,7 +103,9 @@ abstract class KtClassOrObject :
 
     override fun getPresentation(): ItemPresentation? = ItemPresentationProviders.getItemPresentation(this)
 
-    override fun getPrimaryConstructor(): KtPrimaryConstructor? = getStubOrPsiChild(KtStubElementTypes.PRIMARY_CONSTRUCTOR)
+    override fun getPrimaryConstructor(): KtPrimaryConstructor? =
+        if (hasHiddenElementInitialized) (hiddenElement as KtClassOrObject).primaryConstructor
+        else getStubOrPsiChild(KtStubElementTypes.PRIMARY_CONSTRUCTOR)
 
     override fun getPrimaryConstructorModifierList(): KtModifierList? = primaryConstructor?.modifierList
 
