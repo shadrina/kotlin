@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
 import org.jetbrains.kotlin.types.TypeUtils
-import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_CLASS_NOT_FOUND
+import org.jetbrains.kotlin.diagnostics.Errors.MACRO_DEFINITION_NOT_FOUND
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
 import java.lang.IllegalArgumentException
@@ -49,7 +49,7 @@ class MacroExpanderImpl(
         } catch (e: Exception) {
             trace.report(
                 (when (e) {
-                    is ClassNotFoundException -> MACRO_ANNOTATION_CLASS_NOT_FOUND
+                    is ClassNotFoundException -> MACRO_DEFINITION_NOT_FOUND
                     is IllegalArgumentException -> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
                     is NoSuchMethodException -> MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
                     else -> throw e
