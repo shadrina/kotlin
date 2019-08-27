@@ -241,7 +241,7 @@ public interface Errors {
     DiagnosticFactory0<KtAnnotationEntry> ANNOTATION_USED_AS_ANNOTATION_ARGUMENT = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtExpression> ANNOTATION_ARGUMENT_IS_NON_CONST = DiagnosticFactory0.create(WARNING);
 
-    DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_CLASS_NOT_FOUND = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<KtAnnotationEntry> MACRO_DEFINITION_NOT_FOUND = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND = DiagnosticFactory0.create(ERROR);
 

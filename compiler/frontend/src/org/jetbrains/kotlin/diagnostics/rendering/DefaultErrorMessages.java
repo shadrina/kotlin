@@ -889,7 +889,7 @@ public class DefaultErrorMessages {
         MAP.put(ANNOTATION_USED_AS_ANNOTATION_ARGUMENT, "An annotation can't be used as the annotations argument");
         MAP.put(ANNOTATION_ARGUMENT_IS_NON_CONST, "An annotation argument must be a compile-time constant");
 
-        MAP.put(MACRO_ANNOTATION_CLASS_NOT_FOUND, "Macro definition class not found");
+        MAP.put(MACRO_DEFINITION_NOT_FOUND, "Macro definition not found");
         MAP.put(MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR, "No matching constructor for macro definition class");
         MAP.put(MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND, "Macro definition has no appropriate 'invoke' method");
 
