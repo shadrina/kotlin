@@ -1610,6 +1610,16 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                     typeInfo = facade.getTypeInfo(entryExpression, context.replaceDataFlowInfo(typeInfo.getDataFlowInfo()));
                 }
             }
+
+            @Override
+            public void visitEscapeStringTemplateEntry(@NotNull KtEscapeStringTemplateEntry entry) {
+                CompileTimeConstantChecker.CharacterWithDiagnostic value =
+                        CompileTimeConstantChecker.escapedStringToCharacter(entry.getText(), entry);
+                Diagnostic diagnostic = value.getDiagnostic();
+                if (diagnostic != null) {
+                    context.trace.report(diagnostic);
+                }
+            }
         }
         StringTemplateVisitor visitor = new StringTemplateVisitor();
         for (KtStringTemplateEntry entry : expression.getEntries()) {
