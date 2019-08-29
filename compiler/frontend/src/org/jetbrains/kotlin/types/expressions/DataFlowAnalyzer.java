@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.diagnostics.DiagnosticUtilsKt;
 import org.jetbrains.kotlin.incremental.KotlinLookupLocation;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.psi.*;
+import org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt;
 import org.jetbrains.kotlin.resolve.BindingContext;
 import org.jetbrains.kotlin.resolve.BindingTrace;
 import org.jetbrains.kotlin.resolve.DescriptorUtils;
@@ -311,7 +312,7 @@ public class DataFlowAnalyzer {
         if (reportErrorForTypeMismatch &&
             !DiagnosticUtilsKt.reportTypeMismatchDueToTypeProjection(c, expression, c.expectedType, expressionType) &&
             !DiagnosticUtilsKt.reportTypeMismatchDueToScalaLikeNamedFunctionSyntax(c, expression, c.expectedType, expressionType)) {
-            c.trace.report(TYPE_MISMATCH.on(expression, c.expectedType, expressionType));
+            c.trace.report(TYPE_MISMATCH.on(KtPsiUtilKt.sourceDelegate(expression), c.expectedType, expressionType));
         }
         hasError.set(true);
         return expressionType;

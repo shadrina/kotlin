@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.diagnostics.DiagnosticFactory;
 import org.jetbrains.kotlin.diagnostics.DiagnosticUtilsKt;
 import org.jetbrains.kotlin.psi.KtConstantExpression;
 import org.jetbrains.kotlin.psi.KtElement;
+import org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt;
 import org.jetbrains.kotlin.resolve.BindingTrace;
 import org.jetbrains.kotlin.resolve.calls.context.ResolutionContext;
 import org.jetbrains.kotlin.types.KotlinType;
@@ -103,7 +104,7 @@ public class CompileTimeConstantChecker {
         if (!noExpectedTypeOrError(expectedType)) {
             KotlinType valueType = value.getType(module);
             if (!KotlinTypeChecker.DEFAULT.isSubtypeOf(valueType, expectedType)) {
-                return reportConstantExpectedTypeMismatch(expression, "integer", expectedType, null);
+                return reportConstantExpectedTypeMismatch(expression, "integer", expectedType, builtIns.getIntType());
             }
         }
         return false;
@@ -120,7 +121,7 @@ public class CompileTimeConstantChecker {
         if (!noExpectedTypeOrError(expectedType)) {
             KotlinType valueType = value.getType(module);
             if (!KotlinTypeChecker.DEFAULT.isSubtypeOf(valueType, expectedType)) {
-                return reportConstantExpectedTypeMismatch(expression, "floating-point", expectedType, null);
+                return reportConstantExpectedTypeMismatch(expression, "floating-point", expectedType, builtIns.getFloatType());
             }
         }
         return false;
@@ -288,10 +289,13 @@ public class CompileTimeConstantChecker {
             @NotNull KtConstantExpression expression,
             @NotNull String typeName,
             @NotNull KotlinType expectedType,
-            @Nullable KotlinType expressionType
+            @NotNull KotlinType expressionType
     ) {
         if (DiagnosticUtilsKt.reportTypeMismatchDueToTypeProjection(context, expression, expectedType, expressionType)) return true;
 
+        if (KtPsiUtilKt.isHidden(expression)) {
+            trace.report(TYPE_MISMATCH.on(KtPsiUtilKt.sourceDelegate(expression), expectedType, expressionType));
+        }
         trace.report(CONSTANT_EXPECTED_TYPE_MISMATCH.on(expression, typeName, expectedType));
         return true;
     }

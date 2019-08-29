@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.diagnostics.Errors.BadNamedArgumentsTarget.NON_KOTLI
 import org.jetbrains.kotlin.diagnostics.reportDiagnosticOnce
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.isNull
+import org.jetbrains.kotlin.psi.psiUtil.sourceDelegate
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 import org.jetbrains.kotlin.resolve.calls.callUtil.reportTrailingLambdaErrorOr
@@ -159,7 +160,7 @@ class DiagnosticReporterByTrackingStrategy(
                     if (it.isNull()) {
                         trace.reportDiagnosticOnce(NULL_FOR_NONNULL_TYPE.on(it, diagnostic.expectedType))
                     } else {
-                        trace.report(TYPE_MISMATCH.on(it, diagnostic.expectedType, diagnostic.actualType))
+                        trace.report(TYPE_MISMATCH.on(it.sourceDelegate(), diagnostic.expectedType, diagnostic.actualType))
                     }
                 }
             }
@@ -301,19 +302,19 @@ class DiagnosticReporterByTrackingStrategy(
                     }
                     trace.report(
                         Errors.TYPE_MISMATCH.on(
-                            deparenthesized,
+                            deparenthesized.sourceDelegate(),
                             constraintError.upperKotlinType,
                             constraintError.lowerKotlinType
                         )
                     )
                 }
 
-                (position as? ExpectedTypeConstraintPosition)?.let {
-                    val call = it.topLevelCall.psiKotlinCall.psiCall.callElement.safeAs<KtExpression>()
+                (position as? ExpectedTypeConstraintPosition)?.let { constraintPosition ->
+                    val call = constraintPosition.topLevelCall.psiKotlinCall.psiCall.callElement.safeAs<KtExpression>()
                     reportIfNonNull(call) {
                         trace.report(
                             Errors.TYPE_MISMATCH.on(
-                                it,
+                                it.sourceDelegate(),
                                 constraintError.upperKotlinType,
                                 constraintError.lowerKotlinType
                             )
