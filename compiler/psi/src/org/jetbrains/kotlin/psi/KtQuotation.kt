@@ -9,6 +9,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.macros.MetaTools
+import org.jetbrains.kotlin.psi.psiUtil.content
 import java.lang.IllegalStateException
 import java.lang.StringBuilder
 import kotlin.meta.Node
@@ -18,9 +19,9 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
         private const val INSERTION_PLACEHOLDER = "x"
     }
 
-    override var metaTools = MetaTools(node)
     override var replacedElement: KtElement = this
     override lateinit var hiddenElement: KtElement
+    override var metaTools = MetaTools(node)
     override var isHidden = false
     override var isRoot = false
 
@@ -32,8 +33,8 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
         try {
             val converted = astNodeByContent(hiddenElementContent())
-            hiddenElement = factory.createExpression(converted.toCode())
-            hiddenElement.containingKtFile.analysisContext = containingKtFile
+            hiddenElement = (factory.createExpression(converted.toCode()) as KtDotQualifiedExpression)
+                .apply { markHiddenRoot(this@KtQuotation) }
 
         } catch (t: Throwable) {
             when (t) {
@@ -77,11 +78,5 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
         }
         kastreeConverter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
-    }
-
-    private fun KtStringTemplateEntry.content(): String = when (this) {
-        is KtSimpleNameStringTemplateEntry -> firstChild.nextSibling.text
-        is KtBlockStringTemplateEntry -> text.removePrefix(firstChild.text).removeSuffix(lastChild.text)
-        else -> text
     }
 }

@@ -18,11 +18,24 @@ package org.jetbrains.kotlin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.diagnostic.Logger
+import org.jetbrains.kotlin.psi.macros.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinPlaceHolderStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes.INSIDE_DIRECTIVE_EXPRESSIONS
 
-class KtDotQualifiedExpression : KtExpressionImplStub<KotlinPlaceHolderStub<KtDotQualifiedExpression>>, KtQualifiedExpression {
+class KtDotQualifiedExpression : KtExpressionImplStub<KotlinPlaceHolderStub<KtDotQualifiedExpression>>, KtQualifiedExpression,
+    KtReplaceable {
+    override var replacedElement: KtElement = this
+    override lateinit var hiddenElement: KtElement
+    override lateinit var metaTools: MetaTools
+    override val hasHiddenElementInitialized = false
+    override var isHidden = false
+    override var isRoot = false
+
+    override fun initializeHiddenElement(macroExpander: MacroExpander) {
+    }
+
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: KotlinPlaceHolderStub<KtDotQualifiedExpression>) : super(stub, KtStubElementTypes.DOT_QUALIFIED_EXPRESSION)

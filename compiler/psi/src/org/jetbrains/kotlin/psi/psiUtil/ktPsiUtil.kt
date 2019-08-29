@@ -43,10 +43,26 @@ import java.util.*
 // ----------- Macros ----------------------------------------------------------------------------------------------------------------------
 
 // TODO: Small workaround until all the elements are replaceable
-fun PsiElement.isHidden(): Boolean = (this is KtNamedDeclaration && isHidden) || (parent?.isHidden() ?: false)
+fun PsiElement.isHidden(): Boolean = (this is KtReplaceable && isHidden)
+        || (this is KtElement && containingKtFile.doNotAnalyze != null)
+        || (parent?.isHidden() ?: false)
 
 fun PsiElement.replacedParent(): PsiElement =
-    if (this is KtNamedDeclaration && isHidden && isRoot) replacedElement else parent.replacedParent()
+    if (this is KtReplaceable && isHidden && isRoot) replacedElement else parent.replacedParent()
+
+fun KtExpression.sourceDelegate(): KtExpression = when {
+    !isHidden() -> this
+    else -> {
+        val replacedElement = replacedParent()
+        if (replacedElement !is KtQuotation) replacedElement as KtExpression
+        else sourceDelegateInQuotation(replacedElement)
+    }
+}
+
+fun KtExpression.sourceDelegateInQuotation(quotation: KtQuotation): KtExpression {
+    // TODO: Store hidden to replaced insertions mapping inside quotation
+    return quotation
+}
 
 // ----------- Calls and qualified expressions ---------------------------------------------------------------------------------------------
 
@@ -403,6 +419,12 @@ fun KtStringTemplateExpression.getContentRange(): TextRange {
     val lastChild = node.lastChildNode
     val length = textLength
     return TextRange(start, if (lastChild.elementType == KtTokens.CLOSING_QUOTE) length - lastChild.textLength else length)
+}
+
+fun KtStringTemplateEntry.content(): String = when (this) {
+    is KtSimpleNameStringTemplateEntry -> firstChild.nextSibling.text
+    is KtBlockStringTemplateEntry -> text.removePrefix(firstChild.text).removeSuffix(lastChild.text)
+    else -> text
 }
 
 /**
