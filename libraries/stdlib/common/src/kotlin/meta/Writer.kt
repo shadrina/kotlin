@@ -380,7 +380,7 @@ open class Writer(
                 is Node.Expr.CollLit ->
                     children(exprs, ", ", "[", "]")
                 is Node.Expr.Name ->
-                    appendName(value)
+                    if (!isExternal) appendName(value) else "x"
                 is Node.Expr.Labeled ->
                     appendName(label).append("@ ").also { children(expr) }
                 is Node.Expr.Annotated ->

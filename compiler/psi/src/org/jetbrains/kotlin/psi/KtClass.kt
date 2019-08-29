@@ -32,12 +32,7 @@ open class KtClass : KtClassOrObject {
         val nodeToConvert = kastreeConverter.convertStructured(this)
         val converted = macroExpander.run(annotationEntries[0], nodeToConvert) ?: return
         val convertedText = Writer.write(converted)
-        hiddenElement = factory.createClass(convertedText).apply {
-            markHidden()
-            isRoot = true
-            replacedElement = this@KtClass
-            containingKtFile.analysisContext = this@KtClass.containingKtFile
-        }
+        hiddenElement = factory.createClass(convertedText).apply { markHiddenRoot(this@KtClass) }
     }
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {

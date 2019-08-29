@@ -21,4 +21,11 @@ interface KtReplaceable : KtElement {
     fun initializeHiddenElement(macroExpander: MacroExpander)
 }
 
+fun KtReplaceable.markHiddenRoot(replaced: KtReplaceable) {
+    markHidden()
+    isRoot = true
+    replacedElement = replaced
+    containingKtFile.analysisContext = replaced.containingKtFile
+}
+
 fun KtReplaceable.markHidden() = accept(forEachDescendantOfTypeVisitor<KtReplaceable> { it.isHidden = true; it.replacedElement = this })
