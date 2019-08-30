@@ -11,7 +11,8 @@ import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.psiUtil.content
 import java.lang.IllegalStateException
-import java.lang.StringBuilder
+import java.time.LocalDateTime
+import kotlin.meta.MutableVisitor
 import kotlin.meta.Node
 
 abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = true) : KtExpressionImpl(node), KtReplaceable {
@@ -27,14 +28,15 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
 
     val factory: KtPsiFactory get() = metaTools.factory
     val kastreeConverter: KastreeConverter get() = metaTools.converter
+    val offsetToInsertionMapping = mutableMapOf<Int, KtExpression?>()
 
     abstract fun astNodeByContent(content: String): Node
 
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
         try {
-            val converted = astNodeByContent(hiddenElementContent())
-            hiddenElement = (factory.createExpression(converted.toCode()) as KtDotQualifiedExpression)
-                .apply { markHiddenRoot(this@KtQuotation) }
+            val converted = astNodeByContent(hiddenElementContent()).also { mapOffsetsToInsertions(it) }
+            val finalExpression = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
+            hiddenElement = finalExpression.apply { markHiddenRoot(this@KtQuotation) }
 
         } catch (t: Throwable) {
             when (t) {
@@ -79,4 +81,30 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
         kastreeConverter.insertionsInfo = insertionsInfo
         return (if (saveIndents) text else text.trim()).toString()
     }
+
+    private fun mapOffsetsToInsertions(node: Node) {
+        offsetToInsertionMapping.clear()
+        val tmpInsertionPlaceholder = generateTemporaryInsertionPlaceholder()
+        val tmpInsertionPlaceholderLength = tmpInsertionPlaceholder.length
+        val mutated = MutableVisitor.preVisit(node) { v, _ ->
+            if (v is Node.Expr.Name && v.isExternal) v.copy(value = tmpInsertionPlaceholder)
+            else v
+        }
+        val entries = getEntries()
+        var entryIndex = 0
+        var textIndexOffset = 0
+        val matches = tmpInsertionPlaceholder.toRegex().findAll(mutated.toCode())
+        assert(entries.size == matches.count())
+        for (match in matches) {
+            val entry = entries[entryIndex++] as KtStringTemplateEntryWithExpression
+            val expression = entry.expression
+            offsetToInsertionMapping[match.range.first + textIndexOffset] = expression
+            val expressionLength = expression?.text?.length ?: 0
+            textIndexOffset += expressionLength - tmpInsertionPlaceholderLength
+        }
+    }
+
+    // TODO: Think how best to create the identifier
+    // It must not be present in the code snippet
+    private fun generateTemporaryInsertionPlaceholder() = "TEMPORARY_INSERTION_PLACEHOLDER${LocalDateTime.now()}"
 }

@@ -43,9 +43,7 @@ import java.util.*
 // ----------- Macros ----------------------------------------------------------------------------------------------------------------------
 
 // TODO: Small workaround until all the elements are replaceable
-fun PsiElement.isHidden(): Boolean = (this is KtReplaceable && isHidden)
-        || (this is KtElement && containingKtFile.doNotAnalyze != null)
-        || (parent?.isHidden() ?: false)
+fun PsiElement.isHidden(): Boolean = (this is KtReplaceable && isHidden) || (parent?.isHidden() ?: false)
 
 fun PsiElement.replacedParent(): PsiElement =
     if (this is KtReplaceable && isHidden && isRoot) replacedElement else parent.replacedParent()
@@ -60,8 +58,9 @@ fun KtExpression.sourceDelegate(): KtExpression = when {
 }
 
 fun KtExpression.sourceDelegateInQuotation(quotation: KtQuotation): KtExpression {
-    // TODO: Store hidden to replaced insertions mapping inside quotation
-    return quotation
+    val offset = getStartOffsetIn(quotation.hiddenElement)
+    return if (quotation.offsetToInsertionMapping.containsKey(offset)) quotation.offsetToInsertionMapping[offset] ?: quotation
+    else quotation
 }
 
 // ----------- Calls and qualified expressions ---------------------------------------------------------------------------------------------
