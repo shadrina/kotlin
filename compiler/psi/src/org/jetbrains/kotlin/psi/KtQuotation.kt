@@ -33,17 +33,9 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     abstract fun astNodeByContent(content: String): Node
 
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
-        try {
-            val converted = astNodeByContent(hiddenElementContent()).also { mapOffsetsToInsertions(it) }
-            val finalExpression = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
-            hiddenElement = finalExpression.apply { markHiddenRoot(this@KtQuotation) }
-
-        } catch (t: Throwable) {
-            when (t) {
-                is IllegalStateException, is ClassCastException, is AssertionError -> return
-                else -> throw t
-            }
-        }
+        val converted = astNodeByContent(hiddenElementContent()).also { mapOffsetsToInsertions(it) }
+        val finalExpression = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
+        hiddenElement = finalExpression.apply { markHiddenRoot(this@KtQuotation) }
     }
 
     override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized

@@ -66,6 +66,8 @@ public interface Errors {
     DiagnosticFactory1<PsiElement, Pair<LanguageFeature, LanguageVersionSettings>> EXPERIMENTAL_FEATURE_WARNING = DiagnosticFactory1.create(WARNING);
     DiagnosticFactory1<PsiElement, Pair<LanguageFeature, LanguageVersionSettings>> EXPERIMENTAL_FEATURE_ERROR = DiagnosticFactory1.create(ERROR);
 
+    DiagnosticFactory1<PsiElement, String> QUOTATION_INITIALIZATION_ERROR = DiagnosticFactory1.create(ERROR);
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Generic errors/warnings: applicable in many contexts
@@ -240,6 +242,7 @@ public interface Errors {
     DiagnosticFactory0<KtAnnotatedExpression> ANNOTATIONS_ON_BLOCK_LEVEL_EXPRESSION_ON_THE_SAME_LINE = DiagnosticFactory0.create(WARNING);
     DiagnosticFactory0<KtAnnotationEntry> ANNOTATION_USED_AS_ANNOTATION_ARGUMENT = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtExpression> ANNOTATION_ARGUMENT_IS_NON_CONST = DiagnosticFactory0.create(WARNING);
+
 
     DiagnosticFactory0<KtAnnotationEntry> MACRO_DEFINITION_NOT_FOUND = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR = DiagnosticFactory0.create(ERROR);
