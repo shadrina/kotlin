@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
 import org.jetbrains.kotlin.resolve.BindingContext.PACKAGE_TO_FILES
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice
+import org.jetbrains.kotlin.diagnostics.Errors.QUOTATION_INITIALIZATION_ERROR
+import java.lang.IllegalStateException
 
 interface FilePreprocessorExtension {
     fun preprocessFile(file: KtFile)
@@ -23,7 +25,17 @@ class FilePreprocessor(
     fun preprocessFile(file: KtFile, macroExpander: MacroExpander) {
         registerFileByPackage(file)
 
-        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> { it.initializeHiddenElement(macroExpander) })
+        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> {
+            try {
+                it.initializeHiddenElement(macroExpander)
+            } catch (t: Throwable) {
+                when (t) {
+                    is IllegalStateException, is ClassCastException, is AssertionError ->
+                        trace.report(QUOTATION_INITIALIZATION_ERROR.on(it, t.message ?: ""))
+                    else -> throw t
+                }
+            }
+        })
         file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
             if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement(macroExpander)
         })
