@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.diagnostics.Errors.MACRO_DEFINITION_NOT_FOUND
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
 import java.lang.IllegalArgumentException
-import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import java.net.URL
 import java.net.URLClassLoader
@@ -42,7 +41,7 @@ class MacroExpanderImpl(
                     constant?.value
                 }
                 .toTypedArray()
-            val instance = klass.declaredConstructors.newInstance(args)
+            val instance = klass.declaredConstructors.single().apply { isAccessible = true }.newInstance(*args)
             val invokeMethod = klass.declaredMethods.invokeMethod().apply { isAccessible = true }
             val result = invokeMethod.invoke(instance, node) as Node
             return postprocess(annotationEntry, result)
@@ -50,7 +49,7 @@ class MacroExpanderImpl(
             trace.report(
                 (when (e) {
                     is ClassNotFoundException -> MACRO_DEFINITION_NOT_FOUND
-                    is IllegalArgumentException -> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
+                    is IllegalArgumentException, is NoSuchElementException -> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
                     is NoSuchMethodException -> MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
                     else -> throw e
                 }).on(annotationEntry)
@@ -75,29 +74,23 @@ class MacroExpanderImpl(
         }
         return when {
             imports.isEmpty() -> shortName?.identifier
-            imports.size == 1 -> imports.singleOrNull()?.importedFqName?.asString()
+            imports.size == 1 -> imports.single().importedFqName?.asString()
             else -> null
         }
     }
 
-    // We cannot choose constructor according to parameter types because
-    // resolving calls is unavailable here
-    private fun Array<Constructor<*>>.newInstance(args: Array<Any?>): Any {
-        val filtered = this
-            .filter { it.parameters.size == args.size }
-            .onEach { it.isAccessible = true }
-        if (args.isEmpty()) return filtered.single().newInstance()
-        var instance: Any
-        for (ctor in filtered) {
-            try {
-                instance = ctor.newInstance(*args)
-                return instance
-            } catch (e: Exception) {
-            }
+    private fun Array<Method>.invokeMethod(): Method {
+        val candidates = filter(::isMacroFunction).toMutableList()
+        if (candidates.isEmpty()) throw NoSuchMethodException()
+        while (candidates.size > 1) {
+            val first = candidates[0].parameterTypes.single()
+            val second = candidates[1].parameterTypes.single()
+            candidates.removeAt(if (first.isAssignableFrom(second)) 0 else 1)
         }
-        throw IllegalArgumentException()
+        return candidates.single()
     }
 
-    // TODO: Overload resolution
-    private fun Array<Method>.invokeMethod(): Method = singleOrNull { it.name == "invoke" } ?: throw NoSuchMethodException()
+    private fun isMacroFunction(m: Method) = m.name == "invoke"
+            && Node::class.java.isAssignableFrom(m.returnType)
+            && m.parameterCount == 1 && Node::class.java.isAssignableFrom(m.parameterTypes.single())
 }
