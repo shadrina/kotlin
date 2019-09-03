@@ -342,6 +342,9 @@ class DeclarationsChecker(
                 trace.report(LOCAL_ANNOTATION_CLASS.on(classOrObject))
             }
         }
+        if (classDescriptor.kind == ClassKind.MACRO_DEFINITION && DescriptorUtils.isLocal(classDescriptor)) {
+            trace.report(LOCAL_MACRO_DEFINITION_ERROR.on(classOrObject))
+        }
     }
 
     private fun checkTypesInClassHeader(classOrObject: KtClassOrObject) {
@@ -476,6 +479,10 @@ class DeclarationsChecker(
                 checkAnnotationClassMembers(aClass)
                 checkValOnAnnotationParameter(aClass)
             }
+            classDescriptor.kind == ClassKind.MACRO_DEFINITION -> {
+                checkMacroDefinitionClassMembers(aClass, classDescriptor)
+                checkValOnAnnotationParameter(aClass)
+            }
             aClass is KtEnumEntry -> checkEnumEntry(aClass, classDescriptor)
         }
     }
@@ -566,6 +573,19 @@ class DeclarationsChecker(
                 trace.report(VAR_ANNOTATION_PARAMETER.on(parameter))
             }
         }
+    }
+
+    private fun checkMacroDefinitionClassMembers(aClass: KtClass, classDescriptor: ClassDescriptorWithResolutionScopes) {
+        val hasProperInvokeMethod = classDescriptor.declaredCallableMembers
+            .filter {
+                val member = DescriptorToSourceUtils.descriptorToDeclaration(it)
+                it.kind == CallableMemberDescriptor.Kind.DECLARATION && member is KtNamedFunction && member.name == "invoke"
+            }.any {
+                val parameterType = it.valueParameters.singleOrNull()?.type
+                val returnType = it.returnType
+                parameterType?.isMeta() == true && returnType?.isMeta() == true
+            }
+        if (!hasProperInvokeMethod) checkAnnotationClassMembers(aClass)
     }
 
     private fun checkOpenMembers(classDescriptor: ClassDescriptorWithResolutionScopes) {

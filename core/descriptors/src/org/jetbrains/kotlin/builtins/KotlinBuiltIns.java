@@ -47,6 +47,7 @@ public abstract class KotlinBuiltIns {
     public static final FqName COLLECTIONS_PACKAGE_FQ_NAME = BUILT_INS_PACKAGE_FQ_NAME.child(Name.identifier("collections"));
     public static final FqName RANGES_PACKAGE_FQ_NAME = BUILT_INS_PACKAGE_FQ_NAME.child(Name.identifier("ranges"));
     public static final FqName TEXT_PACKAGE_FQ_NAME = BUILT_INS_PACKAGE_FQ_NAME.child(Name.identifier("text"));
+    public static final FqName META_PACKAGE_FQ_NAME = BUILT_INS_PACKAGE_FQ_NAME.child(Name.identifier("meta"));
 
     public static final Set<FqName> BUILT_INS_PACKAGE_FQ_NAMES = setOf(
             BUILT_INS_PACKAGE_FQ_NAME,
@@ -242,6 +243,8 @@ public abstract class KotlinBuiltIns {
         public final FqName mutableMap = collectionsFqName("MutableMap");
         public final FqName mutableMapEntry = mutableMap.child(Name.identifier("MutableEntry"));
 
+        public final FqName node = metaFqName("Node");
+
         public final FqNameUnsafe kClass = reflect("KClass");
         public final FqNameUnsafe kCallable = reflect("KCallable");
         public final FqNameUnsafe kProperty0 = reflect("KProperty0");
@@ -290,6 +293,11 @@ public abstract class KotlinBuiltIns {
         @NotNull
         private static FqName collectionsFqName(@NotNull String simpleName) {
             return COLLECTIONS_PACKAGE_FQ_NAME.child(Name.identifier(simpleName));
+        }
+
+        @NotNull
+        private static FqName metaFqName(@NotNull String simpleName) {
+            return META_PACKAGE_FQ_NAME.child(Name.identifier(simpleName));
         }
 
         @NotNull
@@ -889,6 +897,10 @@ public abstract class KotlinBuiltIns {
                fqName.equals(getFqName(descriptor));
     }
 
+    private static boolean classFqNameStartsWith(@NotNull ClassifierDescriptor descriptor, @NotNull FqNameUnsafe fqName) {
+        return getFqName(descriptor).toString().startsWith(fqName.toString());
+    }
+
     private static boolean isNotNullConstructedFromGivenClass(@NotNull KotlinType type, @NotNull FqNameUnsafe fqName) {
         return !type.isMarkedNullable() && isConstructedFromGivenClass(type, fqName);
     }
@@ -983,6 +995,12 @@ public abstract class KotlinBuiltIns {
 
     private static boolean isConstructedFromGivenClassAndNotNullable(@NotNull KotlinType type, @NotNull FqNameUnsafe fqName) {
         return isConstructedFromGivenClass(type, fqName) && !type.isMarkedNullable();
+    }
+
+    public static boolean isMeta(@NotNull KotlinType type) {
+        ClassifierDescriptor descriptor = type.getConstructor().getDeclarationDescriptor();
+        return descriptor instanceof ClassDescriptor && classFqNameStartsWith(descriptor, FQ_NAMES.node.toUnsafe())
+               && !type.isMarkedNullable();
     }
 
     public static boolean isNothing(@NotNull KotlinType type) {
