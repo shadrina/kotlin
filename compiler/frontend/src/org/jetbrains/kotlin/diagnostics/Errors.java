@@ -246,12 +246,14 @@ public interface Errors {
     DiagnosticFactory0<KtAnnotationEntry> MACRO_DEFINITION_NOT_FOUND = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<KtAnnotationEntry> MACRO_ANNOTATION_ERROR = DiagnosticFactory0.create(ERROR);
 
     DiagnosticFactory0<PsiElement> RESTRICTED_RETENTION_FOR_EXPRESSION_ANNOTATION = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<PsiElement> RESTRICTED_RETENTION_FOR_EXPRESSION_ANNOTATION_WARNING = DiagnosticFactory0.create(WARNING);
 
     DiagnosticFactory0<KtClassOrObject> LOCAL_ANNOTATION_CLASS = DiagnosticFactory0.create(WARNING);
     DiagnosticFactory0<KtClassOrObject> LOCAL_ANNOTATION_CLASS_ERROR = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<KtClassOrObject> LOCAL_MACRO_DEFINITION_ERROR = DiagnosticFactory0.create(ERROR);
 
     DiagnosticFactory1<PsiElement, FqName> ILLEGAL_KOTLIN_VERSION_STRING_VALUE = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory1<PsiElement, String> NEWER_VERSION_IN_SINCE_KOTLIN = DiagnosticFactory1.create(WARNING);

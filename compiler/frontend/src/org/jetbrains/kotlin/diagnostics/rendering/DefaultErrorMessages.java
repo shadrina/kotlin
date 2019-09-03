@@ -893,6 +893,7 @@ public class DefaultErrorMessages {
         MAP.put(MACRO_DEFINITION_NOT_FOUND, "Macro definition not found");
         MAP.put(MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR, "No matching constructor for macro definition class");
         MAP.put(MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND, "Macro definition has no appropriate 'invoke' method");
+        MAP.put(MACRO_ANNOTATION_ERROR, "Error occurred during macro annotation expansion");
 
         MAP.put(RESTRICTED_RETENTION_FOR_EXPRESSION_ANNOTATION,
                 "Expression annotations with retention other than SOURCE are prohibited");
@@ -901,6 +902,7 @@ public class DefaultErrorMessages {
 
         MAP.put(LOCAL_ANNOTATION_CLASS, "Local annotation classes are deprecated and will be unsupported in a future release");
         MAP.put(LOCAL_ANNOTATION_CLASS_ERROR, "Annotation class cannot be local");
+        MAP.put(LOCAL_MACRO_DEFINITION_ERROR, "Macro definition cannot be local");
 
         MAP.put(ANNOTATION_ON_SUPERCLASS, "Annotations on superclass are meaningless");
         MAP.put(ANNOTATION_ON_SUPERCLASS_WARNING, "Annotations on superclass are meaningless and deprecated");
