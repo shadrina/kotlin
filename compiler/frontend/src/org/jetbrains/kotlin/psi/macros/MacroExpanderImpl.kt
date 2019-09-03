@@ -12,7 +12,9 @@ import org.jetbrains.kotlin.types.TypeUtils
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_DEFINITION_NOT_FOUND
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
+import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_ERROR
 import java.lang.IllegalArgumentException
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.net.URL
 import java.net.URLClassLoader
@@ -49,8 +51,10 @@ class MacroExpanderImpl(
             trace.report(
                 (when (e) {
                     is ClassNotFoundException -> MACRO_DEFINITION_NOT_FOUND
-                    is IllegalArgumentException, is NoSuchElementException -> MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
+                    is IllegalArgumentException, is NoSuchElementException, is InstantiationException ->
+                        MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
                     is NoSuchMethodException -> MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
+                    is InvocationTargetException -> MACRO_ANNOTATION_ERROR
                     else -> throw e
                 }).on(annotationEntry)
             )
