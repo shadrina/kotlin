@@ -13,6 +13,8 @@ import org.jetbrains.kotlin.diagnostics.Errors.MACRO_DEFINITION_NOT_FOUND
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_NO_MATCHING_CONSTRUCTOR
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_ERROR
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtReplaceable
 import java.lang.IllegalArgumentException
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -44,7 +46,7 @@ class MacroExpanderImpl(
                 }
                 .toTypedArray()
             val instance = klass.declaredConstructors.single().apply { isAccessible = true }.newInstance(*args)
-            val invokeMethod = klass.declaredMethods.invokeMethod().apply { isAccessible = true }
+            val invokeMethod = findProperInvokeMethod(annotationEntry, klass.declaredMethods).apply { isAccessible = true }
             val result = invokeMethod.invoke(instance, node) as Node
             return postprocess(annotationEntry, result)
         } catch (e: Exception) {
@@ -72,6 +74,25 @@ class MacroExpanderImpl(
         }
     }
 
+    private fun findProperInvokeMethod(annotationEntry: KtAnnotationEntry, methods: Array<Method>): Method {
+        val annotatedElementClass = annotationEntry.annotatedElement().toNodeClass()
+        fun Method.singleParameterType() = parameterTypes.single()
+        val candidates = methods.filter {
+            it.isMacroFunction() && it.singleParameterType().isAssignableFrom(annotatedElementClass)
+        }.toMutableList()
+        if (candidates.isEmpty()) throw NoSuchMethodException()
+        while (candidates.size > 1) {
+            val first = candidates[0].singleParameterType()
+            val second = candidates[1].singleParameterType()
+            candidates.removeAt(if (first.isAssignableFrom(second)) 0 else 1)
+        }
+        return candidates.single()
+    }
+
+    private fun Method.isMacroFunction() = name == "invoke"
+            && Node::class.java.isAssignableFrom(returnType)
+            && parameterCount == 1 && Node::class.java.isAssignableFrom(parameterTypes.single())
+
     private fun KtAnnotationEntry.fullName(): String? {
         val imports = (containingKtFile.importList?.imports ?: return shortName?.identifier).filter {
             it.importedFqName?.pathSegments()?.last() == shortName
@@ -83,18 +104,16 @@ class MacroExpanderImpl(
         }
     }
 
-    private fun Array<Method>.invokeMethod(): Method {
-        val candidates = filter(::isMacroFunction).toMutableList()
-        if (candidates.isEmpty()) throw NoSuchMethodException()
-        while (candidates.size > 1) {
-            val first = candidates[0].parameterTypes.single()
-            val second = candidates[1].parameterTypes.single()
-            candidates.removeAt(if (first.isAssignableFrom(second)) 0 else 1)
+    private fun KtAnnotationEntry.annotatedElement(): KtReplaceable {
+        var annotated = parent
+        while (annotated !is KtReplaceable) {
+            annotated = annotated.parent
         }
-        return candidates.single()
+        return annotated
     }
 
-    private fun isMacroFunction(m: Method) = m.name == "invoke"
-            && Node::class.java.isAssignableFrom(m.returnType)
-            && m.parameterCount == 1 && Node::class.java.isAssignableFrom(m.parameterTypes.single())
+    private fun KtReplaceable.toNodeClass() = when (this) {
+        is KtClassOrObject -> Node.Decl.Structured::class
+        else -> Node::class
+    }.java
 }
