@@ -59,7 +59,7 @@ class LazyTopDownAnalyzer(
     fun analyzeDeclarations(
         topDownAnalysisMode: TopDownAnalysisMode,
         declarations: Collection<PsiElement>,
-        dependencies: Collection<String>,
+        dependencies: Collection<String> = listOf(),
         outerDataFlowInfo: DataFlowInfo = DataFlowInfo.EMPTY
     ): TopDownAnalysisContext {
         val c = TopDownAnalysisContext(topDownAnalysisMode, outerDataFlowInfo, declarationScopeProvider)

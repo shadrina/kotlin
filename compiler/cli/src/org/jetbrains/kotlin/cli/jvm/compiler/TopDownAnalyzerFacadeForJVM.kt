@@ -77,7 +77,7 @@ object TopDownAnalyzerFacadeForJVM {
         trace: BindingTrace,
         configuration: CompilerConfiguration,
         packagePartProvider: (GlobalSearchScope) -> PackagePartProvider,
-        dependencies: Collection<String>,
+        dependencies: Collection<String> = listOf(),
         declarationProviderFactory: (StorageManager, Collection<KtFile>) -> DeclarationProviderFactory = ::FileBasedDeclarationProviderFactory,
         sourceModuleSearchScope: GlobalSearchScope = newModuleSearchScope(project, files)
     ): AnalysisResult {
