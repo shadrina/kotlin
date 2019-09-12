@@ -1201,6 +1201,7 @@ open class IrFileSerializer(
         ENUM_CLASS -> ProtoClassKind.ENUM_CLASS
         ENUM_ENTRY -> ProtoClassKind.ENUM_ENTRY
         ANNOTATION_CLASS -> ProtoClassKind.ANNOTATION_CLASS
+        MACRO_DEFINITION -> ProtoClassKind.CLASS
         OBJECT -> ProtoClassKind.OBJECT
     }
 
