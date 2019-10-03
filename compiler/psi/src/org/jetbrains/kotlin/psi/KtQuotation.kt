@@ -10,7 +10,6 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.psiUtil.content
-import java.lang.IllegalStateException
 import java.time.LocalDateTime
 import kotlin.meta.MutableVisitor
 import kotlin.meta.Node

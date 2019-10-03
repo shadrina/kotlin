@@ -17,6 +17,7 @@
 package org.jetbrains.kotlin.psi.psiUtil
 
 import com.intellij.extapi.psi.StubBasedPsiElementBase
+import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
@@ -61,6 +62,14 @@ fun KtExpression.sourceDelegateInQuotation(quotation: KtQuotation): KtExpression
     val offset = getStartOffsetIn(quotation.hiddenElement)
     return if (quotation.offsetToInsertionMapping.containsKey(offset)) quotation.offsetToInsertionMapping[offset] ?: quotation
     else quotation
+}
+
+fun Sequence<ASTNode>.content(): String = fold("", { acc, elem -> acc + elem.content() })
+
+fun ASTNode.content(): String = when {
+    psi is KtQuotation -> (psi as KtQuotation).hiddenElement.text
+    children().none() -> text
+    else -> children().content()
 }
 
 // ----------- Calls and qualified expressions ---------------------------------------------------------------------------------------------
@@ -422,7 +431,7 @@ fun KtStringTemplateExpression.getContentRange(): TextRange {
 
 fun KtStringTemplateEntry.content(): String = when (this) {
     is KtSimpleNameStringTemplateEntry -> firstChild.nextSibling.text
-    is KtBlockStringTemplateEntry -> text.removePrefix(firstChild.text).removeSuffix(lastChild.text)
+    is KtBlockStringTemplateEntry -> expression?.node?.content() ?: ""
     else -> text
 }
 
