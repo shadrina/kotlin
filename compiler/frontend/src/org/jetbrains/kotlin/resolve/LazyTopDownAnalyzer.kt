@@ -71,11 +71,13 @@ class LazyTopDownAnalyzer(
         val typeAliases = ArrayList<KtTypeAlias>()
         val destructuringDeclarations = ArrayList<KtDestructuringDeclaration>()
 
-        val macroExpander = MacroExpanderImpl(
-            trace,
-            ConstantExpressionEvaluator(moduleDescriptor, languageVersionSettings, declarations.first().project),
-            dependencies
-        )
+        val macroExpander = declarations.firstOrNull()?.let {
+            MacroExpanderImpl(
+                trace,
+                ConstantExpressionEvaluator(moduleDescriptor, languageVersionSettings, it.project),
+                dependencies
+            )
+        }
 
         // fill in the context
         for (declaration in declarations) {
