@@ -22,28 +22,34 @@ class FilePreprocessor(
     private val trace: BindingTrace,
     private val extensions: Iterable<FilePreprocessorExtension>
 ) {
-    fun preprocessFile(file: KtFile, macroExpander: MacroExpander) {
+    fun preprocessFile(file: KtFile, macroExpander: MacroExpander?) {
         registerFileByPackage(file)
 
-        file.accept(forEachDescendantOfTypeVisitor<KtQuotation> {
-            try {
-                it.initializeHiddenElement(macroExpander)
-            } catch (t: Throwable) {
-                when (t) {
-                    is IllegalStateException, is ClassCastException, is AssertionError ->
-                        trace.report(QUOTATION_INITIALIZATION_ERROR.on(it, t.message ?: ""))
-                    else -> throw t
-                }
-            }
-        })
-        file.accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
-            if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement(macroExpander)
-        })
+        if (macroExpander != null) {
+            file.expandQuotations(macroExpander)
+            file.expandMacroAnnotations(macroExpander)
+        }
 
         for (extension in extensions) {
             extension.preprocessFile(file)
         }
     }
+
+    private fun KtFile.expandQuotations(macroExpander: MacroExpander) = accept(forEachDescendantOfTypeVisitor<KtQuotation> {
+        try {
+            it.initializeHiddenElement(macroExpander)
+        } catch (t: Throwable) {
+            when (t) {
+                is IllegalStateException, is ClassCastException, is AssertionError ->
+                    trace.report(QUOTATION_INITIALIZATION_ERROR.on(it, t.message ?: ""))
+                else -> throw t
+            }
+        }
+    })
+
+    private fun KtFile.expandMacroAnnotations(macroExpander: MacroExpander) = accept(forEachDescendantOfTypeVisitor<KtAnnotated> {
+        if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement(macroExpander)
+    })
 
     private fun registerFileByPackage(file: KtFile) {
         // Register files corresponding to this package

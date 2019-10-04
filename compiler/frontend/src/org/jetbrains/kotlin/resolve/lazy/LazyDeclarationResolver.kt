@@ -128,9 +128,7 @@ open class LazyDeclarationResolver constructor(
                 val location = lookupLocationFor(function, function.isTopLevel)
                 val scopeForDeclaration = getMemberScopeDeclaredIn(function, location)
                 val descriptors = scopeForDeclaration.getContributedFunctions(function.nameAsSafeName, location)
-                return bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, function)
-                    // TODO: Overload resolution
-                    ?: descriptors.firstOrNull()
+                return descriptors.firstOrNull() ?: bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, function)
             }
 
             override fun visitParameter(parameter: KtParameter, data: Nothing?): DeclarationDescriptor? {
