@@ -39,6 +39,12 @@ public class KtEnumEntry extends KtClass {
 
     @NotNull
     @Override
+    public KtClass createHiddenElementFromContent(@NotNull String content) {
+        return getFactory().createEnumEntry(content);
+    }
+
+    @NotNull
+    @Override
     public List<KtSuperTypeListEntry> getSuperTypeListEntries() {
         KtInitializerList initializerList = getInitializerList();
         if (initializerList == null) {

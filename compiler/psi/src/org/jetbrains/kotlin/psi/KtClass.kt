@@ -9,31 +9,14 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.macros.MacroExpander
-import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinClassStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
-import kotlin.meta.Writer
 
 open class KtClass : KtClassOrObject {
-    override lateinit var hiddenElement: KtElement
-    final override lateinit var metaTools: MetaTools
-
-    override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized
-
-    constructor(node: ASTNode) : super(node) {
-        metaTools = MetaTools(node)
-    }
-
+    constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassStub) : super(stub, KtStubElementTypes.CLASS)
 
-    override fun initializeHiddenElement(macroExpander: MacroExpander) {
-        if (!::metaTools.isInitialized || !isMacroAnnotated) return
-        val nodeToConvert = kastreeConverter.convertStructured(this)
-        val converted = macroExpander.run(annotationEntries[0], nodeToConvert) ?: return
-        val convertedText = Writer.write(converted)
-        hiddenElement = factory.createClass(convertedText).apply { markHiddenRoot(this@KtClass) }
-    }
+    override fun createHiddenElementFromContent(content: String) = factory.createClass(content)
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitClass(this, data)

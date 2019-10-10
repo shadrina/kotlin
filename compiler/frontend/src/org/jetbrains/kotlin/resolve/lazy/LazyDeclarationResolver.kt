@@ -70,7 +70,7 @@ open class LazyDeclarationResolver constructor(
     ): ClassDescriptor? {
         val scope = getMemberScopeDeclaredIn(classObjectOrScript, location)
 
-        if (classObjectOrScript.hasHiddenElementInitialized) {
+        if (classObjectOrScript is KtClassOrObject && classObjectOrScript.hasHiddenElementInitialized) {
             return findClassDescriptorIfAny(classObjectOrScript.hiddenElement as KtNamedDeclaration, location)
         }
 

@@ -19,6 +19,8 @@ interface KtReplaceable : KtElement {
     var isRoot: Boolean
 
     fun initializeHiddenElement(macroExpander: MacroExpander)
+
+    fun createHiddenElementFromContent(content: String): KtElement
 }
 
 fun KtReplaceable.markHiddenRoot(replaced: KtReplaceable) {

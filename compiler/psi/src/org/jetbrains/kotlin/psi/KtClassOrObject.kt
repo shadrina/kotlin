@@ -26,14 +26,23 @@ import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.macros.MacroExpander
+import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinClassOrObjectStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
+import kotlin.meta.Writer
 
 abstract class KtClassOrObject :
     KtTypeParameterListOwnerStub<KotlinClassOrObjectStub<out KtClassOrObject>>, KtDeclarationContainer, KtNamedDeclaration,
-    KtPureClassOrObject {
-    constructor(node: ASTNode) : super(node)
+    KtPureClassOrObject, KtReplaceable {
+    constructor(node: ASTNode) : super(node) {
+        metaTools = MetaTools(node)
+    }
+
     constructor(stub: KotlinClassOrObjectStub<out KtClassOrObject>, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
+
+    override lateinit var hiddenElement: KtElement
+    final override lateinit var metaTools: MetaTools
 
     override var replacedElement: KtElement = this
     override var isHidden: Boolean = false
@@ -41,6 +50,18 @@ abstract class KtClassOrObject :
 
     val factory: KtPsiFactory get() = metaTools.factory
     val kastreeConverter: KastreeConverter get() = metaTools.converter
+
+    override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized
+
+    override fun initializeHiddenElement(macroExpander: MacroExpander) {
+        if (!::metaTools.isInitialized || !isMacroAnnotated) return
+        val nodeToConvert = kastreeConverter.convertStructured(this)
+        val converted = macroExpander.run(annotationEntries[0], nodeToConvert) ?: return
+        val convertedText = Writer.write(converted)
+        hiddenElement = (createHiddenElementFromContent(convertedText) as KtReplaceable).apply {
+            markHiddenRoot(this@KtClassOrObject)
+        }
+    }
 
     fun getSuperTypeList(): KtSuperTypeList? = getStubOrPsiChild(KtStubElementTypes.SUPER_TYPE_LIST)
 

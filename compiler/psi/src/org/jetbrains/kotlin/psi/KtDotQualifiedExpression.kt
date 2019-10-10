@@ -37,6 +37,8 @@ class KtDotQualifiedExpression : KtExpressionImplStub<KotlinPlaceHolderStub<KtDo
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
     }
 
+    override fun createHiddenElementFromContent(content: String): KtElement = TODO()
+
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: KotlinPlaceHolderStub<KtDotQualifiedExpression>) : super(stub, KtStubElementTypes.DOT_QUALIFIED_EXPRESSION)
