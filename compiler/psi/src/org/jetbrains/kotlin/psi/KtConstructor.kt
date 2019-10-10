@@ -22,8 +22,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.util.IncorrectOperationException
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.macros.MacroExpander
-import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinPlaceHolderStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtPlaceHolderStubElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
@@ -31,17 +29,6 @@ import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 abstract class KtConstructor<T : KtConstructor<T>> : KtDeclarationStub<KotlinPlaceHolderStub<T>>, KtFunction {
     protected constructor(node: ASTNode) : super(node)
     protected constructor(stub: KotlinPlaceHolderStub<T>, nodeType: KtPlaceHolderStubElementType<T>) : super(stub, nodeType)
-
-    override var replacedElement: KtElement = this
-    override lateinit var hiddenElement: KtElement
-    override lateinit var metaTools: MetaTools
-
-    override val hasHiddenElementInitialized: Boolean = false
-    override var isHidden: Boolean = false
-    override var isRoot: Boolean = false
-
-    override fun initializeHiddenElement(macroExpander: MacroExpander) {
-    }
 
     abstract fun getContainingClassOrObject(): KtClassOrObject
 

@@ -21,11 +21,8 @@ import com.intellij.psi.PsiElement;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.lexer.KtTokens;
-import org.jetbrains.kotlin.psi.macros.MacroExpander;
-import org.jetbrains.kotlin.psi.macros.MetaTools;
 
 import static org.jetbrains.kotlin.psi.KtPsiFactoryKt.KtPsiFactory;
 
@@ -34,63 +31,6 @@ import static org.jetbrains.kotlin.psi.KtPsiFactoryKt.KtPsiFactory;
 abstract class KtNamedDeclarationNotStubbed extends KtDeclarationImpl implements KtNamedDeclaration {
     public KtNamedDeclarationNotStubbed(@NotNull ASTNode node) {
         super(node);
-    }
-
-    @NotNull
-    @Override
-    public KtElement getReplacedElement() {
-        return this;
-    }
-
-    @Override
-    public void setReplacedElement(@NotNull KtElement element) {
-    }
-
-    @NotNull
-    @Override
-    public KtElement getHiddenElement() {
-        throw new IllegalStateException("Hidden element isn't initialized");
-    }
-
-    @Override
-    public void setHiddenElement(@NotNull KtElement element) {
-    }
-
-    @NotNull
-    @Override
-    public MetaTools getMetaTools() {
-        throw new IllegalStateException("Meta tools aren't initialized");
-    }
-
-    @Override
-    public void setMetaTools(@NotNull MetaTools tools) {
-    }
-
-    @Override
-    public boolean getHasHiddenElementInitialized() {
-        return false;
-    }
-
-    @Override
-    public boolean isHidden() {
-        return false;
-    }
-
-    @Override
-    public void setHidden(boolean b) {
-    }
-
-    @Override
-    public boolean isRoot() {
-        return false;
-    }
-
-    @Override
-    public void setRoot(boolean b) {
-    }
-
-    @Override
-    public void initializeHiddenElement(@NotNull MacroExpander macroExpander) {
     }
 
     @Override

@@ -29,15 +29,17 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     val kastreeConverter: KastreeConverter get() = metaTools.converter
     val offsetToInsertionMapping = mutableMapOf<Int, KtExpression?>()
 
+    override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized
+
     abstract fun astNodeByContent(content: String): Node
 
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
         val converted = astNodeByContent(hiddenElementContent()).also { mapOffsetsToInsertions(it) }
-        val finalExpression = factory.createExpression(converted.toCode()) as KtDotQualifiedExpression
+        val finalExpression = createHiddenElementFromContent(converted.toCode()) as KtDotQualifiedExpression
         hiddenElement = finalExpression.apply { markHiddenRoot(this@KtQuotation) }
     }
 
-    override val hasHiddenElementInitialized: Boolean get() = ::hiddenElement.isInitialized
+    override fun createHiddenElementFromContent(content: String) = factory.createExpression(content)
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R = visitor.visitQuotation(this, data)
 
