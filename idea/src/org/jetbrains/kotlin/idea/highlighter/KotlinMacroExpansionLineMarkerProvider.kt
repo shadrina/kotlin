@@ -16,33 +16,51 @@ import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtQuotation
 import org.jetbrains.kotlin.psi.KtReplaceable
+import java.awt.event.MouseEvent
 
 class KotlinMacroExpansionLineMarkerProvider : RelatedItemLineMarkerProvider() {
     private val KEY = Key<String>("MACRO_EXPANDED_KEY")
 
     override fun collectNavigationMarkers(element: PsiElement, result: MutableCollection<in RelatedItemLineMarkerInfo<PsiElement>>) {
-        if (element !is KtReplaceable || !element.hasHiddenElementInitialized) return
-        if (element is KtQuotation) return
-        result.add(MacroExpandedElementMarkerInfo(element))
+        if (element !is KtReplaceable || element is KtQuotation) return
+        element.expandMarker()?.let { result.add(it) }
+        element.undoMarker()?.let { result.add(it) }
+    }
+
+    private fun KtReplaceable.expandMarker(): MacroExpandedElementMarkerInfo? {
+        if (!hasHiddenElementInitialized) return null
+        return MacroExpandedElementMarkerInfo(this) { _, elt -> expandMacroAnnotation(elt) }
+    }
+
+    private fun KtReplaceable.undoMarker(): MacroExpandedElementMarkerInfo? {
+        val text = getUserData(KEY) ?: return null
+        return MacroExpandedElementMarkerInfo(this) { _, elt -> undoMacroExpansion(elt, text) }
     }
 
     private fun expandMacroAnnotation(element: PsiElement) {
-        if (element !is KtReplaceable) return
+        element as KtReplaceable
         WriteCommandAction.runWriteCommandAction(element.project) {
-            val hidden = element.hiddenElement
-            hidden.putCopyableUserData(KEY, element.text)
-            element.replace(hidden)
+            val new = element.replace(element.hiddenElement) as KtReplaceable
+            new.putUserData(KEY, element.text)
         }
     }
 
-    private inner class MacroExpandedElementMarkerInfo(element: PsiElement) : RelatedItemLineMarkerInfo<PsiElement>(
-        element,
-        element.textRange,
-        AllIcons.Actions.Expandall,
-        Pass.LINE_MARKERS,
-        { "Expand macro" },
-        { _, elt -> expandMacroAnnotation(elt) },
-        GutterIconRenderer.Alignment.RIGHT,
-        listOf<GotoRelatedItem>()
-    )
+    private fun undoMacroExpansion(element: PsiElement, text: String) {
+        element as KtReplaceable
+        WriteCommandAction.runWriteCommandAction(element.project) {
+            element.replace(element.createHiddenElementFromContent(text))
+        }
+    }
+
+    private inner class MacroExpandedElementMarkerInfo(element: PsiElement, navHandler: (e: MouseEvent, elt: PsiElement) -> Unit) :
+        RelatedItemLineMarkerInfo<PsiElement>(
+            element,
+            element.textRange,
+            AllIcons.Actions.Expandall,
+            Pass.LINE_MARKERS,
+            { "Expand macro" },
+            navHandler,
+            GutterIconRenderer.Alignment.RIGHT,
+            listOf<GotoRelatedItem>()
+        )
 }
