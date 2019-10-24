@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes.INSIDE_DIRECTI
 class KtDotQualifiedExpression : KtExpressionImplStub<KotlinPlaceHolderStub<KtDotQualifiedExpression>>, KtQualifiedExpression,
     KtReplaceable {
     override var replacedElement: KtElement = this
-    override lateinit var hiddenElement: KtElement
+    override var hiddenElement: KtElement = this
     override lateinit var metaTools: MetaTools
     override val hasHiddenElementInitialized = false
     override var isHidden = false
@@ -38,7 +38,9 @@ class KtDotQualifiedExpression : KtExpressionImplStub<KotlinPlaceHolderStub<KtDo
 
     override fun createHiddenElementFromContent(content: String): KtElement = TODO()
 
-    constructor(node: ASTNode) : super(node)
+    constructor(node: ASTNode) : super(node) {
+        metaTools = MetaTools(node)
+    }
 
     constructor(stub: KotlinPlaceHolderStub<KtDotQualifiedExpression>) : super(stub, KtStubElementTypes.DOT_QUALIFIED_EXPRESSION)
 
