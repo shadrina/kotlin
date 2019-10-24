@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.stubs.KotlinClassOrObjectStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
+import kotlin.meta.Node
 import kotlin.meta.Writer
 
 abstract class KtClassOrObject :
@@ -55,7 +56,11 @@ abstract class KtClassOrObject :
 
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
         if (!::metaTools.isInitialized || !isMacroAnnotated) return
-        val nodeToConvert = kastreeConverter.convertStructured(this)
+        val nodeToConvert = with(kastreeConverter.convertStructured(this)) {
+            copy(mods = mods.filter {
+                (it as? Node.Modifier.AnnotationSet)?.target != Node.Modifier.AnnotationSet.Target.MACRO
+            })
+        }
         val converted = macroExpander.run(annotationEntries[0], nodeToConvert) ?: return
         val convertedText = Writer.write(converted)
         hiddenElement = (createHiddenElementFromContent(convertedText) as KtReplaceable).apply {
