@@ -29,12 +29,12 @@ class KotlinMacroExpansionLineMarkerProvider : RelatedItemLineMarkerProvider() {
 
     private fun KtReplaceable.expandMarker(): MacroExpandedElementMarkerInfo? {
         if (!hasHiddenElementInitialized) return null
-        return MacroExpandedElementMarkerInfo(this) { _, elt -> expandMacroAnnotation(elt) }
+        return MacroExpandedElementMarkerInfo(this, "Expand macro") { _, elt -> expandMacroAnnotation(elt) }
     }
 
     private fun KtReplaceable.undoMarker(): MacroExpandedElementMarkerInfo? {
         val text = getUserData(KEY) ?: return null
-        return MacroExpandedElementMarkerInfo(this) { _, elt -> undoMacroExpansion(elt, text) }
+        return MacroExpandedElementMarkerInfo(this, "Undo expansion") { _, elt -> undoMacroExpansion(elt, text) }
     }
 
     private fun expandMacroAnnotation(element: PsiElement) {
@@ -52,15 +52,18 @@ class KotlinMacroExpansionLineMarkerProvider : RelatedItemLineMarkerProvider() {
         }
     }
 
-    private inner class MacroExpandedElementMarkerInfo(element: PsiElement, navHandler: (e: MouseEvent, elt: PsiElement) -> Unit) :
-        RelatedItemLineMarkerInfo<PsiElement>(
-            element,
-            element.textRange,
-            AllIcons.Actions.Expandall,
-            Pass.LINE_MARKERS,
-            { "Expand macro" },
-            navHandler,
-            GutterIconRenderer.Alignment.RIGHT,
-            listOf<GotoRelatedItem>()
-        )
+    private inner class MacroExpandedElementMarkerInfo(
+        element: PsiElement,
+        message: String,
+        navHandler: (e: MouseEvent, elt: PsiElement) -> Unit
+    ) : RelatedItemLineMarkerInfo<PsiElement>(
+        element,
+        element.textRange,
+        AllIcons.Actions.Expandall,
+        Pass.LINE_MARKERS,
+        { message },
+        navHandler,
+        GutterIconRenderer.Alignment.RIGHT,
+        listOf<GotoRelatedItem>()
+    )
 }
