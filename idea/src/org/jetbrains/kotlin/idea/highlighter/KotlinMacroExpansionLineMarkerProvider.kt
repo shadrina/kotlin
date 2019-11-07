@@ -16,6 +16,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtQuotation
 import org.jetbrains.kotlin.psi.KtReplaceable
+import org.jetbrains.kotlin.psi.markHiddenRoot
 import java.awt.event.MouseEvent
 
 class KotlinMacroExpansionLineMarkerProvider : RelatedItemLineMarkerProvider() {
@@ -40,15 +41,18 @@ class KotlinMacroExpansionLineMarkerProvider : RelatedItemLineMarkerProvider() {
     private fun expandMacroAnnotation(element: PsiElement) {
         element as KtReplaceable
         WriteCommandAction.runWriteCommandAction(element.project) {
-            val new = element.replace(element.hiddenElement) as KtReplaceable
-            new.putUserData(KEY, element.text)
+            val inserted = element.replace(element.hiddenElement) as KtReplaceable
+            inserted.putUserData(KEY, element.text)
         }
     }
 
     private fun undoMacroExpansion(element: PsiElement, text: String) {
         element as KtReplaceable
         WriteCommandAction.runWriteCommandAction(element.project) {
-            element.replace(element.createHiddenElementFromContent(text))
+            val inserted = element.replace(element.createHiddenElementFromContent(text))
+            (inserted as KtReplaceable).hiddenElement = (element.createHiddenElementFromContent(element.text) as KtReplaceable).apply {
+                markHiddenRoot(inserted)
+            }
         }
     }
 
