@@ -36,6 +36,7 @@ import org.jetbrains.kotlin.load.java.SpecialBuiltinMembers;
 import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor;
 import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.psi.*;
+import org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt;
 import org.jetbrains.kotlin.resolve.BindingContext;
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils;
 import org.jetbrains.kotlin.resolve.DescriptorUtils;
@@ -113,7 +114,11 @@ public class FunctionCodegen {
         }
 
         if (functionDescriptor == null) {
-            throw ExceptionLogger.logDescriptorNotFound("No descriptor for function " + function.getName(), function);
+            if (KtPsiUtilKt.isHidden(function)) {
+                return;
+            } else {
+                throw ExceptionLogger.logDescriptorNotFound("No descriptor for function " + function.getName(), function);
+            }
         }
 
         if (owner.getContextKind() != OwnerKind.DEFAULT_IMPLS || function.hasBody()) {
