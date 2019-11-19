@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.incremental.components.LookupLocation
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getElementTextWithContext
+import org.jetbrains.kotlin.psi.psiUtil.isHidden
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
@@ -64,6 +65,22 @@ open class LazyDeclarationResolver constructor(
     fun getScriptDescriptor(script: KtScript, location: LookupLocation): ClassDescriptorWithResolutionScopes =
         findClassDescriptor(script, location) as ClassDescriptorWithResolutionScopes
 
+    private fun findNonHiddenElementClassDescriptorIfAny(
+        classObjectOrScript: KtNamedDeclaration,
+        location: LookupLocation
+    ): ClassDescriptor? {
+        val scope = getMemberScopeDeclaredIn(classObjectOrScript, location)
+
+        // Why not use the result here. Because it may be that there is a redeclaration:
+        //     class A {} class A { fun foo(): A<completion here>}
+        // and if we find the class by name only, we may b-not get the right one.
+        // This call is only needed to make sure the classes are written to trace
+        scope.getContributedClassifier(classObjectOrScript.nameAsSafeName, location)
+        val descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, classObjectOrScript)
+
+        return descriptor as? ClassDescriptor
+    }
+
     private fun findClassDescriptorIfAny(
         classObjectOrScript: KtNamedDeclaration,
         location: LookupLocation
@@ -73,15 +90,13 @@ open class LazyDeclarationResolver constructor(
         if (classObjectOrScript is KtClassOrObject && classObjectOrScript.hasHiddenElementInitialized) {
             return findClassDescriptorIfAny(classObjectOrScript.hiddenElement as KtNamedDeclaration, location)
         }
-
-        // Why not use the result here. Because it may be that there is a redeclaration:
-        //     class A {} class A { fun foo(): A<completion here>}
-        // and if we find the class by name only, we may b-not get the right one.
-        // This call is only needed to make sure the classes are written to trace
         val classifier = scope.getContributedClassifier(classObjectOrScript.nameAsSafeName, location)
         val descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, classObjectOrScript)
 
         if (descriptor == null && classifier != null) return classifier as? ClassDescriptor
+        if (descriptor == null && classifier == null && classObjectOrScript is KtClassOrObject && classObjectOrScript.isHidden()) {
+            return findNonHiddenElementClassDescriptorIfAny(classObjectOrScript.replacedElement as KtNamedDeclaration, location)
+        }
         return descriptor as? ClassDescriptor
     }
 
@@ -91,6 +106,9 @@ open class LazyDeclarationResolver constructor(
     ): ClassDescriptor =
         findClassDescriptorIfAny(classObjectOrScript, location)
             ?: (absentDescriptorHandler.diagnoseDescriptorNotFound(classObjectOrScript) as ClassDescriptor)
+
+    // TODO: Patch!
+    fun hasDescriptor(declaration: KtDeclaration): Boolean = resolveToDescriptor(declaration, true) != null
 
     fun resolveToDescriptor(declaration: KtDeclaration): DeclarationDescriptor =
         resolveToDescriptor(declaration, /*track =*/true) ?: absentDescriptorHandler.diagnoseDescriptorNotFound(declaration)
