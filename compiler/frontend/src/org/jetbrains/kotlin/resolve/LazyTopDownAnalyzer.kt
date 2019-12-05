@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.macros.MacroExpanderImpl
+import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
 import org.jetbrains.kotlin.psi.psiUtil.isHidden
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.checkers.ClassifierUsageChecker
@@ -72,13 +73,29 @@ class LazyTopDownAnalyzer(
         val typeAliases = ArrayList<KtTypeAlias>()
         val destructuringDeclarations = ArrayList<KtDestructuringDeclaration>()
 
-        val macroExpander = declarations.firstOrNull()?.let {
-            MacroExpanderImpl(
+        val (quotationVisitor, macroAnnotatedVisitor) = if (declarations.isNotEmpty()) {
+            val macroExpander = MacroExpanderImpl(
                 trace,
-                ConstantExpressionEvaluator(moduleDescriptor, languageVersionSettings, it.project),
+                ConstantExpressionEvaluator(moduleDescriptor, languageVersionSettings, declarations.first().project),
                 dependencies
             )
-        }
+            Pair(
+                forEachDescendantOfTypeVisitor<KtQuotation> { quotation ->
+                    try {
+                        quotation.initializeHiddenElement(macroExpander)
+                    } catch (t: Throwable) {
+                        when (t) {
+                            is IllegalStateException, is ClassCastException, is AssertionError ->
+                                trace.report(QUOTATION_INITIALIZATION_ERROR.on(quotation, t.message ?: ""))
+                            else -> throw t
+                        }
+                    }
+                },
+                forEachDescendantOfTypeVisitor<KtAnnotated> {
+                    if (it is KtReplaceable && it.isMacroAnnotated) it.initializeHiddenElement(macroExpander)
+                }
+            )
+        } else Pair(null, null)
 
         // fill in the context
         for (declaration in declarations) {
@@ -105,7 +122,7 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitKtFile(file: KtFile) {
-                    filePreprocessor.preprocessFile(file, macroExpander)
+                    filePreprocessor.preprocessFile(file)
                     registerDeclarations(file.declarations)
 
                     val packageDirective = file.packageDirective
@@ -203,7 +220,7 @@ class LazyTopDownAnalyzer(
                 }
 
                 override fun visitNamedFunction(function: KtNamedFunction) {
-                    functions.add(function)
+                    functions.add(if (function.hasHiddenElementInitialized) function.hiddenElement as KtNamedFunction else function)
                 }
 
                 override fun visitProperty(property: KtProperty) {
@@ -214,7 +231,8 @@ class LazyTopDownAnalyzer(
                     typeAliases.add(typeAlias)
                 }
             })
-
+            quotationVisitor?.let { declaration.accept(it) }
+            macroAnnotatedVisitor?.let { declaration.accept(it) }
             declaration.accept(visitor)
         }
 
