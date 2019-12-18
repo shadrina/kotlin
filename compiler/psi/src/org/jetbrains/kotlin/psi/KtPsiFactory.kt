@@ -122,6 +122,10 @@ class KtPsiFactory @JvmOverloads constructor(private val project: Project, val m
         return createDeclaration("typealias $name$typeParametersText = $body")
     }
 
+    fun createTypeAlias(text: String): KtTypeAlias {
+        return createDeclaration(text)
+    }
+
     fun createStar(): PsiElement {
         return createType("List<*>").findElementAt(5)!!
     }
