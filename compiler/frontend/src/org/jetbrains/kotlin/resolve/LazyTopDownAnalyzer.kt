@@ -37,6 +37,7 @@ import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluat
 import org.jetbrains.kotlin.resolve.deprecation.DeprecationResolver
 import org.jetbrains.kotlin.resolve.lazy.*
 import org.jetbrains.kotlin.resolve.lazy.descriptors.LazyClassDescriptor
+import org.jetbrains.kotlin.utils.KotlinExceptionWithAttachments
 import java.util.*
 
 class LazyTopDownAnalyzer(
@@ -85,7 +86,7 @@ class LazyTopDownAnalyzer(
                         quotation.initializeHiddenElement(macroExpander)
                     } catch (t: Throwable) {
                         when (t) {
-                            is IllegalStateException, is ClassCastException, is AssertionError ->
+                            is KotlinExceptionWithAttachments, is IllegalStateException, is ClassCastException, is AssertionError ->
                                 trace.report(QUOTATION_INITIALIZATION_ERROR.on(quotation, t.message ?: ""))
                             else -> throw t
                         }
