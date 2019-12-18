@@ -1349,6 +1349,12 @@ class ControlFlowProcessor(
             builder.loadStringTemplate(expression, elementsToValues(inputExpressions))
         }
 
+        override fun visitQuotation(quotation: KtQuotation) {
+            if (quotation.hasHiddenElementInitialized) {
+                visitQualifiedExpression(quotation.hiddenElement as KtQualifiedExpression)
+            }
+        }
+
         override fun visitTypeProjection(typeProjection: KtTypeProjection) {
             // TODO : Support Type Arguments. Companion object may be initialized at this point");
         }

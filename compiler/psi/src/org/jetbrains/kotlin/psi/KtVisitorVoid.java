@@ -377,6 +377,10 @@ public class KtVisitorVoid extends KtVisitor<Void, Void> {
         super.visitStringTemplateExpression(expression, null);
     }
 
+    public void visitQuotation(@NotNull KtQuotation quotation) {
+        super.visitQuotation(quotation, null);
+    }
+
     public void visitNamedDeclaration(@NotNull KtNamedDeclaration declaration) {
         super.visitNamedDeclaration(declaration, null);
     }
@@ -1011,6 +1015,12 @@ public class KtVisitorVoid extends KtVisitor<Void, Void> {
     @Override
     public final Void visitObjectDeclaration(@NotNull KtObjectDeclaration declaration, Void data) {
         visitObjectDeclaration(declaration);
+        return null;
+    }
+
+    @Override
+    public Void visitQuotation(@NotNull KtQuotation quotation, Void data) {
+        visitQuotation(quotation);
         return null;
     }
 
