@@ -389,6 +389,11 @@ public class ExpressionTypingVisitorForStatements extends ExpressionTypingVisito
     }
 
     @Override
+    public KotlinTypeInfo visitQuotation(@NotNull KtQuotation quotation, ExpressionTypingContext data) {
+        return basic.visitQuotation(quotation, data);
+    }
+
+    @Override
     public KotlinTypeInfo visitWhileExpression(@NotNull KtWhileExpression expression, ExpressionTypingContext context) {
         return controlStructures.visitWhileExpression(expression, context, true);
     }
