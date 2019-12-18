@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_NO_MATCHING_CONS
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_METHOD_INVOKE_NOT_FOUND
 import org.jetbrains.kotlin.diagnostics.Errors.MACRO_ANNOTATION_ERROR
 import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtReplaceable
 import java.lang.IllegalArgumentException
 import java.lang.reflect.InvocationTargetException
@@ -114,6 +115,7 @@ class MacroExpanderImpl(
 
     private fun KtReplaceable.toNodeClass() = when (this) {
         is KtClassOrObject -> Node.Decl.Structured::class
+        is KtNamedFunction -> Node.Decl.Func::class
         else -> Node::class
     }.java
 }
