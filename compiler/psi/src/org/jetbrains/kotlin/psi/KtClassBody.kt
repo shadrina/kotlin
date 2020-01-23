@@ -32,7 +32,9 @@ class KtClassBody : KtElementImplStub<KotlinPlaceHolderStub<KtClassBody>>, KtDec
 
     override fun getParent() = parentByStub
 
-    override fun getDeclarations() = listOf(*getStubOrPsiChildren(DECLARATION_TYPES, KtDeclaration.ARRAY_FACTORY))
+    override fun getDeclarations() = listOf(*getStubOrPsiChildren(DECLARATION_TYPES, KtDeclaration.ARRAY_FACTORY)).map {
+        if (it is KtReplaceable && it.hasHiddenElementInitialized) it.hiddenElement as KtDeclaration else it
+    }
 
     override fun getDeclarationsFromSource() = declarations
 
@@ -45,16 +47,25 @@ class KtClassBody : KtElementImplStub<KotlinPlaceHolderStub<KtClassBody>>, KtDec
         get() = getStubOrPsiChildrenAsList(KtStubElementTypes.SECONDARY_CONSTRUCTOR)
 
     val properties: List<KtProperty>
-        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.PROPERTY)
+        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.PROPERTY).map {
+            if (it is KtReplaceable && it.hasHiddenElementInitialized) it.hiddenElement as KtProperty else it
+        }
 
     val functions: List<KtNamedFunction>
-        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.FUNCTION)
+        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.FUNCTION).map {
+            if (it is KtReplaceable && it.hasHiddenElementInitialized) it.hiddenElement as KtNamedFunction else it
+        }
 
     val enumEntries: List<KtEnumEntry>
-        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.ENUM_ENTRY).filterIsInstance<KtEnumEntry>()
+        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.ENUM_ENTRY).filterIsInstance<KtEnumEntry>().map {
+            if (it.hasHiddenElementInitialized) it.hiddenElement as KtEnumEntry else it
+        }
 
     val allCompanionObjects: List<KtObjectDeclaration>
-        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.OBJECT_DECLARATION).filter { it.isCompanion() }
+        get() = getStubOrPsiChildrenAsList(KtStubElementTypes.OBJECT_DECLARATION)
+            .map {
+                if (it.hasHiddenElementInitialized) it.hiddenElement as KtObjectDeclaration else it
+            }.filter { it.isCompanion() }
 
     val rBrace: PsiElement?
         get() = node.getChildren(TokenSet.create(KtTokens.RBRACE)).singleOrNull()?.psi
