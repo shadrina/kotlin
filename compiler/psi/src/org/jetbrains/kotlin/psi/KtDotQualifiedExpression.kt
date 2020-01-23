@@ -37,7 +37,9 @@ class KtDotQualifiedExpression : KtExpressionImplStub<KotlinPlaceHolderStub<KtDo
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
     }
 
-    override fun createHiddenElementFromContent(content: String): KtElement = TODO()
+    override fun convertToNode() = TODO()
+
+    override fun createHiddenElementFromContent(content: String) = TODO()
 
     constructor(node: ASTNode) : super(node) {
         metaTools = MetaTools(node)

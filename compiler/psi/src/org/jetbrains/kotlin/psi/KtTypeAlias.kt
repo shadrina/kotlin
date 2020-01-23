@@ -51,4 +51,8 @@ class KtTypeAlias : KtTypeParameterListOwnerStub<KotlinTypeAliasStub>, KtNamedDe
     }
 
     override fun getPresentation() = ItemPresentationProviders.getItemPresentation(this)
+
+    override fun convertToNode() = metaTools.converter.convertTypeAlias(this)
+
+    override fun createHiddenElementFromContent(content: String) = metaTools.factory.createTypeAlias(content)
 }

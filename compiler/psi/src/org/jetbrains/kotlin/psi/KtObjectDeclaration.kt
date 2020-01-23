@@ -28,7 +28,7 @@ class KtObjectDeclaration : KtClassOrObject {
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinObjectStub) : super(stub, KtStubElementTypes.OBJECT_DECLARATION)
 
-    override fun createHiddenElementFromContent(content: String) = factory.createObject(content)
+    override fun createHiddenElementFromContent(content: String) = metaTools.factory.createObject(content)
 
     private val _stub: KotlinObjectStub?
         get() = stub as? KotlinObjectStub

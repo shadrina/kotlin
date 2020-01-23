@@ -24,6 +24,7 @@ import com.intellij.psi.PsiModifiableCodeBlock;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.AstLoadingFilter;
+import kotlin.meta.Node;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.lexer.KtTokens;
@@ -34,6 +35,7 @@ import org.jetbrains.kotlin.psi.typeRefHelpers.TypeRefHelpersKt;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class KtNamedFunction extends KtTypeParameterListOwnerStub<KotlinFunctionStub>
         implements KtFunction, KtDeclarationWithInitializer, PsiModifiableCodeBlock {
@@ -256,5 +258,28 @@ public class KtNamedFunction extends KtTypeParameterListOwnerStub<KotlinFunction
         }
 
         return KtPsiUtilKt.isContractPresentPsiCheck(this, isAllowedOnMembers);
+    }
+
+    @NotNull
+    @Override
+    public Node convertToNode() {
+        Node.Decl.Func converted = getMetaTools().getConverter().convertFunc(this);
+        List<Node.Modifier> mods = converted.getMods().stream().filter(mod -> {
+            if (mod instanceof Node.Modifier.AnnotationSet) {
+                Node.Modifier.AnnotationSet annotationSet = (Node.Modifier.AnnotationSet) mod;
+                return annotationSet.getTarget() != Node.Modifier.AnnotationSet.Target.MACRO;
+            } else {
+                return true;
+            }
+        }).collect(Collectors.toList());
+        return converted.copy(mods, converted.getTypeParams(), converted.getReceiverType(), converted.getName(),
+                              converted.getParamTypeParams(), converted.getParams(), converted.getType(), converted.getTypeConstraints(),
+                              converted.getBody());
+    }
+
+    @NotNull
+    @Override
+    public KtElement createHiddenElementFromContent(@NotNull String content) {
+        return getMetaTools().getFactory().createFunction(content);
     }
 }

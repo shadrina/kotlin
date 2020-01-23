@@ -34,10 +34,11 @@ abstract class KtQuotation(node: ASTNode, private val saveIndents: Boolean = tru
     abstract fun astNodeByContent(content: String): Node
 
     override fun initializeHiddenElement(macroExpander: MacroExpander) {
-        val converted = astNodeByContent(hiddenElementContent()).also { mapOffsetsToInsertions(it) }
-        val finalExpression = createHiddenElementFromContent(converted.toCode()) as KtDotQualifiedExpression
+        val finalExpression = createHiddenElementFromContent(convertToNode().toCode()) as KtDotQualifiedExpression
         hiddenElement = finalExpression.apply { markHiddenRoot(this@KtQuotation) }
     }
+
+    override fun convertToNode() = astNodeByContent(hiddenElementContent()).also { mapOffsetsToInsertions(it) }
 
     override fun createHiddenElementFromContent(content: String) = factory.createExpression(content)
 

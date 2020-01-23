@@ -16,7 +16,7 @@ open class KtClass : KtClassOrObject {
     constructor(node: ASTNode) : super(node)
     constructor(stub: KotlinClassStub) : super(stub, KtStubElementTypes.CLASS)
 
-    override fun createHiddenElementFromContent(content: String) = factory.createClass(content)
+    override fun createHiddenElementFromContent(content: String) = metaTools.factory.createClass(content)
 
     override fun <R, D> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitClass(this, data)

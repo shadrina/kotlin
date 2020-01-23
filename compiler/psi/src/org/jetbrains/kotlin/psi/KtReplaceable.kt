@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.psi
 import org.jetbrains.kotlin.psi.macros.MacroExpander
 import org.jetbrains.kotlin.psi.macros.MetaTools
 import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfTypeVisitor
+import kotlin.meta.Node
 
 interface KtReplaceable : KtElement {
     var replacedElement: KtElement
@@ -17,6 +18,8 @@ interface KtReplaceable : KtElement {
     val hasHiddenElementInitialized: Boolean
     var isHidden: Boolean
     var isRoot: Boolean
+
+    fun convertToNode(): Node
 
     fun initializeHiddenElement(macroExpander: MacroExpander)
 

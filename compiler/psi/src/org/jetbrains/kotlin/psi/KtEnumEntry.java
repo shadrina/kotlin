@@ -40,7 +40,7 @@ public class KtEnumEntry extends KtClass {
     @NotNull
     @Override
     public KtClass createHiddenElementFromContent(@NotNull String content) {
-        return getFactory().createEnumEntry(content);
+        return getMetaTools().getFactory().createEnumEntry(content);
     }
 
     @NotNull

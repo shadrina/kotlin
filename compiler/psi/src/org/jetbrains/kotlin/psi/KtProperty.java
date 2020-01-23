@@ -26,6 +26,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.AstLoadingFilter;
+import kotlin.meta.Node;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.KtNodeTypes;
@@ -337,5 +338,17 @@ public class KtProperty extends KtTypeParameterListOwnerStub<KotlinPropertyStub>
             return true;
         }
         return false;
+    }
+
+    @NotNull
+    @Override
+    public Node convertToNode() {
+        return getMetaTools().getConverter().convertProperty(this);
+    }
+
+    @NotNull
+    @Override
+    public KtElement createHiddenElementFromContent(@NotNull String content) {
+        return getMetaTools().getFactory().createProperty(content);
     }
 }
