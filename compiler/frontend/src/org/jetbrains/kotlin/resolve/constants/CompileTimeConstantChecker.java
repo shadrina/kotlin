@@ -104,7 +104,7 @@ public class CompileTimeConstantChecker {
         if (!noExpectedTypeOrError(expectedType)) {
             KotlinType valueType = value.getType(module);
             if (!KotlinTypeChecker.DEFAULT.isSubtypeOf(valueType, expectedType)) {
-                return reportConstantExpectedTypeMismatch(expression, "integer", expectedType, builtIns.getIntType());
+                return reportConstantExpectedTypeMismatch(expression, "integer", expectedType, null);
             }
         }
         return false;
@@ -121,7 +121,7 @@ public class CompileTimeConstantChecker {
         if (!noExpectedTypeOrError(expectedType)) {
             KotlinType valueType = value.getType(module);
             if (!KotlinTypeChecker.DEFAULT.isSubtypeOf(valueType, expectedType)) {
-                return reportConstantExpectedTypeMismatch(expression, "floating-point", expectedType, builtIns.getFloatType());
+                return reportConstantExpectedTypeMismatch(expression, "floating-point", expectedType, null);
             }
         }
         return false;
@@ -289,11 +289,11 @@ public class CompileTimeConstantChecker {
             @NotNull KtConstantExpression expression,
             @NotNull String typeName,
             @NotNull KotlinType expectedType,
-            @NotNull KotlinType expressionType
+            @Nullable KotlinType expressionType
     ) {
         if (DiagnosticUtilsKt.reportTypeMismatchDueToTypeProjection(context, expression, expectedType, expressionType)) return true;
 
-        if (KtPsiUtilKt.isHidden(expression)) {
+        if (expressionType != null && KtPsiUtilKt.isHidden(expression)) {
             trace.report(TYPE_MISMATCH.on(KtPsiUtilKt.sourceDelegate(expression), expectedType, expressionType));
         }
         trace.report(CONSTANT_EXPECTED_TYPE_MISMATCH.on(expression, typeName, expectedType));
