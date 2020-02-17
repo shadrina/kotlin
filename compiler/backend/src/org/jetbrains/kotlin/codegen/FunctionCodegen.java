@@ -117,11 +117,7 @@ public class FunctionCodegen {
         }
 
         if (functionDescriptor == null) {
-            if (KtPsiUtilKt.isHidden(function)) {
-                return;
-            } else {
-                throw ExceptionLogger.logDescriptorNotFound("No descriptor for function " + function.getName(), function);
-            }
+            throw ExceptionLogger.logDescriptorNotFound("No descriptor for function " + function.getName(), function);
         }
 
         if (owner.getContextKind() != OwnerKind.DEFAULT_IMPLS || function.hasBody()) {

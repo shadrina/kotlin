@@ -182,9 +182,6 @@ class LazyTopDownAnalyzer(
                 private fun registerPrimaryConstructorParameters(klass: KtClass) {
                     for (jetParameter in klass.primaryConstructorParameters) {
                         if (jetParameter.hasValOrVar()) {
-                            if (jetParameter.isHidden() && !lazyDeclarationResolver.hasDescriptor(jetParameter)) {
-                                continue
-                            }
                             c.primaryConstructorParameterProperties.put(
                                 jetParameter,
                                 lazyDeclarationResolver.resolveToDescriptor(jetParameter) as PropertyDescriptor
@@ -315,9 +312,6 @@ class LazyTopDownAnalyzer(
 
     private fun createFunctionDescriptors(c: TopDownAnalysisContext, functions: List<KtNamedFunction>) {
         for (function in functions) {
-            if (function.isHidden() && !lazyDeclarationResolver.hasDescriptor(function)) {
-                continue
-            }
             val simpleFunctionDescriptor = lazyDeclarationResolver.resolveToDescriptor(function) as SimpleFunctionDescriptor
             c.functions.put(function, simpleFunctionDescriptor)
             ForceResolveUtil.forceResolveAllContents(simpleFunctionDescriptor.annotations)

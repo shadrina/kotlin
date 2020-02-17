@@ -242,14 +242,7 @@ open class LazyClassMemberScope(
         val constructor = getPrimaryConstructor() ?: return
         val primaryConstructorParameters = declarationProvider.primaryConstructorParameters
 
-        if (constructor.valueParameters.size != primaryConstructorParameters.size) {
-            val element = declarationProvider.ownerInfo?.scopeAnchor
-            if (element is KtReplaceable && (element.hasHiddenElementInitialized || element.isHidden)) {
-                return
-            } else {
-                throw AssertionError("From descriptor: ${constructor.valueParameters.size} but from PSI: ${primaryConstructorParameters.size}")
-            }
-        }
+        assert(constructor.valueParameters.size == primaryConstructorParameters.size) { "From descriptor: " + constructor.valueParameters.size + " but from PSI: " + primaryConstructorParameters.size }
 
         if (DataClassDescriptorResolver.isComponentLike(name)) {
             var componentIndex = 0
@@ -377,13 +370,8 @@ open class LazyClassMemberScope(
         val valueParameterDescriptors = primaryConstructor.valueParameters
         val primaryConstructorParameters = declarationProvider.primaryConstructorParameters
 
-        if (valueParameterDescriptors.size != primaryConstructorParameters.size) {
-            val element = declarationProvider.ownerInfo?.scopeAnchor
-            if (element is KtReplaceable && (element.hasHiddenElementInitialized || element.isHidden)) {
-                return
-            } else {
-                throw AssertionError("From descriptor: ${valueParameterDescriptors.size} but from PSI: ${primaryConstructorParameters.size}")
-            }
+        assert(valueParameterDescriptors.size == primaryConstructorParameters.size) {
+            "From descriptor: ${valueParameterDescriptors.size} but from PSI: ${primaryConstructorParameters.size}"
         }
 
         for (valueParameterDescriptor in valueParameterDescriptors) {
