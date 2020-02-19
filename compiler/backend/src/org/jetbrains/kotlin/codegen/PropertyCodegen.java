@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.descriptors.annotations.Annotations;
 import org.jetbrains.kotlin.fileClasses.JvmFileClassUtilKt;
 import org.jetbrains.kotlin.load.java.JvmAbi;
 import org.jetbrains.kotlin.psi.*;
+import org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt;
 import org.jetbrains.kotlin.resolve.BindingContext;
 import org.jetbrains.kotlin.resolve.DescriptorFactory;
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils;
@@ -88,9 +89,13 @@ public class PropertyCodegen {
     public void gen(@NotNull KtProperty property) {
         VariableDescriptor variableDescriptor = bindingContext.get(BindingContext.VARIABLE, property);
         if (!(variableDescriptor instanceof PropertyDescriptor)) {
-            throw ExceptionLogger.logDescriptorNotFound(
-                    "Property " + property.getName() + " should have a property descriptor: " + variableDescriptor, property
-            );
+            if (KtPsiUtilKt.isHidden(property)) {
+                return;
+            } else {
+                throw ExceptionLogger.logDescriptorNotFound(
+                        "Property " + property.getName() + " should have a property descriptor: " + variableDescriptor, property
+                );
+            }
         }
 
         PropertyDescriptor propertyDescriptor = (PropertyDescriptor) variableDescriptor;
