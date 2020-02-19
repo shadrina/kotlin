@@ -48,6 +48,8 @@ protected constructor(
     protected val storageManager: StorageManager = c.storageManager
     private val classDescriptors: MemoizedFunctionToNotNull<Name, List<ClassDescriptor>> =
         storageManager.createMemoizedFunction { doGetClasses(it) }
+    private val hiddenClassDescriptors: MemoizedFunctionToNotNull<Name, List<ClassDescriptor>> =
+        storageManager.createMemoizedFunction { doGetHiddenClasses(it) }
     private val functionDescriptors: MemoizedFunctionToNotNull<Name, Collection<SimpleFunctionDescriptor>> =
         storageManager.createMemoizedFunction { doGetFunctions(it) }
     private val propertyDescriptors: MemoizedFunctionToNotNull<Name, Collection<PropertyDescriptor>> =
@@ -65,12 +67,52 @@ protected constructor(
 
         val result = linkedSetOf<ClassDescriptor>()
         val classOrObjectDeclarations = declarationProvider.getClassOrObjectDeclarations(name)
-        classOrObjectDeclarations.mapTo(result) {
+        classOrObjectDeclarations.filter {
+            !it.correspondingClassOrObject.isHidden
+        }.mapTo(result) {
             val isExternal = it.modifierList?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: false
             LazyClassDescriptor(c, thisDescriptor, name, it, isExternal)
         }
         getNonDeclaredClasses(name, result)
         return result.toList()
+    }
+
+    private fun doGetHiddenClasses(name: Name): List<ClassDescriptor> {
+        mainScope?.classDescriptors?.invoke(name)?.let { return it }
+
+        val result = linkedSetOf<ClassDescriptor>()
+        val classOrObjectDeclarations = declarationProvider.getClassOrObjectDeclarations(name)
+        classOrObjectDeclarations.map {
+            if (!it.correspondingClassOrObject.isHidden) KtClassInfoUtil.createClassOrObjectInfo(it.correspondingClassOrObject.hiddenElement as KtClassOrObject)
+            else it
+        }.mapTo(result) {
+            val isExternal = it.modifierList?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: false
+            LazyClassDescriptor(c, thisDescriptor, name, it, isExternal)
+        }
+        getNonDeclaredClasses(name, result)
+        return result.toList()
+    }
+
+    fun getContributedClassifier(name: Name, location: LookupLocation, element: KtNamedDeclaration): ClassifierDescriptor? {
+        recordLookup(name, location)
+        // NB we should resolve type alias descriptors even if a class descriptor with corresponding name is present
+        val classes =
+            if (element is KtReplaceable && element.isHidden)
+                hiddenClassDescriptors(name)
+            else
+                classDescriptors(name)
+        val typeAliases = typeAliasDescriptors(name)
+        // See getFirstClassifierDiscriminateHeaders()
+        var result: ClassifierDescriptor? = null
+        for (klass in classes) {
+            if (!klass.isExpect) return klass
+            if (result == null) result = klass
+        }
+        for (typeAlias in typeAliases) {
+            if (!typeAlias.isExpect) return typeAlias
+            if (result == null) result = typeAlias
+        }
+        return result
     }
 
     override fun getContributedClassifier(name: Name, location: LookupLocation): ClassifierDescriptor? {

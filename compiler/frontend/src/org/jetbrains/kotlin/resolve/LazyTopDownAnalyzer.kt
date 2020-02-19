@@ -105,8 +105,11 @@ class LazyTopDownAnalyzer(
             visitor = ExceptionWrappingKtVisitorVoid(object : KtVisitorVoid() {
                 private fun registerDeclarations(declarations: List<KtDeclaration>) {
                     for (jetDeclaration in declarations) {
-                        (if (jetDeclaration is KtReplaceable && jetDeclaration.hasHiddenElementInitialized) jetDeclaration.hiddenElement
-                        else jetDeclaration).accept(visitor!!)
+                        if (jetDeclaration is KtReplaceable && jetDeclaration.hasHiddenElementInitialized) {
+                            jetDeclaration.hiddenElement.accept(visitor!!)
+                        } else {
+                            jetDeclaration.accept(visitor!!)
+                        }
                     }
                 }
 
