@@ -28,6 +28,13 @@ sealed class Node {
     interface WithModifiers : WithAnnotations {
         val mods: List<Modifier>
         override val anns: List<Modifier.AnnotationSet> get() = mods.mapNotNull { it as? Modifier.AnnotationSet }
+
+        fun hasModifier(keyword: Modifier.Keyword) = mods.any { it is Modifier.Lit && it.keyword == keyword }
+
+        fun isPrivate() = hasModifier(Modifier.Keyword.PRIVATE)
+        fun isProtected() = hasModifier(Modifier.Keyword.PROTECTED)
+        fun isPublic() = hasModifier(Modifier.Keyword.PUBLIC)
+        fun isInternal() = hasModifier(Modifier.Keyword.INTERNAL)
     }
 
     interface Entry : WithAnnotations {
@@ -115,6 +122,9 @@ sealed class Node {
                 "members" to members.toCode()
             )
 
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
+
             enum class Form {
                 CLASS, ENUM_CLASS, INTERFACE, OBJECT, COMPANION_OBJECT;
 
@@ -158,6 +168,9 @@ sealed class Node {
                     "mods" to mods.toCode(),
                     "params" to params.toCode()
                 )
+
+                // TODO: Filter out inappropriate modifiers
+                fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
             }
         }
 
@@ -193,6 +206,9 @@ sealed class Node {
                 "body" to body?.toCode()
             )
 
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
+
             data class Param(
                 override val mods: List<Modifier>,
                 val readOnly: Boolean?,
@@ -201,6 +217,21 @@ sealed class Node {
                 val type: Type?,
                 val default: Expr?
             ) : Node(), WithModifiers {
+                companion object {
+                    fun fromNameAndType(name: Expr.Name, type: Type?, default: Expr? = null) =
+                        Param(listOf(), null, name, type, default)
+
+                    fun fromProperty(property: Property) = property.vars.singleOrNull()?.let {
+                        Param(
+                            mods = property.mods,
+                            readOnly = property.readOnly,
+                            name = it.name,
+                            type = it.type,
+                            default = property.expr
+                        )
+                    }
+                }
+
                 override fun toCode() = stringRepresentation(
                     "Decl.Func.Param",
                     "mods" to mods.toCode(),
@@ -209,6 +240,9 @@ sealed class Node {
                     "type" to type?.toCode(),
                     "default" to default?.toCode()
                 )
+
+                // TODO: Filter out inappropriate modifiers
+                fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
             }
 
             sealed class Body : Node() {
@@ -253,6 +287,9 @@ sealed class Node {
                 "accessors" to accessors?.toCode()
             )
 
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
+
             data class Var(
                 val name: Expr.Name,
                 val type: Type?
@@ -287,6 +324,9 @@ sealed class Node {
                         "type" to type?.toCode(),
                         "body" to body?.toCode()
                     )
+
+                    // TODO: Filter out inappropriate modifiers
+                    fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
                 }
 
                 data class Set(
@@ -321,6 +361,9 @@ sealed class Node {
                 "typeParams" to typeParams.toCode(),
                 "type" to type.toCode()
             )
+
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
         }
 
         data class Constructor(
@@ -336,6 +379,9 @@ sealed class Node {
                 "delegationCall" to delegationCall?.toCode(),
                 "block" to block?.toCode()
             )
+
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
 
             data class DelegationCall(
                 val target: DelegationTarget,
@@ -368,6 +414,9 @@ sealed class Node {
                 "args" to args.toCode(),
                 "members" to members.toCode()
             )
+
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
         }
     }
 
@@ -376,12 +425,19 @@ sealed class Node {
         val name: String,
         val type: TypeRef?
     ) : Node(), WithModifiers {
+        companion object {
+            fun fromName(name: Expr.Name) = TypeParam(listOf(), name.value, null)
+        }
+
         override fun toCode() = stringRepresentation(
             "TypeParam",
             "mods" to mods.toCode(),
             "name" to stringify(name),
             "type" to type?.toCode()
         )
+
+        // TODO: Filter out inappropriate modifiers
+        fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
     }
 
     data class TypeConstraint(
@@ -407,6 +463,9 @@ sealed class Node {
                 "mods" to mods.toCode(),
                 "type" to type.toCode()
             )
+
+            // TODO: Filter out inappropriate modifiers
+            fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
         }
 
         data class Func(
@@ -473,11 +532,28 @@ sealed class Node {
         override val mods: List<Modifier>,
         val ref: TypeRef
     ) : Node(), WithModifiers {
+        companion object {
+            fun fromName(name: Expr.Name) = Type(
+                mods = listOf(),
+                ref = TypeRef.Simple(
+                    pieces = listOf(
+                        TypeRef.Simple.Piece(
+                            name = name,
+                            typeParams = listOf()
+                        )
+                    )
+                )
+            )
+        }
+
         override fun toCode() = stringRepresentation(
             "Type",
             "mods" to mods.toCode(),
             "ref" to ref.toCode()
         )
+
+        // TODO: Filter out inappropriate modifiers
+        fun withModifier(keyword: Modifier.Keyword) = copy(mods = mods + Modifier.Lit(keyword))
     }
 
     data class ValueArg(
@@ -485,6 +561,10 @@ sealed class Node {
         val asterisk: Boolean,
         val expr: Expr
     ) : Node() {
+        companion object {
+            fun fromExpr(expr: Expr) = ValueArg(null, false, expr)
+        }
+
         override fun toCode() = stringRepresentation(
             "ValueArg",
             "name" to stringify(name),
