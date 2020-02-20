@@ -370,9 +370,9 @@ open class LazyClassMemberScope(
         val valueParameterDescriptors = primaryConstructor.valueParameters
         val primaryConstructorParameters = declarationProvider.primaryConstructorParameters
 
-        assert(valueParameterDescriptors.size == primaryConstructorParameters.size) {
-            "From descriptor: ${valueParameterDescriptors.size} but from PSI: ${primaryConstructorParameters.size}"
-        }
+//        assert(valueParameterDescriptors.size == primaryConstructorParameters.size) {
+//            "From descriptor: ${valueParameterDescriptors.size} but from PSI: ${primaryConstructorParameters.size}"
+//        }
 
         for (valueParameterDescriptor in valueParameterDescriptors) {
             if (name != valueParameterDescriptor.name) continue
