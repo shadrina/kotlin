@@ -81,7 +81,7 @@ public abstract class KtTypeParameterListOwnerStub<T extends KotlinStubWithFqNam
 
     @Override
     public void initializeHiddenElement(@NotNull MacroExpander macroExpander) {
-        if (metaTools == null || !isMacroAnnotated()) {
+        if (metaTools == null || !isMacroAnnotated() || hiddenElement != null) {
             return;
         }
         Node nodeToConvert = convertToNode();
