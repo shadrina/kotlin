@@ -24,18 +24,20 @@ class KotlinMacroExpansionLineMarkerProvider : RelatedItemLineMarkerProvider() {
 
     override fun collectNavigationMarkers(element: PsiElement, result: MutableCollection<in RelatedItemLineMarkerInfo<PsiElement>>) {
         if (element !is KtReplaceable || element is KtQuotation) return
-        element.expandMarker()?.let { result.add(it) }
-        element.undoMarker()?.let { result.add(it) }
+        expandMarker(element)?.let { result.add(it) }
+        undoMarker(element)?.let { result.add(it) }
     }
 
-    private fun KtReplaceable.expandMarker(): MacroExpandedElementMarkerInfo? {
-        if (!hasHiddenElementInitialized) return null
-        return MacroExpandedElementMarkerInfo(this, "Expand macro") { _, elt -> expandMacroAnnotation(elt) }
+    private fun PsiElement.firstLeaf(): PsiElement = if (firstChild == null) this else firstChild.firstLeaf()
+
+    private fun expandMarker(replaceable: KtReplaceable): MacroExpandedElementMarkerInfo? {
+        if (!replaceable.hasHiddenElementInitialized) return null
+        return MacroExpandedElementMarkerInfo(replaceable.firstLeaf(), "Expand macro") { _, _ -> expandMacroAnnotation(replaceable) }
     }
 
-    private fun KtReplaceable.undoMarker(): MacroExpandedElementMarkerInfo? {
-        val text = getUserData(KEY) ?: return null
-        return MacroExpandedElementMarkerInfo(this, "Undo expansion") { _, elt -> undoMacroExpansion(elt, text) }
+    private fun undoMarker(replaceable: KtReplaceable): MacroExpandedElementMarkerInfo? {
+        val text = replaceable.getUserData(KEY) ?: return null
+        return MacroExpandedElementMarkerInfo(replaceable.firstLeaf(), "Undo expansion") { _, _ -> undoMacroExpansion(replaceable, text) }
     }
 
     private fun expandMacroAnnotation(element: PsiElement) {
