@@ -40,6 +40,8 @@ abstract class KtConstructor<T : KtConstructor<T>> : KtDeclarationStub<KotlinPla
 
     override fun getReceiverTypeReference() = null
 
+    override fun getAdditionalReceiverTypeReference() = null
+
     override fun getTypeReference() = null
 
     @Throws(IncorrectOperationException::class)

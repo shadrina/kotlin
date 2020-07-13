@@ -16,4 +16,9 @@ class KtAdditionalReceiver : KtElementImplStub<KotlinPlaceHolderStub<KtAdditiona
     override fun <R : Any?, D : Any?> accept(visitor: KtVisitor<R, D>, data: D): R {
         return visitor.visitAdditionalReceiver(this, data)
     }
+
+    fun typeReference(): KtTypeReference? {
+        val typeArgumentList = lastChild as KtTypeArgumentList
+        return typeArgumentList.arguments.singleOrNull()?.typeReference
+    }
 }

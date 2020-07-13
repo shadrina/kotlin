@@ -115,6 +115,43 @@ public class KtProperty extends KtTypeParameterListOwnerStub<KotlinPropertyStub>
     }
 
     @Nullable
+    @Override
+    public KtTypeReference getAdditionalReceiverTypeReference() {
+        KotlinPropertyStub stub = getStub();
+        if (stub != null) {
+            if (!stub.isExtension()) {
+                return null;
+            }
+            else {
+                KtAdditionalReceiver additionalReceiver = getStubOrPsiChild(KtStubElementTypes.ADDITIONAL_RECEIVER);
+                if (additionalReceiver != null) {
+                    return additionalReceiver.typeReference();
+                } else {
+                    return null;
+                }
+            }
+        }
+        return getAdditionalReceiverTypeRefByTree();
+    }
+
+    @Nullable
+    private KtTypeReference getAdditionalReceiverTypeRefByTree() {
+        ASTNode node = getNode().getFirstChildNode();
+        while (node != null) {
+            IElementType tt = node.getElementType();
+            if (tt == KtTokens.COLON) break;
+
+            if (tt == KtNodeTypes.ADDITIONAL_RECEIVER) {
+                KtAdditionalReceiver additionalReceiver = (KtAdditionalReceiver) node.getPsi();
+                return additionalReceiver.typeReference();
+            }
+            node = node.getTreeNext();
+        }
+
+        return null;
+    }
+
+    @Nullable
     private KtTypeReference getReceiverTypeRefByTree() {
         ASTNode node = getNode().getFirstChildNode();
         while (node != null) {
