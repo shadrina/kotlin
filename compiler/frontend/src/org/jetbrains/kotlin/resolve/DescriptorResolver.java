@@ -957,6 +957,11 @@ public class DescriptorResolver {
             if (receiverTypeRef != null) {
                 receiverType = typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, receiverTypeRef, trace, true);
             }
+
+            KtTypeReference additionalReceiverTypeRef = variableDeclaration.getAdditionalReceiverTypeReference();
+            if (additionalReceiverTypeRef != null) {
+                typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, additionalReceiverTypeRef, trace, true);
+            }
         }
 
         ReceiverParameterDescriptor receiverDescriptor;

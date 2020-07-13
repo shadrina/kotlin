@@ -164,6 +164,12 @@ public class KtParameter extends KtNamedDeclarationStub<KotlinParameterStub> imp
 
     @Nullable
     @Override
+    public KtTypeReference getAdditionalReceiverTypeReference() {
+        return null;
+    }
+
+    @Nullable
+    @Override
     public KtTypeParameterList getTypeParameterList() {
         return null;
     }
