@@ -76,6 +76,12 @@ public class KtDestructuringDeclarationEntry extends KtNamedDeclarationNotStubbe
 
     @Nullable
     @Override
+    public KtTypeReference getAdditionalReceiverTypeReference() {
+        return null;
+    }
+
+    @Nullable
+    @Override
     public KtTypeParameterList getTypeParameterList() {
         return null;
     }
