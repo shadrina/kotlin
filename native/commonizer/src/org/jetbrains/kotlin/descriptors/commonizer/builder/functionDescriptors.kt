@@ -5,10 +5,7 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.builder
 
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
-import org.jetbrains.kotlin.descriptors.SourceElement
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirFunction
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirFunctionNode
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirNode.Companion.indexOfCommon
@@ -73,6 +70,7 @@ private fun CirFunction.buildDescriptor(
     functionDescriptor.initialize(
         extensionReceiver?.buildExtensionReceiver(targetComponents, typeParameterResolver, functionDescriptor),
         buildDispatchReceiver(functionDescriptor),
+        emptyList(),
         typeParameters,
         valueParameters.buildDescriptors(targetComponents, typeParameterResolver, functionDescriptor),
         returnType.buildType(targetComponents, typeParameterResolver),

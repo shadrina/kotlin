@@ -49,7 +49,13 @@ internal fun genClearCacheFunction(packageFragmentDescriptor: PackageFragmentDes
     val unitType = packageFragmentDescriptor.builtIns.unitType
     return function.initialize(
         DescriptorFactory.createExtensionReceiverParameterForCallable(function, receiverType, Annotations.EMPTY),
-        null, emptyList(), emptyList(), unitType, Modality.FINAL, DescriptorVisibilities.PUBLIC
+        null,
+        emptyList(),
+        emptyList(),
+        emptyList(),
+        unitType,
+        Modality.FINAL,
+        DescriptorVisibilities.PUBLIC
     )
 }
 
@@ -120,10 +126,11 @@ private fun genProperty(
     // todo support (Mutable)List
     val flexibleType = KotlinTypeFactory.flexibleType(type, type.makeNullableAsSpecified(true))
     property.setType(
-            flexibleType,
-            emptyList<TypeParameterDescriptor>(),
-            null,
-            DescriptorFactory.createExtensionReceiverParameterForCallable(property, receiverType, Annotations.EMPTY)
+        flexibleType,
+        emptyList<TypeParameterDescriptor>(),
+        null,
+        DescriptorFactory.createExtensionReceiverParameterForCallable(property, receiverType, Annotations.EMPTY),
+        emptyList<ReceiverParameterDescriptor>()
     )
 
     val getter = PropertyGetterDescriptorImpl(

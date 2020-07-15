@@ -57,6 +57,7 @@ class AccessorForConstructorDescriptor(
         initialize(
             calleeDescriptor.extensionReceiverParameter?.copy(this),
             calleeDescriptor.dispatchReceiverParameter,
+            calleeDescriptor.additionalReceiverParameters.map { p -> p.copy(this) },
             copyTypeParameters(calleeDescriptor),
             copyValueParameters(calleeDescriptor),
             calleeDescriptor.returnType,

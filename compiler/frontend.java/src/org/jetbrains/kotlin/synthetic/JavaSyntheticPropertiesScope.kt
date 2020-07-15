@@ -333,7 +333,8 @@ class JavaSyntheticPropertiesScope(storageManager: StorageManager, private val l
                 val receiverType = typeSubstitutor.safeSubstitute(ownerClass.defaultType, Variance.INVARIANT)
                 descriptor.setType(
                     propertyType, typeParameters, null,
-                    DescriptorFactory.createExtensionReceiverParameterForCallable(descriptor, receiverType, Annotations.EMPTY)
+                    DescriptorFactory.createExtensionReceiverParameterForCallable(descriptor, receiverType, Annotations.EMPTY),
+                    emptyList()
                 )
 
                 val getter = PropertyGetterDescriptorImpl(

@@ -91,8 +91,7 @@ public class SignaturesPropagationData {
                 SourceElement.NO_SOURCE
         );
         autoMethodDescriptor.initialize(
-                null,
-                containingClass.getThisAsReceiverParameter(),
+                null, containingClass.getThisAsReceiverParameter(), CollectionsKt.emptyList(),
                 autoTypeParameters,
                 autoValueParameters,
                 autoReturnType,

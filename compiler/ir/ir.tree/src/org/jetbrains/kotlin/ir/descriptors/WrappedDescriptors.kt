@@ -119,6 +119,8 @@ abstract class WrappedCallableDescriptor<T : IrDeclaration> : CallableDescriptor
 
     override fun getSource() = SourceElement.NO_SOURCE
 
+    override fun getAdditionalReceiverParameters(): List<ReceiverParameterDescriptor> = emptyList()
+
     override fun getExtensionReceiverParameter(): ReceiverParameterDescriptor? = null
 
     override fun getDispatchReceiverParameter(): ReceiverParameterDescriptor? = null
@@ -836,6 +838,8 @@ open class WrappedPropertyDescriptor : PropertyDescriptor, WrappedDeclarationDes
 
     override fun isExternal() = owner.isExternal
 
+    override fun getAdditionalReceiverParameters(): List<ReceiverParameterDescriptor> = emptyList()
+
     override fun <R : Any?, D : Any?> accept(visitor: DeclarationDescriptorVisitor<R, D>?, data: D) =
         visitor!!.visitPropertyDescriptor(this, data)
 
@@ -1026,6 +1030,9 @@ open class WrappedFieldDescriptor : PropertyDescriptor, WrappedDeclarationDescri
         owner.correspondingPropertySymbol?.owner?.descriptor?.extensionReceiverParameter
 
     override fun isExternal() = owner.isExternal
+
+    override fun getAdditionalReceiverParameters() =
+        owner.correspondingPropertySymbol?.owner?.descriptor?.additionalReceiverParameters ?: emptyList()
 
     override fun <R : Any?, D : Any?> accept(visitor: DeclarationDescriptorVisitor<R, D>?, data: D) =
         visitor!!.visitPropertyDescriptor(this, data)

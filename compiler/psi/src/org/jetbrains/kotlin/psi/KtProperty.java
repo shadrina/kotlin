@@ -114,28 +114,23 @@ public class KtProperty extends KtTypeParameterListOwnerStub<KotlinPropertyStub>
         return getReceiverTypeRefByTree();
     }
 
-    @Nullable
+    @NotNull
     @Override
-    public KtTypeReference getAdditionalReceiverTypeReference() {
+    public List<KtTypeReference> getAdditionalReceiverTypeReferences() {
         KotlinPropertyStub stub = getStub();
         if (stub != null) {
-            if (!stub.isExtension()) {
-                return null;
-            }
-            else {
-                KtAdditionalReceiver additionalReceiver = getStubOrPsiChild(KtStubElementTypes.ADDITIONAL_RECEIVER);
-                if (additionalReceiver != null) {
-                    return additionalReceiver.typeReference();
-                } else {
-                    return null;
-                }
+            KtAdditionalReceiver additionalReceiver = getStubOrPsiChild(KtStubElementTypes.ADDITIONAL_RECEIVER);
+            if (additionalReceiver != null) {
+                return additionalReceiver.typeReferences();
+            } else {
+                return Collections.emptyList();
             }
         }
         return getAdditionalReceiverTypeRefByTree();
     }
 
-    @Nullable
-    private KtTypeReference getAdditionalReceiverTypeRefByTree() {
+    @NotNull
+    private List<KtTypeReference> getAdditionalReceiverTypeRefByTree() {
         ASTNode node = getNode().getFirstChildNode();
         while (node != null) {
             IElementType tt = node.getElementType();
@@ -143,12 +138,12 @@ public class KtProperty extends KtTypeParameterListOwnerStub<KotlinPropertyStub>
 
             if (tt == KtNodeTypes.ADDITIONAL_RECEIVER) {
                 KtAdditionalReceiver additionalReceiver = (KtAdditionalReceiver) node.getPsi();
-                return additionalReceiver.typeReference();
+                return additionalReceiver.typeReferences();
             }
             node = node.getTreeNext();
         }
 
-        return null;
+        return Collections.emptyList();
     }
 
     @Nullable

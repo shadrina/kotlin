@@ -16,13 +16,11 @@ import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.platform.konan.isNative
 import org.jetbrains.kotlin.psi.synthetics.SyntheticClassOrObjectDescriptor
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.calls.components.isVararg
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
-import org.jetbrains.kotlin.resolve.descriptorUtil.platform
 import org.jetbrains.kotlin.resolve.lazy.LazyClassContext
 import org.jetbrains.kotlin.resolve.lazy.declarations.ClassMemberDeclarationProvider
 import org.jetbrains.kotlin.resolve.lazy.descriptors.LazyClassDescriptor
@@ -243,7 +241,8 @@ object KSerializerDescriptorResolver {
             propertyFromSerializer.type,
             propertyFromSerializer.typeParameters,
             companionDescriptor.thisAsReceiverParameter,
-            extensionReceiverParameter
+            extensionReceiverParameter,
+            emptyList()
         )
 
         val propertyGetter = PropertyGetterDescriptorImpl(
@@ -276,6 +275,7 @@ object KSerializerDescriptorResolver {
         functionDescriptor.initialize(
             null,
             companionDescriptor.thisAsReceiverParameter,
+            emptyList(),
             functionFromSerializer.typeParameters,
             functionFromSerializer.valueParameters.map { it.copy(functionDescriptor, it.name, it.index) },
             functionFromSerializer.returnType,
@@ -452,6 +452,7 @@ object KSerializerDescriptorResolver {
         f.initialize(
             null,
             thisClass.thisAsReceiverParameter,
+            emptyList(),
             listOf(),
             listOf(vararg),
             kSerializerStarType,
@@ -481,7 +482,16 @@ object KSerializerDescriptorResolver {
         val serialReturnType =
             KotlinTypeFactory.simpleNotNullType(Annotations.EMPTY, serializerClass, listOf(TypeProjectionImpl(newSerializableType)))
 
-        f.initialize(null, thisClass.thisAsReceiverParameter, typeArgs, args, serialReturnType, Modality.FINAL, DescriptorVisibilities.PUBLIC)
+        f.initialize(
+            null,
+            thisClass.thisAsReceiverParameter,
+            emptyList(),
+            typeArgs,
+            args,
+            serialReturnType,
+            Modality.FINAL,
+            DescriptorVisibilities.PUBLIC
+        )
         return f
     }
 
@@ -571,6 +581,7 @@ object KSerializerDescriptorResolver {
         f.initialize(
             null,
             thisClass.thisAsReceiverParameter,
+            emptyList(),
             typeArgs,
             args,
             returnType,

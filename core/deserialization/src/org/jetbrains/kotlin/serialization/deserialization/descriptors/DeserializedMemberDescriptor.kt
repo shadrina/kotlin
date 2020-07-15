@@ -79,8 +79,9 @@ class DeserializedSimpleFunctionDescriptor(
             isExperimentalCoroutineInReleaseEnvironment: DeserializedMemberDescriptor.CoroutinesCompatibilityMode
     ): SimpleFunctionDescriptorImpl {
         return super.initialize(
-            extensionReceiverParameter,
+            extensionReceiverParameter, // TODO
             dispatchReceiverParameter,
+            emptyList(),
             typeParameters,
             unsubstitutedValueParameters,
             unsubstitutedReturnType,
