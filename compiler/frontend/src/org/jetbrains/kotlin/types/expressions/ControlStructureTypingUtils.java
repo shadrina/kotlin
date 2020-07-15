@@ -226,8 +226,7 @@ public class ControlStructureTypingUtils {
         }
         KotlinType returnType = construct != ResolveConstruct.ELVIS ? type : TypeUtilsKt.replaceAnnotations(type, AnnotationsForResolveKt.getExactInAnnotations());
         function.initialize(
-                null,
-                null,
+                null, null, Collections.emptyList(),
                 Lists.newArrayList(typeParameter),
                 valueParameters,
                 returnType,

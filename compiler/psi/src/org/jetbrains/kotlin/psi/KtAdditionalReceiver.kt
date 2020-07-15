@@ -17,8 +17,8 @@ class KtAdditionalReceiver : KtElementImplStub<KotlinPlaceHolderStub<KtAdditiona
         return visitor.visitAdditionalReceiver(this, data)
     }
 
-    fun typeReference(): KtTypeReference? {
+    fun typeReferences(): List<KtTypeReference> {
         val typeArgumentList = lastChild as KtTypeArgumentList
-        return typeArgumentList.arguments.singleOrNull()?.typeReference
+        return typeArgumentList.arguments.mapNotNull { it.typeReference }
     }
 }

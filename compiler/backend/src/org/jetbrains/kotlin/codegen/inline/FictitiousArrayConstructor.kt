@@ -30,8 +30,14 @@ internal class FictitiousArrayConstructor(arrayClass: ClassDescriptor) : SimpleF
             val arrayClass = arrayConstructor.constructedClass
             return FictitiousArrayConstructor(arrayClass).apply {
                 this.initialize(
-                    null, null, arrayConstructor.typeParameters, arrayConstructor.valueParameters, arrayClass.defaultType,
-                    Modality.FINAL, Visibilities.PUBLIC
+                    null,
+                    null,
+                    emptyList(),
+                    arrayConstructor.typeParameters,
+                    arrayConstructor.valueParameters,
+                    arrayClass.defaultType,
+                    Modality.FINAL,
+                    Visibilities.PUBLIC
                 )
                 this.isInline = true
             }
