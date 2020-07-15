@@ -136,7 +136,7 @@ public class DescriptorFactory {
         SimpleFunctionDescriptorImpl values =
                 SimpleFunctionDescriptorImpl.create(enumClass, Annotations.Companion.getEMPTY(), DescriptorUtils.ENUM_VALUES,
                                                     CallableMemberDescriptor.Kind.SYNTHESIZED, enumClass.getSource());
-        return values.initialize(null, null, Collections.<TypeParameterDescriptor>emptyList(),
+        return values.initialize(null, null, Collections.<ReceiverParameterDescriptor>emptyList(), Collections.<TypeParameterDescriptor>emptyList(),
                                  Collections.<ValueParameterDescriptor>emptyList(),
                                  getBuiltIns(enumClass).getArrayType(Variance.INVARIANT, enumClass.getDefaultType()),
                                  Modality.FINAL, Visibilities.PUBLIC);
@@ -155,7 +155,7 @@ public class DescriptorFactory {
                 null,
                 enumClass.getSource()
         );
-        return valueOf.initialize(null, null, Collections.<TypeParameterDescriptor>emptyList(),
+        return valueOf.initialize(null, null, Collections.<ReceiverParameterDescriptor>emptyList(), Collections.<TypeParameterDescriptor>emptyList(),
                                   Collections.singletonList(parameterDescriptor), enumClass.getDefaultType(),
                                   Modality.FINAL, Visibilities.PUBLIC);
     }
