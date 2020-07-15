@@ -594,7 +594,13 @@ class LazyJavaClassMemberScope(
         propertyDescriptor.initialize(getter, null)
 
         val returnType = givenType ?: computeMethodReturnType(method, c.childForMethod(propertyDescriptor, method))
-        propertyDescriptor.setType(returnType, listOf(), getDispatchReceiverParameter(), null)
+        propertyDescriptor.setType(
+            returnType,
+            listOf(),
+            getDispatchReceiverParameter(),
+            null,
+            emptyList()
+        )
         getter.initialize(returnType)
 
         return propertyDescriptor
@@ -620,7 +626,13 @@ class LazyJavaClassMemberScope(
 
         val propertyDescriptor = JavaForKotlinOverridePropertyDescriptor(ownerDescriptor, getterMethod, setterMethod, overriddenProperty)
 
-        propertyDescriptor.setType(getterMethod.returnType!!, listOf(), getDispatchReceiverParameter(), null)
+        propertyDescriptor.setType(
+            getterMethod.returnType!!,
+            listOf(),
+            getDispatchReceiverParameter(),
+            null,
+            emptyList()
+        )
 
         val getter = DescriptorFactory.createGetter(
             propertyDescriptor, getterMethod.annotations, /* isDefault = */false,

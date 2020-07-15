@@ -5,10 +5,7 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.builder
 
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
-import org.jetbrains.kotlin.descriptors.SourceElement
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirProperty
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirPropertyNode
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirNode.Companion.indexOfCommon
@@ -80,7 +77,8 @@ private fun CirProperty.buildDescriptor(
         returnType.buildType(targetComponents, typeParameterResolver),
         typeParameters,
         buildDispatchReceiver(propertyDescriptor),
-        extensionReceiver?.buildExtensionReceiver(targetComponents, typeParameterResolver, propertyDescriptor)
+        extensionReceiver?.buildExtensionReceiver(targetComponents, typeParameterResolver, propertyDescriptor),
+        emptyList()
     )
 
     val getterDescriptor = getter?.let { getter ->

@@ -82,6 +82,7 @@ public class ForceResolveUtil {
         }
         else if (object instanceof CallableDescriptor) {
             CallableDescriptor callableDescriptor = (CallableDescriptor) object;
+            callableDescriptor.getAdditionalReceiverParameters().forEach(p -> forceResolveAllContents(p.getType()));
             ReceiverParameterDescriptor parameter = callableDescriptor.getExtensionReceiverParameter();
             if (parameter != null) {
                 forceResolveAllContents(parameter.getType());

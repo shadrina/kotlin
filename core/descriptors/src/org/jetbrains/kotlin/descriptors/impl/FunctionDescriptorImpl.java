@@ -23,6 +23,7 @@ public abstract class FunctionDescriptorImpl extends DeclarationDescriptorNonRoo
     private List<TypeParameterDescriptor> typeParameters;
     private List<ValueParameterDescriptor> unsubstitutedValueParameters;
     private KotlinType unsubstitutedReturnType;
+    private List<ReceiverParameterDescriptor> additionalReceiverParameters;
     private ReceiverParameterDescriptor extensionReceiverParameter;
     private ReceiverParameterDescriptor dispatchReceiverParameter;
     private Modality modality;
@@ -68,6 +69,7 @@ public abstract class FunctionDescriptorImpl extends DeclarationDescriptorNonRoo
     public FunctionDescriptorImpl initialize(
             @Nullable ReceiverParameterDescriptor extensionReceiverParameter,
             @Nullable ReceiverParameterDescriptor dispatchReceiverParameter,
+            @NotNull List<ReceiverParameterDescriptor> additionalReceiverParameters,
             @NotNull List<? extends TypeParameterDescriptor> typeParameters,
             @NotNull List<ValueParameterDescriptor> unsubstitutedValueParameters,
             @Nullable KotlinType unsubstitutedReturnType,
@@ -81,6 +83,7 @@ public abstract class FunctionDescriptorImpl extends DeclarationDescriptorNonRoo
         this.visibility = visibility;
         this.extensionReceiverParameter = extensionReceiverParameter;
         this.dispatchReceiverParameter = dispatchReceiverParameter;
+        this.additionalReceiverParameters = additionalReceiverParameters;
 
         for (int i = 0; i < typeParameters.size(); ++i) {
             TypeParameterDescriptor typeParameterDescriptor = typeParameters.get(i);
@@ -163,6 +166,12 @@ public abstract class FunctionDescriptorImpl extends DeclarationDescriptorNonRoo
 
     public void setExtensionReceiverParameter(@NotNull ReceiverParameterDescriptor extensionReceiverParameter) {
         this.extensionReceiverParameter = extensionReceiverParameter;
+    }
+
+    @NotNull
+    @Override
+    public List<ReceiverParameterDescriptor> getAdditionalReceiverParameters() {
+        return additionalReceiverParameters;
     }
 
     @Nullable
@@ -664,8 +673,7 @@ public abstract class FunctionDescriptorImpl extends DeclarationDescriptorNonRoo
         }
 
         substitutedDescriptor.initialize(
-                substitutedReceiverParameter,
-                substitutedExpectedThis,
+                substitutedReceiverParameter, substitutedExpectedThis, CollectionsKt.<ReceiverParameterDescriptor>emptyList(),
                 substitutedTypeParameters,
                 substitutedValueParameters,
                 substitutedReturnType,

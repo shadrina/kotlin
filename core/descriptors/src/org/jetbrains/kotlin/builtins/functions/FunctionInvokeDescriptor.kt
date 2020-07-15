@@ -113,15 +113,16 @@ class FunctionInvokeDescriptor private constructor(
 
             val result = FunctionInvokeDescriptor(functionClass, null, CallableMemberDescriptor.Kind.DECLARATION, isSuspend)
             result.initialize(
-                    null,
-                    functionClass.thisAsReceiverParameter,
-                    listOf(),
-                    typeParameters.takeWhile { it.variance == Variance.IN_VARIANCE }
-                            .withIndex()
-                            .map { createValueParameter(result, it.index, it.value) },
-                    typeParameters.last().defaultType,
-                    Modality.ABSTRACT,
-                    DescriptorVisibilities.PUBLIC
+                null,
+                functionClass.thisAsReceiverParameter,
+                listOf(),
+                listOf(),
+                typeParameters.takeWhile { it.variance == Variance.IN_VARIANCE }
+                    .withIndex()
+                    .map { createValueParameter(result, it.index, it.value) },
+                typeParameters.last().defaultType,
+                Modality.ABSTRACT,
+                DescriptorVisibilities.PUBLIC
             )
             result.setHasSynthesizedParameterNames(true)
             return result

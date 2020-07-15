@@ -33,7 +33,13 @@ class ScriptProvidedPropertyDescriptor(
     /* isDelegated = */ false
 ) {
     init {
-        setType(typeDescriptor.defaultType, emptyList(), receiver, null)
+        setType(
+            typeDescriptor.defaultType,
+            emptyList(),
+            receiver,
+            null,
+            emptyList()
+        )
         initialize(
             makePropertyGetterDescriptor(),
             if (!isVar) null else makePropertySetterDescriptor()

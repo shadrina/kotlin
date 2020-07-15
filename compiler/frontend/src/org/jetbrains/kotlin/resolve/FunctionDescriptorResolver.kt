@@ -186,9 +186,9 @@ class FunctionDescriptorResolver(
                 if (function is KtFunctionLiteral) expectedFunctionType.getReceiverType() else null
             }
 
-        val additionalReceiverTypeRef = function.additionalReceiverTypeReference
-        if (additionalReceiverTypeRef != null) {
-            typeResolver.resolveType(headerScope, additionalReceiverTypeRef, trace, true)
+        val additionalReceiverTypeRefs = function.additionalReceiverTypeReferences
+        val additionalReceiverTypes = additionalReceiverTypeRefs.map {
+            typeResolver.resolveType(headerScope, it, trace, true)
         }
 
         val valueParameterDescriptors =
@@ -221,10 +221,17 @@ class FunctionDescriptorResolver(
                 functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
             )
         }
+        val additionalReceivers = additionalReceiverTypes.map {
+            val splitter = AnnotationSplitter(storageManager, it.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
+            DescriptorFactory.createExtensionReceiverParameterForCallable(
+                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
+            )
+        }
 
         functionDescriptor.initialize(
             extensionReceiver,
             getDispatchReceiverParameterIfNeeded(container),
+            additionalReceivers,
             typeParameterDescriptors,
             valueParameterDescriptors,
             returnType,
@@ -380,9 +387,9 @@ class FunctionDescriptorResolver(
         )
         constructorDescriptor.isExpect = classDescriptor.isExpect
         constructorDescriptor.isActual =
-                modifierList?.hasActualModifier() == true ||
-                // We don't require 'actual' for constructors of actual annotations
-                classDescriptor.kind == ClassKind.ANNOTATION_CLASS && classDescriptor.isActual
+            modifierList?.hasActualModifier() == true ||
+                    // We don't require 'actual' for constructors of actual annotations
+                    classDescriptor.kind == ClassKind.ANNOTATION_CLASS && classDescriptor.isActual
         if (declarationToTrace is PsiElement)
             trace.record(BindingContext.CONSTRUCTOR, declarationToTrace, constructorDescriptor)
         val parameterScope = LexicalWritableScope(

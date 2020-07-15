@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.descriptors.impl.ValueParameterDescriptorImpl
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.*
 import org.jetbrains.kotlin.types.typeUtil.asTypeProjection
-import java.util.*
 
 fun createSamConstructorFunction(
     owner: DeclarationDescriptor,
@@ -99,7 +98,9 @@ private fun initializeSamConstructorDescriptor(
     samConstructor.initialize(
         null,
         null,
-        typeParameters.descriptors, listOf(parameter),
+        emptyList(),
+        typeParameters.descriptors,
+        listOf(parameter),
         returnType,
         Modality.FINAL,
         samInterface.visibility

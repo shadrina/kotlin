@@ -127,8 +127,14 @@ class IrBuiltIns(
             returnKotlinType = typeParameterDescriptor.typeConstructor.makeNonNullType()
 
             initialize(
-                null, null, listOf(typeParameterDescriptor), listOf(valueParameterDescriptor), returnKotlinType,
-                Modality.FINAL, DescriptorVisibilities.PUBLIC
+                null,
+                null,
+                emptyList(),
+                listOf(typeParameterDescriptor),
+                listOf(valueParameterDescriptor),
+                returnKotlinType,
+                Modality.FINAL,
+                DescriptorVisibilities.PUBLIC
             )
         }
 

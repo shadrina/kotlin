@@ -131,6 +131,10 @@ abstract class IrBasedCallableDescriptor<T : IrDeclaration>(owner: T) : Callable
 
     override fun getDispatchReceiverParameter(): ReceiverParameterDescriptor? = null
 
+    override fun getAdditionalReceiverParameters(): List<ReceiverParameterDescriptor> {
+        TODO("not implemented")
+    }
+
     override fun getTypeParameters(): List<TypeParameterDescriptor> {
         TODO("not implemented")
     }
@@ -828,6 +832,10 @@ open class IrBasedPropertyDescriptor(owner: IrProperty) :
     override fun getExtensionReceiverParameter() =
         owner.getter?.extensionReceiverParameter?.toIrBasedDescriptor() as? ReceiverParameterDescriptor
 
+    override fun getAdditionalReceiverParameters(): List<ReceiverParameterDescriptor> {
+        TODO("Not yet implemented")
+    }
+
     override fun isExternal() = owner.isExternal
 
     override fun <R : Any?, D : Any?> accept(visitor: DeclarationDescriptorVisitor<R, D>?, data: D) =
@@ -1007,6 +1015,10 @@ open class IrBasedFieldDescriptor(owner: IrField) : PropertyDescriptor, IrBasedD
 
     override fun getExtensionReceiverParameter(): ReceiverParameterDescriptor? =
         owner.correspondingPropertySymbol?.owner?.toIrBasedDescriptor()?.extensionReceiverParameter
+
+    override fun getAdditionalReceiverParameters(): List<ReceiverParameterDescriptor> {
+        TODO("Not yet implemented")
+    }
 
     override fun isExternal() = owner.isExternal
 
