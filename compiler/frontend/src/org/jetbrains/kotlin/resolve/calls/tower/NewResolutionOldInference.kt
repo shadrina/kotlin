@@ -79,7 +79,7 @@ class NewResolutionOldInference(
     private val candidateInterceptor: CandidateInterceptor
 ) {
     sealed class ResolutionKind {
-        abstract internal fun createTowerProcessor(
+        internal abstract fun createTowerProcessor(
             outer: NewResolutionOldInference,
             name: Name,
             tracing: TracingStrategy,
@@ -357,7 +357,7 @@ class NewResolutionOldInference(
         return true
     }
 
-    public class ImplicitScopeTowerImpl(
+    class ImplicitScopeTowerImpl(
         val resolutionContext: BasicCallResolutionContext,
         override val dynamicScope: MemberScope,
         override val syntheticScopes: SyntheticScopes,
@@ -369,10 +369,8 @@ class NewResolutionOldInference(
     ) : ImplicitScopeTower {
         private val cache = HashMap<ReceiverValue, ReceiverValueWithSmartCastInfo>()
 
-        override fun getImplicitReceiver(scope: LexicalScope): ReceiverValueWithSmartCastInfo? =
-            scope.implicitReceiver?.value?.let {
-                cache.getOrPut(it) { resolutionContext.transformToReceiverWithSmartCastInfo(it) }
-            }
+        override fun getImplicitReceivers(scope: LexicalScope): List<ReceiverValueWithSmartCastInfo> =
+            scope.implicitReceivers.map { cache.getOrPut(it.value) { resolutionContext.transformToReceiverWithSmartCastInfo(it.value) } }
 
         override val lexicalScope: LexicalScope get() = resolutionContext.scope
 
