@@ -156,7 +156,7 @@ public class BodyResolver {
                                     outerDataFlowInfo, trace, headerInnerScope, constructor, descriptor
                             ),
                             scope -> new LexicalScopeImpl(
-                                    scope, descriptor, scope.isOwnerDescriptorAccessibleByLabel(), scope.getImplicitReceiver(),
+                                    scope, descriptor, scope.isOwnerDescriptorAccessibleByLabel(), scope.getImplicitReceivers(),
                                     LexicalScopeKind.CONSTRUCTOR_HEADER
                             ));
     }
@@ -421,11 +421,11 @@ public class BodyResolver {
     }
 
     private void checkRedeclarationsInClassHeaderWithoutPrimaryConstructor(
-            @NotNull final ClassDescriptor descriptor, @NotNull LexicalScope scopeForConstructorResolution
+            @NotNull ClassDescriptor descriptor, @NotNull LexicalScope scopeForConstructorResolution
     ) {
         // Initializing a scope will report errors if any.
         new LexicalScopeImpl(
-                scopeForConstructorResolution, descriptor, true, null, LexicalScopeKind.CLASS_HEADER,
+                scopeForConstructorResolution, descriptor, true, Collections.emptyList(), LexicalScopeKind.CLASS_HEADER,
                 new TraceBasedLocalRedeclarationChecker(trace, overloadChecker),
                 new Function1<LexicalScopeImpl.InitializeHandler, Unit>() {
                     @Override
@@ -738,7 +738,7 @@ public class BodyResolver {
             LexicalScope originalScope,
             ConstructorDescriptor unsubstitutedPrimaryConstructor
     ) {
-        return new LexicalScopeImpl(originalScope, unsubstitutedPrimaryConstructor, false, null,
+        return new LexicalScopeImpl(originalScope, unsubstitutedPrimaryConstructor, false, Collections.emptyList(),
                                     LexicalScopeKind.DEFAULT_VALUE, LocalRedeclarationChecker.DO_NOTHING.INSTANCE,
                                     handler -> {
                                         for (ValueParameterDescriptor valueParameter : unsubstitutedPrimaryConstructor.getValueParameters()) {
@@ -809,7 +809,12 @@ public class BodyResolver {
         LexicalScope accessorDeclaringScope = c.getDeclaringScope(accessor);
         assert accessorDeclaringScope != null : "Scope for accessor " + accessor.getText() + " should exists";
         LexicalScope headerScope = ScopeUtils.makeScopeForPropertyHeader(accessorDeclaringScope, descriptor);
-        return new LexicalScopeImpl(headerScope, descriptor, true, descriptor.getExtensionReceiverParameter(),
+        List<ReceiverParameterDescriptor> implicitReceivers = new ArrayList<>();
+        ReceiverParameterDescriptor extensionReceiverParameter = descriptor.getExtensionReceiverParameter();
+        if (extensionReceiverParameter != null) {
+            implicitReceivers.add(extensionReceiverParameter);
+        }
+        return new LexicalScopeImpl(headerScope, descriptor, true, implicitReceivers,
                                     LexicalScopeKind.PROPERTY_ACCESSOR_BODY);
     }
 
@@ -961,7 +966,7 @@ public class BodyResolver {
             PropertyAccessorDescriptor accessorDescriptor = (PropertyAccessorDescriptor) functionDescriptor;
             KtProperty property = (KtProperty) function.getParent();
             SyntheticFieldDescriptor fieldDescriptor = new SyntheticFieldDescriptor(accessorDescriptor, property);
-            innerScope = new LexicalScopeImpl(innerScope, functionDescriptor, true, null,
+            innerScope = new LexicalScopeImpl(innerScope, functionDescriptor, true, Collections.emptyList(),
                                               LexicalScopeKind.PROPERTY_ACCESSOR_BODY,
                                               LocalRedeclarationChecker.DO_NOTHING.INSTANCE, handler -> {
                                                   handler.addVariableDescriptor(fieldDescriptor);
