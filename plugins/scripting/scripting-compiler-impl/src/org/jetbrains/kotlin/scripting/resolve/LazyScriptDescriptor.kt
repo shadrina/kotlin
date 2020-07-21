@@ -283,7 +283,7 @@ class LazyScriptDescriptor(
                 outerScope,
                 receiverClassDescriptor,
                 true,
-                receiverClassDescriptor.thisAsReceiverParameter,
+                listOf(receiverClassDescriptor.thisAsReceiverParameter),
                 LexicalScopeKind.CLASS_MEMBER_SCOPE
             )
         }

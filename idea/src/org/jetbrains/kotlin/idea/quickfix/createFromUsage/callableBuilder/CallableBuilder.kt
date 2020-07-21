@@ -361,7 +361,7 @@ class CallableBuilder(val config: CallableBuilderConfiguration) {
             val memberScope = receiverClassDescriptor.getMemberScope(projections)
 
             return LexicalScopeImpl(
-                memberScope.memberScopeAsImportingScope(), receiverClassDescriptor, false, null,
+                memberScope.memberScopeAsImportingScope(), receiverClassDescriptor, false, listOf(),
                 LexicalScopeKind.SYNTHETIC
             ) {
                 receiverClassDescriptor.typeConstructor.parameters.forEach { addClassifierDescriptor(it) }
@@ -1116,7 +1116,7 @@ internal fun <D : KtNamedDeclaration> placeDeclarationInContainer(
 
     val declarationInPlace = when {
         declaration is KtPrimaryConstructor -> {
-            (container as KtClass).createPrimaryConstructorIfAbsent().replaced(declaration) as D
+            (container as KtClass).createPrimaryConstructorIfAbsent().replaced(declaration)
         }
 
         declaration is KtProperty && container !is KtBlockExpression -> {
