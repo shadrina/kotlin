@@ -44,7 +44,8 @@ interface CandidateFactory<out C : Candidate> {
     fun createCandidate(
         towerCandidate: CandidateWithBoundDispatchReceiver,
         explicitReceiverKind: ExplicitReceiverKind,
-        extensionReceiver: ReceiverValueWithSmartCastInfo?
+        extensionReceiver: ReceiverValueWithSmartCastInfo?,
+        additionalReceivers: List<ReceiverValueWithSmartCastInfo>
     ): C
 }
 

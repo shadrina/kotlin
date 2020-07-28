@@ -653,22 +653,28 @@ internal object CheckReceivers : ResolutionPart() {
     }
 
     override fun KotlinResolutionCandidate.process(workIndex: Int) {
-        if (workIndex == 0) {
-            checkReceiver(
+        when (workIndex) {
+            0 -> checkReceiver(
                 resolvedCall.dispatchReceiverArgument,
                 candidateDescriptor.dispatchReceiverParameter,
                 shouldCheckImplicitInvoke = true,
             )
-        } else {
-            checkReceiver(
+            1 -> checkReceiver(
                 resolvedCall.extensionReceiverArgument,
                 candidateDescriptor.extensionReceiverParameter,
                 shouldCheckImplicitInvoke = false, // reproduce old inference behaviour
             )
+            else -> for (i in resolvedCall.additionalReceiversArguments.indices) {
+                checkReceiver(
+                    resolvedCall.additionalReceiversArguments[i],
+                    candidateDescriptor.additionalReceiverParameters[i],
+                    shouldCheckImplicitInvoke = false
+                )
+            }
         }
     }
 
-    override fun KotlinResolutionCandidate.workCount() = 2
+    override fun KotlinResolutionCandidate.workCount() = 3
 }
 
 internal object CheckArgumentsInParenthesis : ResolutionPart() {

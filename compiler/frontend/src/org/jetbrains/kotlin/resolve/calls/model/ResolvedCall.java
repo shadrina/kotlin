@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.resolve.calls.model;
 
+import kotlin.annotations.jvm.ReadOnly;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.descriptors.CallableDescriptor;
@@ -54,6 +55,11 @@ public interface ResolvedCall<D extends CallableDescriptor> {
     /** If the target was a member of a class, this is the object of that class to call it on */
     @Nullable
     ReceiverValue getDispatchReceiver();
+
+    /** If the target was an extension function or property with additional receivers, this is the value for its additional receiver parameters */
+    @ReadOnly
+    @NotNull
+    List<ReceiverValue> getAdditionalReceivers();
 
     /** Determines whether receiver argument or this object is substituted for explicit receiver */
     @NotNull
