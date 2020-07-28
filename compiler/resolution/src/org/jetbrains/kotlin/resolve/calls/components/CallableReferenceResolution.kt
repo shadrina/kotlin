@@ -191,7 +191,8 @@ class CallableReferencesCandidateFactory(
     override fun createCandidate(
         towerCandidate: CandidateWithBoundDispatchReceiver,
         explicitReceiverKind: ExplicitReceiverKind,
-        extensionReceiver: ReceiverValueWithSmartCastInfo?
+        extensionReceiver: ReceiverValueWithSmartCastInfo?,
+        additionalReceivers: List<ReceiverValueWithSmartCastInfo>
     ): CallableReferenceCandidate {
 
         val dispatchCallableReceiver =

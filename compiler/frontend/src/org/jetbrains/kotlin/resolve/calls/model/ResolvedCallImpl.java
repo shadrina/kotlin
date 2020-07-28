@@ -65,6 +65,7 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
     private D resultingDescriptor; // Probably substituted
     private final ReceiverValue dispatchReceiver; // receiver object of a method
     private ReceiverValue extensionReceiver; // receiver of an extension function
+    private List<ReceiverValue> additionalReceivers; // additional receivers of an extension function
     private final ExplicitReceiverKind explicitReceiverKind;
     private final TypeSubstitutor knownTypeParametersSubstitutor;
 
@@ -96,6 +97,7 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
         this.dispatchReceiver = candidate.getDispatchReceiver();
         this.extensionReceiver = null; // ResolutionCandidate can have only dispatch receiver
         this.explicitReceiverKind = candidate.getExplicitReceiverKind();
+        this.additionalReceivers = Collections.emptyList(); // ResolutionCandidate can have only dispatch receiver
         this.knownTypeParametersSubstitutor = candidate.getKnownTypeParametersResultingSubstitutor();
         this.trace = trace;
         this.tracing = tracing;
@@ -111,6 +113,7 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
             @Nullable ReceiverValue dispatchReceiver,
             @Nullable ReceiverValue extensionReceiver,
             @NotNull ExplicitReceiverKind explicitReceiverKind,
+            @NotNull List<ReceiverValue> additionalReceivers,
             @Nullable TypeSubstitutor knownTypeParametersSubstitutor,
             @NotNull DelegatingBindingTrace trace,
             @NotNull TracingStrategy tracing,
@@ -121,6 +124,7 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
         this.dispatchReceiver = dispatchReceiver;
         this.extensionReceiver = extensionReceiver;
         this.explicitReceiverKind = explicitReceiverKind;
+        this.additionalReceivers = additionalReceivers;
         this.knownTypeParametersSubstitutor = knownTypeParametersSubstitutor;
         this.trace = trace;
         this.tracing = tracing;
@@ -273,6 +277,12 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
     @Nullable
     public ReceiverValue getDispatchReceiver() {
         return dispatchReceiver;
+    }
+
+    @NotNull
+    @Override
+    public List<ReceiverValue> getAdditionalReceivers() {
+        return additionalReceivers;
     }
 
     @Override

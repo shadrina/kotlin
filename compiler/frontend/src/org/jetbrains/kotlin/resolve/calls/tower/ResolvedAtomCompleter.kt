@@ -379,7 +379,7 @@ class ResolvedAtomCompleter(
 
         val resolvedCall = ResolvedCallImpl(
             psiCall, callableCandidate.candidate, dispatchReceiver,
-            extensionReceiver, callableCandidate.explicitReceiverKind,
+            extensionReceiver, callableCandidate.explicitReceiverKind, emptyList(),
             null, temporaryTrace, tracing, MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
         )
         resolvedCall.setResultingSubstitutor(resultSubstitutor)

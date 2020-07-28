@@ -684,6 +684,7 @@ class NewResolvedCallImpl<D : CallableDescriptor>(
 
     private var extensionReceiver = resolvedCallAtom.extensionReceiverArgument?.receiver?.receiverValue
     private var dispatchReceiver = resolvedCallAtom.dispatchReceiverArgument?.receiver?.receiverValue
+    private var additionalReceivers = resolvedCallAtom.additionalReceiversArguments.map { it.receiver.receiverValue }
     private var smartCastDispatchReceiverType: KotlinType? = null
     private var expectedTypeForSamConvertedArgumentMap: MutableMap<ValueArgument, UnwrappedType>? = null
     private var expectedTypeForSuspendConvertedArgumentMap: MutableMap<ValueArgument, UnwrappedType>? = null
@@ -703,6 +704,7 @@ class NewResolvedCallImpl<D : CallableDescriptor>(
     override fun getResultingDescriptor(): D = resultingDescriptor
     override fun getExtensionReceiver(): ReceiverValue? = extensionReceiver
     override fun getDispatchReceiver(): ReceiverValue? = dispatchReceiver
+    override fun getAdditionalReceivers(): List<ReceiverValue> = additionalReceivers
     override fun getExplicitReceiverKind(): ExplicitReceiverKind = resolvedCallAtom.explicitReceiverKind
 
     override fun getTypeArguments(): Map<TypeParameterDescriptor, KotlinType> {

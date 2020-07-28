@@ -437,14 +437,15 @@ class NewResolutionOldInference(
         override fun createCandidate(
             towerCandidate: CandidateWithBoundDispatchReceiver,
             explicitReceiverKind: ExplicitReceiverKind,
-            extensionReceiver: ReceiverValueWithSmartCastInfo?
+            extensionReceiver: ReceiverValueWithSmartCastInfo?,
+            additionalReceivers: List<ReceiverValueWithSmartCastInfo>
         ): MyCandidate {
 
             val candidateTrace = TemporaryBindingTrace.create(basicCallContext.trace, "Context for resolve candidate")
             val candidateCall = ResolvedCallImpl(
                 basicCallContext.call, towerCandidate.descriptor,
                 towerCandidate.dispatchReceiver?.receiverValue, extensionReceiver?.receiverValue,
-                explicitReceiverKind, null, candidateTrace, tracing,
+                explicitReceiverKind, additionalReceivers.map { it.receiverValue }, null, candidateTrace, tracing,
                 basicCallContext.dataFlowInfoForArguments // todo may be we should create new mutable info for arguments
             )
 
