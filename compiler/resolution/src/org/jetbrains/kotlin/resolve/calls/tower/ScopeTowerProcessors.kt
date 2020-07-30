@@ -163,6 +163,12 @@ private class NoExplicitReceiverScopeTowerProcessor<C : Candidate>(
             ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
             data.implicitReceiver
         )
+        is TowerData.BothTowerLevelAndMultipleReceivers -> createCandidates(
+            data.level.collectCandidates(data.implicitReceiver),
+            ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
+            data.implicitReceiver,
+            listOf(data.additionalReceiver)
+        )
         else -> emptyList()
     }
 
