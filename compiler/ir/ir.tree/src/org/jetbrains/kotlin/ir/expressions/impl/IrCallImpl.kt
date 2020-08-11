@@ -52,8 +52,14 @@ class IrCallImpl(
         origin: IrStatementOrigin? = null,
         superQualifierSymbol: IrClassSymbol? = null
     ) : this(
-        startOffset, endOffset, type, symbol, symbol.descriptor.typeParametersCount, symbol.descriptor.valueParameters.size,
-        origin, superQualifierSymbol
+        startOffset,
+        endOffset,
+        type,
+        symbol,
+        symbol.descriptor.typeParametersCount,
+        symbol.descriptor.valueParameters.size + symbol.descriptor.additionalReceiverParameters.size,
+        origin,
+        superQualifierSymbol
     )
 
     @ObsoleteDescriptorBasedAPI
@@ -66,8 +72,14 @@ class IrCallImpl(
         origin: IrStatementOrigin? = null,
         superQualifierSymbol: IrClassSymbol? = null
     ) : this(
-        startOffset, endOffset, type, symbol, typeArgumentsCount, symbol.descriptor.valueParameters.size,
-        origin, superQualifierSymbol
+        startOffset,
+        endOffset,
+        type,
+        symbol,
+        typeArgumentsCount,
+        symbol.descriptor.valueParameters.size + symbol.descriptor.additionalReceiverParameters.size,
+        origin,
+        superQualifierSymbol
     )
 
     override fun <R, D> accept(visitor: IrElementVisitor<R, D>, data: D): R =

@@ -87,10 +87,11 @@ class ReflectionReferencesGenerator(statementGenerator: StatementGenerator) : St
 
         return statementGenerator.generateCallReceiver(
             ktCallableReference,
-            resolvedDescriptor,
-            resolvedCall.dispatchReceiver, resolvedCall.extensionReceiver,
+            resolvedDescriptor, resolvedCall.dispatchReceiver,
+            resolvedCall.extensionReceiver,
+            resolvedCall.additionalReceivers,
             isSafe = false
-        ).call { dispatchReceiverValue, extensionReceiverValue ->
+        ).call { dispatchReceiverValue, extensionReceiverValue, _ ->
             generateCallableReference(
                 ktCallableReference,
                 callableReferenceType,
@@ -149,10 +150,11 @@ class ReflectionReferencesGenerator(statementGenerator: StatementGenerator) : St
         val resolvedCall = callBuilder.original
         return statementGenerator.generateCallReceiver(
             ktCallableReference,
-            resolvedCall.resultingDescriptor,
-            resolvedCall.dispatchReceiver, resolvedCall.extensionReceiver,
+            resolvedCall.resultingDescriptor, resolvedCall.dispatchReceiver,
+            resolvedCall.extensionReceiver,
+            resolvedCall.additionalReceivers,
             isSafe = false
-        ).call { dispatchReceiverValue, extensionReceiverValue ->
+        ).call { dispatchReceiverValue, extensionReceiverValue, _ ->
             val irAdapterRef = IrFunctionReferenceImpl(
                 startOffset, endOffset, irFunctionalType, irAdapterFun.symbol, irAdapterFun.typeParameters.size,
                 irAdapterFun.valueParameters.size, null, IrStatementOrigin.ADAPTED_FUNCTION_REFERENCE
