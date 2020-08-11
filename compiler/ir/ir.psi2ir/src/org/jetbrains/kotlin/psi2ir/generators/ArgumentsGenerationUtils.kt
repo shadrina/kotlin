@@ -69,8 +69,13 @@ fun StatementGenerator.generateReceiver(ktDefaultElement: KtElement, receiver: R
 fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffset: Int, receiver: ReceiverValue): IntermediateValue {
     val irReceiverType =
         when (receiver) {
-            is ExtensionReceiver ->
-                receiver.declarationDescriptor.extensionReceiverParameter!!.type.toIrType()
+            is ExtensionReceiver -> {
+                val receivers =
+                    receiver.declarationDescriptor.additionalReceiverParameters + receiver.declarationDescriptor.extensionReceiverParameter!!
+                receivers.first {
+                    it.value === receiver
+                }.type.toIrType()
+            }
             else ->
                 receiver.type.toIrType()
         }
@@ -100,11 +105,16 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                     receiver.expression.startOffsetSkippingComments, receiver.expression.endOffset, irReceiverType,
                     context.symbolTable.referenceClass(receiver.classQualifier.descriptor as ClassDescriptor)
                 )
-            is ExtensionReceiver ->
+            is ExtensionReceiver -> {
+                val receiverParameter =
+                    (receiver.declarationDescriptor.additionalReceiverParameters + receiver.declarationDescriptor.extensionReceiverParameter!!).single {
+                        it.value === receiver
+                    }
                 IrGetValueImpl(
                     defaultStartOffset, defaultStartOffset, irReceiverType,
-                    context.symbolTable.referenceValueParameter(receiver.declarationDescriptor.extensionReceiverParameter!!)
+                    context.symbolTable.referenceValueParameter(receiverParameter)
                 )
+            }
             else ->
                 TODO("Receiver: ${receiver::class.java.simpleName}")
         }
@@ -182,11 +192,13 @@ fun StatementGenerator.generateCallReceiver(
     calleeDescriptor: CallableDescriptor,
     dispatchReceiver: ReceiverValue?,
     extensionReceiver: ReceiverValue?,
+    additionalReceivers: List<ReceiverValue>,
     isSafe: Boolean,
     isAssignmentReceiver: Boolean = false
 ): CallReceiver {
     val dispatchReceiverValue: IntermediateValue?
     val extensionReceiverValue: IntermediateValue?
+    val additionalReceiverValues: List<IntermediateValue>
     val startOffset = ktDefaultElement.startOffsetSkippingComments
     val endOffset = ktDefaultElement.endOffset
     when (calleeDescriptor) {
@@ -196,6 +208,7 @@ fun StatementGenerator.generateCallReceiver(
             }
             dispatchReceiverValue = generateReceiverForCalleeImportedFromObject(startOffset, endOffset, calleeDescriptor)
             extensionReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver)
+            additionalReceiverValues = additionalReceivers.mapNotNull { generateReceiverOrNull(ktDefaultElement, it) }
         }
         is TypeAliasConstructorDescriptor -> {
             assert(!(dispatchReceiver != null && extensionReceiver != null)) {
@@ -204,20 +217,22 @@ fun StatementGenerator.generateCallReceiver(
             }
             dispatchReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver ?: dispatchReceiver)
             extensionReceiverValue = null
+            additionalReceiverValues = emptyList()
         }
         else -> {
             dispatchReceiverValue = generateReceiverOrNull(ktDefaultElement, dispatchReceiver)
             extensionReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver)
+            additionalReceiverValues = additionalReceivers.mapNotNull { generateReceiverOrNull(ktDefaultElement, it) }
         }
     }
 
     return when {
         !isSafe ->
-            SimpleCallReceiver(dispatchReceiverValue, extensionReceiverValue)
+            SimpleCallReceiver(dispatchReceiverValue, extensionReceiverValue, additionalReceiverValues)
         extensionReceiverValue != null || dispatchReceiverValue != null ->
             SafeCallReceiver(
                 this, startOffset, endOffset,
-                extensionReceiverValue, dispatchReceiverValue, isAssignmentReceiver
+                extensionReceiverValue, additionalReceiverValues, dispatchReceiverValue, isAssignmentReceiver
             )
         else ->
             throw AssertionError("Safe call should have an explicit receiver: ${ktDefaultElement.text}")
@@ -684,6 +699,7 @@ fun StatementGenerator.pregenerateCallReceivers(resolvedCall: ResolvedCall<*>): 
         resolvedCall.resultingDescriptor,
         resolvedCall.dispatchReceiver,
         resolvedCall.extensionReceiver,
+        resolvedCall.additionalReceivers,
         isSafe = resolvedCall.call.isSafeCall()
     )
 

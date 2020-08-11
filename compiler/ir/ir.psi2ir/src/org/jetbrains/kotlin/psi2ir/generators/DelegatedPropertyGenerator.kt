@@ -101,7 +101,12 @@ class DelegatedPropertyGenerator(declarationGenerator: DeclarationGenerator) : D
             IrDeclarationOrigin.DELEGATED_PROPERTY_ACCESSOR,
             accessorDescriptor
         ).buildWithScope { irAccessor ->
-            FunctionGenerator(declarationGenerator).generateFunctionParameterDeclarationsAndReturnType(irAccessor, ktProperty, null)
+            FunctionGenerator(declarationGenerator).generateFunctionParameterDeclarationsAndReturnType(
+                irAccessor,
+                ktProperty,
+                null,
+                emptyList()
+            )
             irAccessor.body = generateBody(irAccessor)
         }
 
@@ -361,7 +366,12 @@ class DelegatedPropertyGenerator(declarationGenerator: DeclarationGenerator) : D
             IrDeclarationOrigin.DELEGATED_PROPERTY_ACCESSOR,
             getterDescriptor
         ).buildWithScope { irAccessor ->
-            FunctionGenerator(declarationGenerator).generateFunctionParameterDeclarationsAndReturnType(irAccessor, ktDelegate, null)
+            FunctionGenerator(declarationGenerator).generateFunctionParameterDeclarationsAndReturnType(
+                irAccessor,
+                ktDelegate,
+                null,
+                emptyList()
+            )
             irAccessor.body = generateBody(irAccessor)
         }
 

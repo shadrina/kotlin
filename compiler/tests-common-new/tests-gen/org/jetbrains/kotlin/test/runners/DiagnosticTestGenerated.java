@@ -9388,6 +9388,59 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
             public void testVariableInvoke() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/extensions/variableInvoke.kt");
             }
+
+            @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceivers")
+            @TestDataPath("$PROJECT_ROOT")
+            @RunWith(JUnit3RunnerWithInners.class)
+            public static class AdditionalReceivers extends AbstractDiagnosticsTestWithFirValidation {
+                private void runTest(String testDataFilePath) throws Exception {
+                    KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+                }
+
+                public void testAllFilesPresentInAdditionalReceivers() throws Exception {
+                    KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceivers"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                }
+
+                @TestMetadata("dp.kt")
+                public void testDp() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/dp.kt");
+                }
+
+                @TestMetadata("insideDeclaration.kt")
+                public void testInsideDeclaration() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/insideDeclaration.kt");
+                }
+
+                @TestMetadata("noExplicitReceiver.kt")
+                public void testNoExplicitReceiver() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/noExplicitReceiver.kt");
+                }
+
+                @TestMetadata("plusMatrix.kt")
+                public void testPlusMatrix() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/plusMatrix.kt");
+                }
+
+                @TestMetadata("typeParameterized.kt")
+                public void testTypeParameterized() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/typeParameterized.kt");
+                }
+
+                @TestMetadata("typeParameterizedList.kt")
+                public void testTypeParameterizedList() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/typeParameterizedList.kt");
+                }
+
+                @TestMetadata("withExplicitReceiver.kt")
+                public void testWithExplicitReceiver() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/withExplicitReceiver.kt");
+                }
+
+                @TestMetadata("withExplicitReceiverError.kt")
+                public void testWithExplicitReceiverError() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/withExplicitReceiverError.kt");
+                }
+            }
         }
 
         @Nested

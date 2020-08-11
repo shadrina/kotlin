@@ -9981,6 +9981,34 @@ public class JsCodegenBoxTestGenerated extends AbstractJsCodegenBoxTest {
         public void testWhenFail() throws Exception {
             runTest("compiler/testData/codegen/box/extensionFunctions/whenFail.kt");
         }
+
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditionalReceivers extends AbstractJsCodegenBoxTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest0(this::doTest, TargetBackend.JS, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAdditionalReceivers() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceivers"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS, true);
+            }
+
+            @TestMetadata("dp.kt")
+            public void testDp() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/dp.kt");
+            }
+
+            @TestMetadata("plusMatrix.kt")
+            public void testPlusMatrix() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/plusMatrix.kt");
+            }
+
+            @TestMetadata("simpleCall.kt")
+            public void testSimpleCall() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/simpleCall.kt");
+            }
+        }
     }
 
     @TestMetadata("compiler/testData/codegen/box/extensionProperties")

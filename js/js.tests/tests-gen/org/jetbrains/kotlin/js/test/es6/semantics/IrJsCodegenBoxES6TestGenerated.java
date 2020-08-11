@@ -9981,6 +9981,34 @@ public class IrJsCodegenBoxES6TestGenerated extends AbstractIrJsCodegenBoxES6Tes
         public void testWhenFail() throws Exception {
             runTest("compiler/testData/codegen/box/extensionFunctions/whenFail.kt");
         }
+
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditionalReceivers extends AbstractIrJsCodegenBoxES6Test {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest0(this::doTest, TargetBackend.JS_IR_ES6, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAdditionalReceivers() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceivers"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS_IR_ES6, true);
+            }
+
+            @TestMetadata("dp.kt")
+            public void testDp() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/dp.kt");
+            }
+
+            @TestMetadata("plusMatrix.kt")
+            public void testPlusMatrix() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/plusMatrix.kt");
+            }
+
+            @TestMetadata("simpleCall.kt")
+            public void testSimpleCall() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/simpleCall.kt");
+            }
+        }
     }
 
     @TestMetadata("compiler/testData/codegen/box/extensionProperties")

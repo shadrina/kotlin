@@ -512,6 +512,7 @@ class LazyJavaClassMemberScope(
             getDispatchReceiverParameter(),
             emptyList(),
             emptyList(),
+            emptyList(),
             returnType,
             // Those functions are generated as open in bytecode
             // Actually, it should not be important because the class is final anyway, but leaving them open is convenient for consistency
