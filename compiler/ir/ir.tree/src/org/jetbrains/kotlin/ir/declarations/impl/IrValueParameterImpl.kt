@@ -56,11 +56,12 @@ class IrValueParameterImpl(
         type: IrType,
         varargElementType: IrType?,
         name: Name = descriptor.name,
-        symbol: IrValueParameterSymbol = IrValueParameterSymbolImpl(descriptor)
+        symbol: IrValueParameterSymbol = IrValueParameterSymbolImpl(descriptor),
+        index: Int? = null
     ) : this(
         startOffset, endOffset, origin, symbol,
         name,
-        index = descriptor.safeAs<ValueParameterDescriptor>()?.index ?: -1,
+        index = index ?: (descriptor.safeAs<ValueParameterDescriptor>()?.index ?: -1),
         type = type, varargElementType = varargElementType,
         isCrossinline = descriptor.safeAs<ValueParameterDescriptor>()?.isCrossinline ?: false,
         isNoinline = descriptor.safeAs<ValueParameterDescriptor>()?.isNoinline ?: false

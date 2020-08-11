@@ -60,7 +60,7 @@ class IrCallImpl(
         origin: IrStatementOrigin? = null,
         superQualifierSymbol: IrClassSymbol? = null
     ) : this(
-        startOffset, endOffset, type, symbol, symbol.descriptor.typeParametersCount, symbol.descriptor.valueParameters.size,
+        startOffset, endOffset, type, symbol, symbol.descriptor.typeParametersCount, symbol.descriptor.valueParameters.size + symbol.descriptor.additionalReceiverParameters.size,
         origin, superQualifierSymbol
     )
 
@@ -74,7 +74,7 @@ class IrCallImpl(
         origin: IrStatementOrigin? = null,
         superQualifierSymbol: IrClassSymbol? = null
     ) : this(
-        startOffset, endOffset, type, symbol, typeArgumentsCount, symbol.descriptor.valueParameters.size,
+        startOffset, endOffset, type, symbol, typeArgumentsCount, symbol.descriptor.valueParameters.size + symbol.descriptor.additionalReceiverParameters.size,
         origin, superQualifierSymbol
     )
 

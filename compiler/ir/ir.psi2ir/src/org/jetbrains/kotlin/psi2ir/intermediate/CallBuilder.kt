@@ -83,11 +83,12 @@ val CallBuilder.explicitReceiverType: KotlinType?
 fun CallBuilder.setExplicitReceiverValue(explicitReceiverValue: IntermediateValue) {
     val previousCallReceiver = callReceiver
     callReceiver = object : CallReceiver {
-        override fun call(withDispatchAndExtensionReceivers: (IntermediateValue?, IntermediateValue?) -> IrExpression): IrExpression {
-            return previousCallReceiver.call { dispatchReceiverValue, _ ->
+        override fun call(withDispatchAndExtensionReceivers: (IntermediateValue?, IntermediateValue?, List<IntermediateValue>) -> IrExpression): IrExpression {
+            return previousCallReceiver.call { dispatchReceiverValue, _, additionalReceiverValues ->
                 val newDispatchReceiverValue = if (hasExtensionReceiver) dispatchReceiverValue else explicitReceiverValue
                 val newExtensionReceiverValue = if (hasExtensionReceiver) explicitReceiverValue else null
-                withDispatchAndExtensionReceivers(newDispatchReceiverValue, newExtensionReceiverValue)
+                // TODO: Create new additional receiver values
+                withDispatchAndExtensionReceivers(newDispatchReceiverValue, newExtensionReceiverValue, additionalReceiverValues)
             }
         }
     }
