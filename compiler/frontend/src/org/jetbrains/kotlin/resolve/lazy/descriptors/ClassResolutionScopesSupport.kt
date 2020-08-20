@@ -69,7 +69,7 @@ class ClassResolutionScopesSupport(
             scopeWithGenerics,
             classDescriptor,
             true,
-            listOf(classDescriptor.thisAsReceiverParameter),
+            classDescriptor.additionalReceivers + classDescriptor.thisAsReceiverParameter,
             LexicalScopeKind.CLASS_MEMBER_SCOPE
         )
     }

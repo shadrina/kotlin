@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.resolve.calls.tower
 
+import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
 import org.jetbrains.kotlin.resolve.scopes.receivers.DetailedReceiver
@@ -71,8 +72,12 @@ internal abstract class AbstractSimpleScopeTowerProcessor<C : Candidate>(
     ): Collection<C> {
         val result = mutableListOf<C>()
         for (candidate in collector) {
-            if (candidate.requiresExtensionReceiver == (extensionReceiver != null) &&
-                candidate.descriptor.additionalReceiverParameters.size == additionalReceivers.size
+            val hasExtensionReceiver = extensionReceiver != null
+            val descriptorAdditionalReceiversSize = candidate.descriptor.additionalReceiverParameters.size
+            val callingClassConstructorWithAdditionalReceiver = candidate.descriptor is ClassConstructorDescriptor && hasExtensionReceiver
+                    && !candidate.requiresExtensionReceiver && descriptorAdditionalReceiversSize == 1
+            if (candidate.requiresExtensionReceiver == hasExtensionReceiver && descriptorAdditionalReceiversSize == additionalReceivers.size
+                || callingClassConstructorWithAdditionalReceiver
             ) {
                 result.add(
                     candidateFactory.createCandidate(
