@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.impl.SyntheticFieldDescriptor
 import org.jetbrains.kotlin.descriptors.impl.TypeAliasConstructorDescriptor
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irGet
@@ -98,6 +99,20 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                         defaultStartOffset, defaultEndOffset, irReceiverType,
                         context.symbolTable.referenceValueParameter(receiverClassDescriptor.thisAsReceiverParameter)
                     )
+            }
+            is ExtensionClassReceiver -> {
+                val receiverClassDescriptor = receiver.classDescriptor
+                val thisAsReceiverParameter = receiverClassDescriptor.thisAsReceiverParameter
+                val thisReceiver = IrGetValueImpl(
+                    defaultStartOffset, defaultEndOffset,
+                    thisAsReceiverParameter.type.toIrType(),
+                    context.symbolTable.referenceValue(thisAsReceiverParameter)
+                )
+                IrGetFieldImpl(
+                    defaultStartOffset, defaultEndOffset,
+                    context.symbolTable.referenceField(receiverClassDescriptor.propertiesForAdditionalReceivers.single()),
+                    irReceiverType, thisReceiver
+                )
             }
             is ThisClassReceiver ->
                 generateThisOrSuperReceiver(receiver, receiver.classDescriptor)
