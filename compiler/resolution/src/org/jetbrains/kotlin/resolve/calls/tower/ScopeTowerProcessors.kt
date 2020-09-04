@@ -76,18 +76,23 @@ internal abstract class AbstractSimpleScopeTowerProcessor<C : Candidate>(
             val descriptorAdditionalReceiversSize = candidate.descriptor.additionalReceiverParameters.size
             val callingClassConstructorWithAdditionalReceiver = candidate.descriptor is ClassConstructorDescriptor && hasExtensionReceiver
                     && !candidate.requiresExtensionReceiver && descriptorAdditionalReceiversSize == 1
-            if (candidate.requiresExtensionReceiver == hasExtensionReceiver && descriptorAdditionalReceiversSize == additionalReceivers.size
-                || callingClassConstructorWithAdditionalReceiver
-            ) {
-                result.add(
+            val candidateToResult =
+                if (callingClassConstructorWithAdditionalReceiver) {
+                    candidateFactory.createCandidate(
+                        candidate,
+                        kind,
+                        extensionReceiver = null,
+                        additionalReceivers = listOf(extensionReceiver!!)
+                    )
+                } else if (candidate.requiresExtensionReceiver == hasExtensionReceiver && descriptorAdditionalReceiversSize == additionalReceivers.size) {
                     candidateFactory.createCandidate(
                         candidate,
                         kind,
                         extensionReceiver = extensionReceiver,
                         additionalReceivers = additionalReceivers
                     )
-                )
-            }
+                } else null
+            candidateToResult?.let { result.add(it) }
         }
         return result
     }

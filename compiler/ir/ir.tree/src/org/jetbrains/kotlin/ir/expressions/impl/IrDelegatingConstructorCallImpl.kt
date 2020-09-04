@@ -46,7 +46,7 @@ class IrDelegatingConstructorCallImpl(
         endOffset: Int,
         type: IrType,
         symbol: IrConstructorSymbol
-    ) : this(startOffset, endOffset, type, symbol, symbol.descriptor.typeParametersCount, symbol.descriptor.valueParameters.size)
+    ) : this(startOffset, endOffset, type, symbol, symbol.descriptor.typeParametersCount, symbol.descriptor.valueParameters.size + symbol.descriptor.additionalReceiverParameters.size)
 
     @ObsoleteDescriptorBasedAPI
     constructor(
@@ -55,7 +55,7 @@ class IrDelegatingConstructorCallImpl(
         type: IrType,
         symbol: IrConstructorSymbol,
         typeArgumentsCount: Int
-    ) : this(startOffset, endOffset, type, symbol, typeArgumentsCount, symbol.descriptor.valueParameters.size)
+    ) : this(startOffset, endOffset, type, symbol, typeArgumentsCount, symbol.descriptor.valueParameters.size + symbol.descriptor.additionalReceiverParameters.size)
 
     override fun <R, D> accept(visitor: IrElementVisitor<R, D>, data: D): R {
         return visitor.visitDelegatingConstructorCall(this, data)
