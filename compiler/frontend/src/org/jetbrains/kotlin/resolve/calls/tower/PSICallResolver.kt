@@ -137,6 +137,7 @@ class PSICallResolver(
             GivenCandidate(
                 it.descriptor as FunctionDescriptor,
                 it.dispatchReceiver?.let { context.transformToReceiverWithSmartCastInfo(it) },
+                it.descriptor.additionalReceiverParameters.map { context.transformToReceiverWithSmartCastInfo(it.value) },
                 it.knownTypeParametersResultingSubstitutor
             )
         }

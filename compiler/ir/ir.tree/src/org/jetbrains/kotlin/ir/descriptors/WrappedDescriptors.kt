@@ -590,6 +590,10 @@ open class WrappedClassDescriptor : ClassDescriptor, WrappedDeclarationDescripto
         TODO("Not yet implemented")
     }
 
+    override fun getPropertiesForAdditionalReceivers(): List<PropertyDescriptor> {
+        TODO("Not yet implemented")
+    }
+
     override fun getUnsubstitutedPrimaryConstructor() =
         owner.declarations.filterIsInstance<IrConstructor>().singleOrNull { it.isPrimary }?.descriptor
 
@@ -720,6 +724,10 @@ open class WrappedEnumEntryDescriptor : ClassDescriptor, WrappedDeclarationDescr
     override fun getThisAsReceiverParameter() = (owner.parent as IrClass).descriptor.thisAsReceiverParameter
 
     override fun getAdditionalReceivers(): List<ReceiverParameterDescriptor> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getPropertiesForAdditionalReceivers(): List<PropertyDescriptor> {
         TODO("Not yet implemented")
     }
 

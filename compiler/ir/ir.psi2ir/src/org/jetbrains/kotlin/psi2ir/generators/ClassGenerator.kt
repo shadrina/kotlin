@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.psi2ir.generators
 import org.jetbrains.kotlin.backend.common.CodegenUtil
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.descriptors.IrImplementingDelegateDescriptorImpl
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -107,6 +108,10 @@ class ClassGenerator(
                 classDescriptor.thisAsReceiverParameter,
                 classDescriptor.thisAsReceiverParameter.type.toIrType()
             )
+            classDescriptor.propertiesForAdditionalReceivers.forEach {
+                val irField = generateFieldForAdditionalReceiver(it)
+                irClass.addMember(irField)
+            }
 
             val irPrimaryConstructor = generatePrimaryConstructor(irClass, ktClassOrObject)
             if (irPrimaryConstructor != null) {
@@ -432,6 +437,14 @@ class ClassGenerator(
         EnumClassMembersGenerator(declarationGenerator).generateSpecialMembers(irClass)
     }
 
+    private fun generateFieldForAdditionalReceiver(propertyDescriptor: PropertyDescriptor): IrField =
+        context.symbolTable.declareField(
+            UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+            IrDeclarationOrigin.FIELD_FOR_CLASS_ADDITIONAL_RECEIVER,
+            propertyDescriptor, propertyDescriptor.type.toIrType(),
+            propertyDescriptor.visibility
+        )
+
     private fun generatePrimaryConstructor(irClass: IrClass, ktClassOrObject: KtPureClassOrObject): IrConstructor? {
         val classDescriptor = irClass.descriptor
         val primaryConstructorDescriptor = classDescriptor.unsubstitutedPrimaryConstructor ?: return null
@@ -468,7 +481,7 @@ class ClassGenerator(
         // generate real body declarations
         ktClassOrObject.body?.let { ktClassBody ->
             ktClassBody.declarations.mapNotNullTo(irClass.declarations) { ktDeclaration ->
-                declarationGenerator.generateClassMemberDeclaration(ktDeclaration, irClass)
+                declarationGenerator.generateClassMemberDeclaration(ktDeclaration, irClass, ktClassOrObject)
             }
         }
 
