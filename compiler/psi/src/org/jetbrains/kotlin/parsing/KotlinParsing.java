@@ -629,6 +629,34 @@ public class KotlinParsing extends AbstractKotlinParsing {
     }
 
     /*
+     * additionalReceiverObjectList
+     *   : additionalReceiverObject+
+     */
+    private void parseAdditionalReceiverObjectList() {
+        assert _at(WITH_KEYWORD);
+        PsiBuilder.Marker additionalReceiverObjectList = mark();
+        while (at(WITH_KEYWORD)) {
+            parseAdditionalReceiverObject();
+        }
+        additionalReceiverObjectList.done(ADDITIONAL_RECEIVER_OBJECT_LIST);
+    }
+
+    /*
+     * additionalReceiverObject
+     *   : "with" "(" expression ")"
+     */
+    private void parseAdditionalReceiverObject() {
+        assert _at(WITH_KEYWORD);
+        PsiBuilder.Marker additionalReceiverObject = mark();
+        advance();
+        if (expect(LPAR, "Expecting a receiver argument", TokenSet.EMPTY)) {
+            myExpressionParsing.parseExpression();
+            expect(RPAR, "Expecting ')'", TokenSet.EMPTY);
+        }
+        additionalReceiverObject.done(ADDITIONAL_RECEIVER_OBJECT);
+    }
+
+    /*
      * fileAnnotationList
      *   : ("[" "file:" annotationEntry+ "]")*
      *   ;
@@ -1699,6 +1727,9 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         if (!functionContractOccurred) {
             parseFunctionContract();
+        }
+        if (at(WITH_KEYWORD)) {
+            parseAdditionalReceiverObjectList();
         }
 
         if (at(SEMICOLON)) {
