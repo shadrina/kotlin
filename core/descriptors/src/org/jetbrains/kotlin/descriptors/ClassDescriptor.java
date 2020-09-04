@@ -81,6 +81,10 @@ public interface ClassDescriptor extends ClassifierDescriptorWithTypeParameters,
     @ReadOnly
     List<ReceiverParameterDescriptor> getAdditionalReceivers();
 
+    @NotNull
+    @ReadOnly
+    List<PropertyDescriptor> getPropertiesForAdditionalReceivers();
+
     @Nullable
     ClassConstructorDescriptor getUnsubstitutedPrimaryConstructor();
 

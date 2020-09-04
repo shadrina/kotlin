@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.builtins.ReflectionTypes
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
+import org.jetbrains.kotlin.descriptors.ConstructorDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.resolve.calls.components.*
@@ -109,9 +110,12 @@ class SimpleCandidateFactory(
         val dispatchArgumentReceiver = givenCandidate.dispatchReceiver?.let {
             ReceiverExpressionKotlinCallArgument(it, isSafeCall)
         }
+        val additionalArgumentsReceivers = givenCandidate.additionalReceivers.map {
+            ReceiverExpressionKotlinCallArgument(it, isSafeCall)
+        }
         return createCandidate(
             givenCandidate.descriptor, explicitReceiverKind, dispatchArgumentReceiver, null,
-            emptyList(), listOf(), givenCandidate.knownTypeParametersResultingSubstitutor
+            additionalArgumentsReceivers, listOf(), givenCandidate.knownTypeParametersResultingSubstitutor
         )
     }
 
@@ -125,9 +129,11 @@ class SimpleCandidateFactory(
             kotlinCall.getExplicitDispatchReceiver(explicitReceiverKind),
             towerCandidate.dispatchReceiver
         )
+        val hasOnlyAdditionalReceivers = extensionReceiver == null && additionalReceivers.isNotEmpty()
         val extensionArgumentReceiver =
-            createReceiverArgument(kotlinCall.getExplicitExtensionReceiver(explicitReceiverKind), extensionReceiver)
-        val additionalArgumentsReceivers = additionalReceivers.mapNotNull { createReceiverArgument(null, it) } // TODO
+            if (towerCandidate.descriptor is ConstructorDescriptor && hasOnlyAdditionalReceivers) null
+            else createReceiverArgument(kotlinCall.getExplicitExtensionReceiver(explicitReceiverKind), extensionReceiver)
+        val additionalArgumentsReceivers = additionalReceivers.mapNotNull { createReceiverArgument(null, it) }
 
         return createCandidate(
             towerCandidate.descriptor, explicitReceiverKind, dispatchArgumentReceiver,
@@ -245,6 +251,7 @@ enum class KotlinCallKind(vararg resolutionPart: ResolutionPart) {
 class GivenCandidate(
     val descriptor: FunctionDescriptor,
     val dispatchReceiver: ReceiverValueWithSmartCastInfo?,
+    val additionalReceivers: List<ReceiverValueWithSmartCastInfo>,
     val knownTypeParametersResultingSubstitutor: TypeSubstitutor?
 )
 

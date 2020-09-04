@@ -1244,6 +1244,48 @@ public class DescriptorResolver {
     }
 
     @NotNull
+    public PropertyDescriptor createPropertyForAdditionalReceiver(
+            @NotNull ClassDescriptor classDescriptor,
+            @NotNull ReceiverParameterDescriptor receiverParameter
+    ) {
+        Set<AnnotationUseSiteTarget> targetSet = EnumSet.of(PROPERTY, PROPERTY_GETTER, FIELD);
+        AnnotationSplitter annotationSplitter = new AnnotationSplitter(storageManager, Annotations.Companion.getEMPTY(), targetSet);
+        Annotations propertyAnnotations = new CompositeAnnotations(
+                annotationSplitter.getAnnotationsForTarget(PROPERTY),
+                annotationSplitter.getOtherAnnotations()
+        );
+        PropertyDescriptorImpl propertyDescriptor = PropertyDescriptorImpl.create(
+                classDescriptor,
+                propertyAnnotations,
+                Modality.FINAL,
+                DescriptorVisibilities.DEFAULT_VISIBILITY,
+                false,
+                Name.identifier("tmpPropertyForAdditionalReceiver"),
+                CallableMemberDescriptor.Kind.DECLARATION,
+                SourceElement.NO_SOURCE,
+                false,
+                false,
+                classDescriptor.isExpect(),
+                false,
+                false,
+                false
+        );
+        propertyDescriptor.setType(receiverParameter.getType(), Collections.emptyList(), getDispatchReceiverParameterIfNeeded(classDescriptor), null,
+                                   CollectionsKt.emptyList());
+        Annotations getterAnnotations = new CompositeAnnotations(CollectionsKt.listOf(
+                annotationSplitter.getAnnotationsForTarget(PROPERTY_GETTER)));
+        PropertyGetterDescriptorImpl getter = DescriptorFactory.createDefaultGetter(propertyDescriptor, getterAnnotations);
+        propertyDescriptor.initialize(
+                getter, null,
+                new FieldDescriptorImpl(annotationSplitter.getAnnotationsForTarget(FIELD), propertyDescriptor),
+                null
+        );
+
+        getter.initialize(propertyDescriptor.getType());
+        return propertyDescriptor;
+    }
+
+    @NotNull
     public PropertyDescriptor resolvePrimaryConstructorParameterToAProperty(
             @NotNull ClassDescriptor classDescriptor,
             @NotNull ValueParameterDescriptor valueParameter,

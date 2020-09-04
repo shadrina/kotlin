@@ -9850,6 +9850,39 @@ public class IrJsCodegenBoxES6TestGenerated extends AbstractIrJsCodegenBoxES6Tes
         }
     }
 
+    @TestMetadata("compiler/testData/codegen/box/extensionClasses")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class ExtensionClasses extends AbstractIrJsCodegenBoxES6Test {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest0(this::doTest, TargetBackend.JS_IR_ES6, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInExtensionClasses() throws Exception {
+            KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionClasses"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS_IR_ES6, true);
+        }
+
+        @TestMetadata("constructors.kt")
+        public void testConstructors() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/constructors.kt");
+        }
+
+        @TestMetadata("genericCollection.kt")
+        public void testGenericCollection() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/genericCollection.kt");
+        }
+
+        @TestMetadata("generics.kt")
+        public void testGenerics() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/generics.kt");
+        }
+
+        @TestMetadata("simple.kt")
+        public void testSimple() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/simple.kt");
+        }
+    }
+
     @TestMetadata("compiler/testData/codegen/box/extensionFunctions")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)

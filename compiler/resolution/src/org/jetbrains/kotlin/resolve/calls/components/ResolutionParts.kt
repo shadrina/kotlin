@@ -660,12 +660,9 @@ internal object CheckReceivers : ResolutionPart() {
                 shouldCheckImplicitInvoke = true,
             )
             1 -> {
-                val receiverParameter =
-                    if (candidateDescriptor is ClassConstructorDescriptor) candidateDescriptor.additionalReceiverParameters.singleOrNull()
-                    else candidateDescriptor.extensionReceiverParameter
                 checkReceiver(
                     resolvedCall.extensionReceiverArgument,
-                    receiverParameter,
+                    candidateDescriptor.extensionReceiverParameter,
                     shouldCheckImplicitInvoke = false, // reproduce old inference behaviour
                 )
             }

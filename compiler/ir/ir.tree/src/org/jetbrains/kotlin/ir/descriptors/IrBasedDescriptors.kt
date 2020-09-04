@@ -609,6 +609,10 @@ open class IrBasedClassDescriptor(owner: IrClass) : ClassDescriptor, IrBasedDecl
         TODO("Not yet implemented")
     }
 
+    override fun getPropertiesForAdditionalReceivers(): List<PropertyDescriptor> {
+        TODO("Not yet implemented")
+    }
+
     override fun getUnsubstitutedPrimaryConstructor() =
         owner.declarations.filterIsInstance<IrConstructor>().singleOrNull { it.isPrimary }?.toIrBasedDescriptor()
 
@@ -712,6 +716,9 @@ open class IrBasedEnumEntryDescriptor(owner: IrEnumEntry) : ClassDescriptor, IrB
     override fun getThisAsReceiverParameter() = (owner.parent as IrClass).toIrBasedDescriptor().thisAsReceiverParameter
 
     override fun getAdditionalReceivers(): List<ReceiverParameterDescriptor> {
+        TODO("Not yet implemented")
+    }
+    override fun getPropertiesForAdditionalReceivers(): List<PropertyDescriptor> {
         TODO("Not yet implemented")
     }
 

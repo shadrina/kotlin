@@ -4909,6 +4909,39 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
         }
     }
 
+    @TestMetadata("compiler/testData/codegen/box/extensionClasses")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class ExtensionClasses extends AbstractIrCodegenBoxWasmTest {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest0(this::doTest, TargetBackend.WASM, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInExtensionClasses() throws Exception {
+            KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionClasses"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.WASM, true);
+        }
+
+        @TestMetadata("constructors.kt")
+        public void testConstructors() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/constructors.kt");
+        }
+
+        @TestMetadata("genericCollection.kt")
+        public void testGenericCollection() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/genericCollection.kt");
+        }
+
+        @TestMetadata("generics.kt")
+        public void testGenerics() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/generics.kt");
+        }
+
+        @TestMetadata("simple.kt")
+        public void testSimple() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/simple.kt");
+        }
+    }
+
     @TestMetadata("compiler/testData/codegen/box/extensionFunctions")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)

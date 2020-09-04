@@ -18,7 +18,9 @@ package org.jetbrains.kotlin.psi2ir.generators
 
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.Scope
+import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
@@ -176,12 +178,15 @@ class BodyGenerator(
     fun getLoop(expression: KtExpression): IrLoop? =
         loopTable[expression]
 
-    fun generatePrimaryConstructorBody(ktClassOrObject: KtPureClassOrObject): IrBody {
+    fun generatePrimaryConstructorBody(ktClassOrObject: KtPureClassOrObject, irConstructor: IrConstructor): IrBody {
         val irBlockBody = context.irFactory.createBlockBody(ktClassOrObject.pureStartOffset, ktClassOrObject.pureEndOffset)
 
         generateSuperConstructorCall(irBlockBody, ktClassOrObject)
 
         val classDescriptor = (scopeOwner as ClassConstructorDescriptor).containingDeclaration
+        if (classDescriptor.additionalReceivers.isNotEmpty()) {
+            generateSetAdditionalFieldForPrimaryConstructorBody(classDescriptor, irConstructor, irBlockBody)
+        }
         irBlockBody.statements.add(
             IrInstanceInitializerCallImpl(
                 ktClassOrObject.pureStartOffset, ktClassOrObject.pureEndOffset,
@@ -329,4 +334,26 @@ class BodyGenerator(
             pregenerateCall(constructorCall)
         )
 
+    private fun generateSetAdditionalFieldForPrimaryConstructorBody(
+        classDescriptor: ClassDescriptor,
+        irConstructor: IrConstructor,
+        irBlockBody: IrBlockBody
+    ) {
+        val thisAsReceiverParameter = classDescriptor.thisAsReceiverParameter
+        val receiver = IrGetValueImpl(
+            UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+            thisAsReceiverParameter.type.toIrType(),
+            context.symbolTable.referenceValue(thisAsReceiverParameter)
+        )
+        val irValueParameter = irConstructor.valueParameters.first()
+        irBlockBody.statements.add(
+            IrSetFieldImpl(
+                UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+                context.symbolTable.referenceField(classDescriptor.propertiesForAdditionalReceivers.single()),
+                receiver,
+                IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irValueParameter.type, irValueParameter.symbol),
+                context.irBuiltIns.unitType
+            )
+        )
+    }
 }
