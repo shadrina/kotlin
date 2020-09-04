@@ -129,6 +129,12 @@ public class KtProperty extends KtTypeParameterListOwnerStub<KotlinPropertyStub>
         return getAdditionalReceiverTypeRefByTree();
     }
 
+    @Nullable
+    @Override
+    public KtAdditionalReceiverObjectList getAdditionalReceiverObjectList() {
+        return null;
+    }
+
     @NotNull
     private List<KtTypeReference> getAdditionalReceiverTypeRefByTree() {
         ASTNode node = getNode().getFirstChildNode();
