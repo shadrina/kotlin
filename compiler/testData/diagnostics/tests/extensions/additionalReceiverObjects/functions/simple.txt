@@ -12,9 +12,9 @@ public final class B {
     public constructor B(/*0*/ a: A)
     public final val a: A
     public open override /*1*/ /*fake_override*/ fun equals(/*0*/ other: kotlin.Any?): kotlin.Boolean
-    public final fun f(): kotlin.Unit
+    public final fun f(): kotlin.Int
     public final fun g(): kotlin.Unit
-    public final fun h(/*0*/ a: A): kotlin.Unit
+    public final fun h(/*0*/ a: A): kotlin.Int
     public open override /*1*/ /*fake_override*/ fun hashCode(): kotlin.Int
     public open override /*1*/ /*fake_override*/ fun toString(): kotlin.String
 }

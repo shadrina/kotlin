@@ -5,15 +5,9 @@ class A {
 }
 
 class B(val a: A) {
-    fun f() with(a) {
-        x
-    }
-
+    fun f() with(a) = x
     fun g() with(A()) {
         x
     }
-
-    fun h(a: A) with(a) {
-        x
-    }
+    fun h(a: A) with(a) = x
 }
