@@ -67,6 +67,12 @@ public abstract class KtFunctionNotStubbed extends KtTypeParameterListOwnerNotSt
         return Collections.emptyList();
     }
 
+    @Nullable
+    @Override
+    public KtAdditionalReceiverObjectList getAdditionalReceiverObjectList() {
+        return null;
+    }
+
     @Override
     @Nullable
     public KtTypeReference getTypeReference() {

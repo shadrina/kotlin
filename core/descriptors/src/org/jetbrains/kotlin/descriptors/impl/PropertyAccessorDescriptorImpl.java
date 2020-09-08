@@ -166,7 +166,7 @@ public abstract class PropertyAccessorDescriptorImpl extends DeclarationDescript
         return correspondingProperty;
     }
 
-    @Nullable
+    @NotNull
     @Override
     public List<ReceiverParameterDescriptor> getAdditionalReceiverParameters() {
         return getCorrespondingProperty().getAdditionalReceiverParameters();

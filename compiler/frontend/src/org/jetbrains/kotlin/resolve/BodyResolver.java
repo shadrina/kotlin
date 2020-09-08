@@ -31,6 +31,8 @@ import org.jetbrains.kotlin.builtins.KotlinBuiltIns;
 import org.jetbrains.kotlin.config.LanguageFeature;
 import org.jetbrains.kotlin.config.LanguageVersionSettings;
 import org.jetbrains.kotlin.descriptors.*;
+import org.jetbrains.kotlin.descriptors.annotations.Annotations;
+import org.jetbrains.kotlin.descriptors.impl.ReceiverParameterDescriptorImpl;
 import org.jetbrains.kotlin.descriptors.impl.SyntheticFieldDescriptor;
 import org.jetbrains.kotlin.diagnostics.Errors;
 import org.jetbrains.kotlin.lexer.KtTokens;
@@ -46,10 +48,9 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.DescriptorUtilsKt;
 import org.jetbrains.kotlin.resolve.lazy.ForceResolveUtil;
 import org.jetbrains.kotlin.resolve.multiplatform.ExpectedActualResolver;
 import org.jetbrains.kotlin.resolve.scopes.*;
+import org.jetbrains.kotlin.resolve.scopes.receivers.ExpressionImplicitReceiver;
 import org.jetbrains.kotlin.types.*;
-import org.jetbrains.kotlin.types.expressions.ExpressionTypingServices;
-import org.jetbrains.kotlin.types.expressions.PreliminaryDeclarationVisitor;
-import org.jetbrains.kotlin.types.expressions.ValueParameterResolver;
+import org.jetbrains.kotlin.types.expressions.*;
 import org.jetbrains.kotlin.types.expressions.typeInfoFactory.TypeInfoFactoryKt;
 import org.jetbrains.kotlin.util.Box;
 import org.jetbrains.kotlin.util.ReenteringLazyValueComputationException;
@@ -960,6 +961,23 @@ public class BodyResolver {
         valueParameterResolver.resolveValueParameters(
                 valueParameters, valueParameterDescriptors, headerScope, outerDataFlowInfo, trace
         );
+
+        if (function instanceof KtFunction) {
+            KtAdditionalReceiverObjectList ktAdditionalReceiverObjectList = ((KtFunction) function).getAdditionalReceiverObjectList();
+            if (ktAdditionalReceiverObjectList != null) {
+                ExpressionTypingContext context = ExpressionTypingContext.newContext(
+                        trace, headerScope, outerDataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
+                        languageVersionSettings, valueParameterResolver.getDataFlowValueFactory()
+                );
+                innerScope = FunctionDescriptorUtil.makeFunctionInnerScopeWithAdditionalReceiverObjects(
+                        ktAdditionalReceiverObjectList,
+                        functionDescriptor,
+                        innerScope,
+                        context,
+                        expressionTypingServices
+                );
+            }
+        }
 
         // Synthetic "field" creation
         if (functionDescriptor instanceof PropertyAccessorDescriptor && functionDescriptor.getExtensionReceiverParameter() == null) {
