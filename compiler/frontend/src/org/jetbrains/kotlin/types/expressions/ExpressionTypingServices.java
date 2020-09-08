@@ -29,9 +29,11 @@ import org.jetbrains.kotlin.resolve.calls.tower.LambdaContextInfo;
 import org.jetbrains.kotlin.resolve.scopes.*;
 import org.jetbrains.kotlin.types.ErrorUtils;
 import org.jetbrains.kotlin.types.KotlinType;
+import org.jetbrains.kotlin.types.TypeUtils;
 import org.jetbrains.kotlin.types.expressions.typeInfoFactory.TypeInfoFactoryKt;
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -221,6 +223,22 @@ public class ExpressionTypingServices {
         assert bodyExpression != null;
         LexicalScope functionInnerScope = FunctionDescriptorUtil.getFunctionInnerScope(outerScope, functionDescriptor, trace,
                                                                                        expressionTypingComponents.overloadChecker);
+        if (function instanceof KtFunction) {
+            KtAdditionalReceiverObjectList ktAdditionalReceiverObjectList = ((KtFunction) function).getAdditionalReceiverObjectList();
+            if (ktAdditionalReceiverObjectList != null) {
+                ExpressionTypingContext context = ExpressionTypingContext.newContext(
+                        trace, functionInnerScope, dataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
+                        getLanguageVersionSettings(), expressionTypingComponents.dataFlowValueFactory
+                );
+                functionInnerScope = FunctionDescriptorUtil.makeFunctionInnerScopeWithAdditionalReceiverObjects(
+                        ktAdditionalReceiverObjectList,
+                        functionDescriptor,
+                        functionInnerScope,
+                        context,
+                        this
+                );
+            }
+        }
 
         ExpressionTypingContext context = ExpressionTypingContext.newContext(
                 trace, functionInnerScope, dataFlowInfo, NO_EXPECTED_TYPE, getLanguageVersionSettings(),

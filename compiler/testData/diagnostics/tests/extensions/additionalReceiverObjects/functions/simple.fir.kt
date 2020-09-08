@@ -5,15 +5,9 @@ class A {
 }
 
 class B(val a: A) {
-    fun f() with(a) {
-        <!UNRESOLVED_REFERENCE!>x<!>
-    }
-
+    fun f() with(a) = <!UNRESOLVED_REFERENCE!>x<!>
     fun g() with(A()) {
         <!UNRESOLVED_REFERENCE!>x<!>
     }
-
-    fun h(a: A) with(a) {
-        <!UNRESOLVED_REFERENCE!>x<!>
-    }
+    fun h(a: A) with(a) = <!UNRESOLVED_REFERENCE!>x<!>
 }

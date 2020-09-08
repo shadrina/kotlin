@@ -971,7 +971,17 @@ public class BodyResolver {
         if (function instanceof KtFunction) {
             KtAdditionalReceiverObjectList ktAdditionalReceiverObjectList = ((KtFunction) function).getAdditionalReceiverObjectList();
             if (ktAdditionalReceiverObjectList != null) {
-                innerScope = getScopeForFunctionWithAdditionalObjectReceivers(ktAdditionalReceiverObjectList, functionDescriptor, headerScope, innerScope, outerDataFlowInfo);
+                ExpressionTypingContext context = ExpressionTypingContext.newContext(
+                        trace, headerScope, outerDataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
+                        languageVersionSettings, valueParameterResolver.getDataFlowValueFactory()
+                );
+                innerScope = FunctionDescriptorUtil.makeFunctionInnerScopeWithAdditionalReceiverObjects(
+                        ktAdditionalReceiverObjectList,
+                        functionDescriptor,
+                        innerScope,
+                        context,
+                        expressionTypingServices
+                );
             }
         }
 
@@ -1006,41 +1016,6 @@ public class BodyResolver {
         }
 
         assert functionDescriptor.getReturnType() != null;
-    }
-
-    private LexicalScope getScopeForFunctionWithAdditionalObjectReceivers(
-            @NotNull KtAdditionalReceiverObjectList additionalReceiverObjectList,
-            @NotNull FunctionDescriptor functionDescriptor,
-            @NotNull LexicalScope headerScope,
-            @NotNull LexicalScope innerScope,
-            @NotNull DataFlowInfo outerDataFlowInfo
-    ) {
-        List<KtExpression> expressions = additionalReceiverObjectList.additionalReceiverObjectExpressions();
-        LexicalScope scopeForReceiverObject =
-                new LexicalScopeImpl(headerScope, headerScope.getOwnerDescriptor(), false, Collections.emptyList(), LexicalScopeKind.DEFAULT_VALUE);
-        ExpressionTypingContext contextForReceiverObject = ExpressionTypingContext.newContext(
-                trace, scopeForReceiverObject, outerDataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
-                languageVersionSettings, valueParameterResolver.getDataFlowValueFactory()
-        );
-        List<ReceiverParameterDescriptor> implicitObjectReceivers = new ArrayList<>();
-        for (KtExpression expression: expressions) {
-            KotlinType kotlinType = expressionTypingServices.getTypeInfo(expression, contextForReceiverObject.replaceExpectedType(null)).getType();
-            if (kotlinType != null) {
-                implicitObjectReceivers
-                        .add(new ReceiverParameterDescriptorImpl(
-                                functionDescriptor,
-                                new ExpressionImplicitReceiver(functionDescriptor, expression, kotlinType, null),
-                                Annotations.Companion.getEMPTY()
-                        ));
-            }
-        }
-        return new LexicalScopeImpl(
-                innerScope,
-                innerScope.getOwnerDescriptor(),
-                innerScope.isOwnerDescriptorAccessibleByLabel(),
-                implicitObjectReceivers,
-                innerScope.getKind()
-        );
     }
 
     public void resolveConstructorParameterDefaultValues(
