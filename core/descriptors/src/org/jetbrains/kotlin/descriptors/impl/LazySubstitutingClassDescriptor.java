@@ -165,12 +165,6 @@ public class LazySubstitutingClassDescriptor extends ModuleAwareClassDescriptor 
 
     @NotNull
     @Override
-    public List<PropertyDescriptor> getPropertiesForAdditionalReceivers() {
-        return Collections.emptyList();
-    }
-
-    @NotNull
-    @Override
     public Collection<ClassConstructorDescriptor> getConstructors() {
         Collection<ClassConstructorDescriptor> originalConstructors = original.getConstructors();
         Collection<ClassConstructorDescriptor> result = new ArrayList<ClassConstructorDescriptor>(originalConstructors.size());
