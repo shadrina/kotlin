@@ -123,12 +123,6 @@ public abstract class AbstractClassDescriptor extends ModuleAwareClassDescriptor
 
     @NotNull
     @Override
-    public List<PropertyDescriptor> getPropertiesForAdditionalReceivers() {
-        return Collections.emptyList();
-    }
-
-    @NotNull
-    @Override
     public MemberScope getMemberScope(@NotNull List<? extends TypeProjection> typeArguments, @NotNull KotlinTypeRefiner kotlinTypeRefiner) {
         assert typeArguments.size() == getTypeConstructor().getParameters().size() : "Illegal number of type arguments: expected "
                                                                                      + getTypeConstructor().getParameters().size() + " but was " + typeArguments.size()
