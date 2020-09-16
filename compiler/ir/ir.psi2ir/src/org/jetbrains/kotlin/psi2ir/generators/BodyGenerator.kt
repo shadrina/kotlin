@@ -383,15 +383,17 @@ class BodyGenerator(
             thisAsReceiverParameter.type.toIrType(),
             context.symbolTable.referenceValue(thisAsReceiverParameter)
         )
-        val irValueParameter = irConstructor.valueParameters.first()
-        irBlockBody.statements.add(
-            IrSetFieldImpl(
-                UNDEFINED_OFFSET, UNDEFINED_OFFSET,
-                context.symbolTable.referenceField(classDescriptor.propertiesForAdditionalReceivers.single()),
-                receiver,
-                IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irValueParameter.type, irValueParameter.symbol),
-                context.irBuiltIns.unitType
+        for ((index, receiverDescriptor) in classDescriptor.additionalReceivers.withIndex()) {
+            val irValueParameter = irConstructor.valueParameters[index]
+            irBlockBody.statements.add(
+                IrSetFieldImpl(
+                    UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+                    context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiverDescriptor.value)),
+                    receiver,
+                    IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irValueParameter.type, irValueParameter.symbol),
+                    context.irBuiltIns.unitType
+                )
             )
-        )
+        }
     }
 }

@@ -11695,6 +11695,29 @@ public class IrBlackBoxCodegenTestGenerated extends AbstractIrBlackBoxCodegenTes
             runTest("compiler/testData/codegen/box/extensionFunctions/whenFail.kt");
         }
 
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditionalReceiverObjects extends AbstractIrBlackBoxCodegenTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+            }
+
+            @TestMetadata("anyContext.kt")
+            public void testAnyContext() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/anyContext.kt");
+            }
+
+            @TestMetadata("simple.kt")
+            public void testSimple() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/simple.kt");
+            }
+        }
+
         @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
