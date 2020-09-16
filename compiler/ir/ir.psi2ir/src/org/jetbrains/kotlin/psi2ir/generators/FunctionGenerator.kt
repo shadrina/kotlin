@@ -42,7 +42,9 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
             IrDeclarationOrigin.DEFINED,
             getOrFail(BindingContext.FUNCTION, ktFunction)
         ) {
-            ktFunction.bodyExpression?.let { generateFunctionBody(it) }
+            ktFunction.bodyExpression?.let {
+                generateFunctionBody(it, ktFunction)
+            }
         }
 
     fun generateLambdaFunctionDeclaration(ktFunction: KtFunctionLiteral): IrSimpleFunction =
@@ -119,7 +121,7 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
             val ktBodyExpression = ktAccessor?.bodyExpression
             irAccessor.body =
                 if (ktBodyExpression != null)
-                    createBodyGenerator(irAccessor.symbol).generateFunctionBody(ktBodyExpression)
+                    createBodyGenerator(irAccessor.symbol).generateFunctionBody(ktBodyExpression, null)
                 else
                     generateDefaultAccessorBody(descriptor, irAccessor)
         }
