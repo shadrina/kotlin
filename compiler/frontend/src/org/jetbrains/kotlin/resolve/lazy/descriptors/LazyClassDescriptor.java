@@ -111,8 +111,6 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
 
     private final NotNullLazyValue<List<ReceiverParameterDescriptor>> additionalReceivers;
 
-    private final NotNullLazyValue<List<PropertyDescriptor>> propertiesForAdditionalReceivers;
-
     public LazyClassDescriptor(
             @NotNull LazyClassContext c,
             @NotNull DeclarationDescriptor containingDeclaration,
@@ -290,9 +288,6 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
                 );
             }).collect(Collectors.toList());
         });
-        this.propertiesForAdditionalReceivers = storageManager.createLazyValue(() -> getAdditionalReceivers().stream()
-                .map(r -> c.getDescriptorResolver().createPropertyForAdditionalReceiver(this, r))
-                .collect(Collectors.toList()));
     }
 
     private static boolean isIllegalInner(@NotNull DeclarationDescriptor descriptor) {
@@ -432,12 +427,6 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
     @Override
     public List<ReceiverParameterDescriptor> getAdditionalReceivers() {
         return additionalReceivers.invoke();
-    }
-
-    @NotNull
-    @Override
-    public List<PropertyDescriptor> getPropertiesForAdditionalReceivers() {
-        return propertiesForAdditionalReceivers.invoke();
     }
 
     @Override
@@ -657,7 +646,6 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
         getUnsubstitutedPrimaryConstructor();
         getVisibility();
         getAdditionalReceivers();
-        getPropertiesForAdditionalReceivers();
     }
 
     @NotNull

@@ -129,7 +129,7 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                 )
                 IrGetFieldImpl(
                     defaultStartOffset, defaultEndOffset,
-                    context.symbolTable.referenceField(receiverClassDescriptor.propertiesForAdditionalReceivers.single()),
+                    context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiver)),
                     irReceiverType, thisReceiver
                 )
             }
@@ -137,6 +137,11 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                 generateThisOrSuperReceiver(receiver, receiver.classDescriptor)
             is SuperCallReceiverValue ->
                 generateThisOrSuperReceiver(receiver, receiver.thisType.constructor.declarationDescriptor as ClassDescriptor)
+            is ExpressionImplicitReceiver ->
+                IrGetValueImpl(
+                    defaultStartOffset, defaultEndOffset,
+                    context.symbolTable.referenceValue(context.additionalDescriptorStorage.getVariable(receiver.expression))
+                )
             is ExpressionReceiver ->
                 generateExpression(receiver.expression)
             is ClassValueReceiver ->
