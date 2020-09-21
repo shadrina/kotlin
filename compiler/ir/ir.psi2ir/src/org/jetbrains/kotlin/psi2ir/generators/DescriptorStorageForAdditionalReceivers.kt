@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.descriptors.VariableDescriptor
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue
 
-class AdditionalDescriptorStorage {
+class DescriptorStorageForAdditionalReceivers {
     private val fieldStorage: MutableMap<ReceiverValue, PropertyDescriptor> = mutableMapOf()
     private val variableStorage: MutableMap<KtExpression, VariableDescriptor> = mutableMapOf()
 
