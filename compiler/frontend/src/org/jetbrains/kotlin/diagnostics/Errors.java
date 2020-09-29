@@ -1155,6 +1155,9 @@ public interface Errors {
     DiagnosticFactory1<KtElement, String> ERROR_IN_CONTRACT_DESCRIPTION = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory1<KtElement, String> CONTRACT_NOT_ALLOWED = DiagnosticFactory1.create(ERROR);
 
+    // Additional receivers
+    DiagnosticFactory1<KtElement, String> NO_ADDITIONAL_RECEIVER = DiagnosticFactory1.create(ERROR);
+
     // Error sets
     ImmutableSet<? extends DiagnosticFactory<?>> UNRESOLVED_REFERENCE_DIAGNOSTICS = ImmutableSet.of(
             UNRESOLVED_REFERENCE, NAMED_PARAMETER_NOT_FOUND, UNRESOLVED_REFERENCE_WRONG_RECEIVER);

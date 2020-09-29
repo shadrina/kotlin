@@ -7,7 +7,7 @@ with<A> fun B.f() {}
 fun main() {
     val b = B()
 
-    b.<!UNRESOLVED_REFERENCE!>f<!>()
+    b.<!NO_ADDITIONAL_RECEIVER!>f()<!>
     with(A()) {
         b.f()
     }

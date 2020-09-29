@@ -21,13 +21,14 @@ import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind.*
 import org.jetbrains.kotlin.resolve.calls.tower.InfixCallNoInfixModifier
 import org.jetbrains.kotlin.resolve.calls.tower.InvokeConventionCallNoOperatorModifier
 import org.jetbrains.kotlin.resolve.calls.tower.VisibilityError
+import org.jetbrains.kotlin.resolve.scopes.LexicalScope
+import org.jetbrains.kotlin.resolve.scopes.utils.parentsWithSelf
 import org.jetbrains.kotlin.types.*
+import org.jetbrains.kotlin.types.checker.NewKotlinTypeChecker
 import org.jetbrains.kotlin.types.model.KotlinTypeMarker
 import org.jetbrains.kotlin.types.model.TypeConstructorMarker
 import org.jetbrains.kotlin.types.model.typeConstructor
-import org.jetbrains.kotlin.types.typeUtil.contains
-import org.jetbrains.kotlin.types.typeUtil.makeNotNullable
-import org.jetbrains.kotlin.types.typeUtil.makeNullable
+import org.jetbrains.kotlin.types.typeUtil.*
 import org.jetbrains.kotlin.utils.SmartList
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
@@ -652,6 +653,28 @@ internal object CheckReceivers : ResolutionPart() {
         resolveKotlinArgument(receiverArgument, receiverParameter, receiverInfo)
     }
 
+    private fun KotlinResolutionCandidate.searchForAdditionalReceivers() {
+        val candidateReceivers = scopeTower.lexicalScope.parentsWithSelf
+            .flatMap { if (it is LexicalScope) scopeTower.getImplicitReceivers(it) else emptyList() }
+        parameterLoop@ for (receiver in candidateDescriptor.additionalReceiverParameters) {
+            val expectedReceiverType = receiver.type
+            val expectedReceiverTypeClosestBound =
+                if (expectedReceiverType.isTypeParameter()) expectedReceiverType.supertypes().first()
+                    .replaceArgumentsWithStarProjections()
+                else expectedReceiverType.replaceArgumentsWithStarProjections()
+
+            for (candidateReceiver in candidateReceivers) {
+                val candidateReceiverType = candidateReceiver.receiverValue.type.replaceArgumentsWithStarProjections()
+                if (NewKotlinTypeChecker.Default.isSubtypeOf(candidateReceiverType, expectedReceiverTypeClosestBound)) {
+                    resolvedCall.additionalReceiversArguments.add(ReceiverExpressionKotlinCallArgument(candidateReceiver))
+                    continue@parameterLoop
+                }
+            }
+            this.diagnosticsFromResolutionParts.add(NoAdditionalReceiver(receiver))
+            return
+        }
+    }
+
     override fun KotlinResolutionCandidate.process(workIndex: Int) {
         when (workIndex) {
             0 -> checkReceiver(
@@ -666,12 +689,15 @@ internal object CheckReceivers : ResolutionPart() {
                     shouldCheckImplicitInvoke = false, // reproduce old inference behaviour
                 )
             }
-            else -> for (i in resolvedCall.additionalReceiversArguments.indices) {
-                checkReceiver(
-                    resolvedCall.additionalReceiversArguments[i],
-                    candidateDescriptor.additionalReceiverParameters[i],
-                    shouldCheckImplicitInvoke = false
-                )
+            else -> {
+                searchForAdditionalReceivers()
+                for (i in resolvedCall.additionalReceiversArguments.indices) {
+                    checkReceiver(
+                        resolvedCall.additionalReceiversArguments[i],
+                        candidateDescriptor.additionalReceiverParameters[i],
+                        shouldCheckImplicitInvoke = false
+                    )
+                }
             }
         }
     }

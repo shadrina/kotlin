@@ -11,7 +11,6 @@ class Inner(arg: Any) {
 
 fun f(outer: Outer) {
     Inner(1)
-    outer.<!UNRESOLVED_REFERENCE!>Inner<!>(2)
     with(outer) {
         Inner(3)
     }

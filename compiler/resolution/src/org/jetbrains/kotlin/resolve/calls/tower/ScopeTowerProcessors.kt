@@ -16,7 +16,6 @@
 
 package org.jetbrains.kotlin.resolve.calls.tower
 
-import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
 import org.jetbrains.kotlin.resolve.scopes.receivers.DetailedReceiver
@@ -67,32 +66,19 @@ internal abstract class AbstractSimpleScopeTowerProcessor<C : Candidate>(
     fun createCandidates(
         collector: Collection<CandidateWithBoundDispatchReceiver>,
         kind: ExplicitReceiverKind,
-        extensionReceiver: ReceiverValueWithSmartCastInfo?,
-        additionalReceivers: List<ReceiverValueWithSmartCastInfo> = emptyList()
+        extensionReceiver: ReceiverValueWithSmartCastInfo?
     ): Collection<C> {
         val result = mutableListOf<C>()
         for (candidate in collector) {
-            val hasExtensionReceiver = extensionReceiver != null
-            val descriptorAdditionalReceiversSize = candidate.descriptor.additionalReceiverParameters.size
-            val callingClassConstructorWithAdditionalReceiver = candidate.descriptor is ClassConstructorDescriptor && hasExtensionReceiver
-                    && !candidate.requiresExtensionReceiver && descriptorAdditionalReceiversSize == 1
-            val candidateToResult =
-                if (callingClassConstructorWithAdditionalReceiver) {
+            if (candidate.requiresExtensionReceiver == (extensionReceiver != null)) {
+                result.add(
                     candidateFactory.createCandidate(
                         candidate,
                         kind,
-                        extensionReceiver = null,
-                        additionalReceivers = listOf(extensionReceiver!!)
+                        extensionReceiver = extensionReceiver
                     )
-                } else if (candidate.requiresExtensionReceiver == hasExtensionReceiver && descriptorAdditionalReceiversSize == additionalReceivers.size) {
-                    candidateFactory.createCandidate(
-                        candidate,
-                        kind,
-                        extensionReceiver = extensionReceiver,
-                        additionalReceivers = additionalReceivers
-                    )
-                } else null
-            candidateToResult?.let { result.add(it) }
+                )
+            }
         }
         return result
     }
@@ -122,8 +108,7 @@ internal class ExplicitReceiverScopeTowerProcessor<C : Candidate>(
             is TowerData.BothTowerLevelAndImplicitReceiver -> createCandidates(
                 data.level.collectCandidates(explicitReceiver),
                 ExplicitReceiverKind.EXTENSION_RECEIVER,
-                explicitReceiver,
-                listOf(data.implicitReceiver)
+                explicitReceiver
             )
             else -> emptyList()
         }
@@ -172,12 +157,6 @@ private class NoExplicitReceiverScopeTowerProcessor<C : Candidate>(
             data.level.collectCandidates(data.implicitReceiver),
             ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
             data.implicitReceiver
-        )
-        is TowerData.BothTowerLevelAndMultipleReceivers -> createCandidates(
-            data.level.collectCandidates(data.implicitReceiver),
-            ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
-            data.implicitReceiver,
-            listOf(data.additionalReceiver)
         )
         else -> emptyList()
     }
