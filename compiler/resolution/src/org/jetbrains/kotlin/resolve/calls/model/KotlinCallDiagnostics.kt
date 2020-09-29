@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.resolve.calls.model
 
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import org.jetbrains.kotlin.descriptors.ReceiverParameterDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.resolve.calls.components.CallableReferenceCandidate
 import org.jetbrains.kotlin.resolve.calls.inference.model.NewTypeVariable
@@ -262,5 +263,11 @@ class CompatibilityWarningOnArgument(
 ) : KotlinCallDiagnostic(RESOLVED) {
     override fun report(reporter: DiagnosticReporter) {
         reporter.onCallArgument(argument, this)
+    }
+}
+
+class NoAdditionalReceiver(val receiverDescriptor: ReceiverParameterDescriptor) : KotlinCallDiagnostic(INAPPLICABLE) {
+    override fun report(reporter: DiagnosticReporter) {
+        reporter.onCall(this)
     }
 }

@@ -44,8 +44,7 @@ interface CandidateFactory<out C : Candidate> {
     fun createCandidate(
         towerCandidate: CandidateWithBoundDispatchReceiver,
         explicitReceiverKind: ExplicitReceiverKind,
-        extensionReceiver: ReceiverValueWithSmartCastInfo?,
-        additionalReceivers: List<ReceiverValueWithSmartCastInfo>
+        extensionReceiver: ReceiverValueWithSmartCastInfo?
     ): C
 }
 
@@ -66,11 +65,6 @@ sealed class TowerData {
     class OnlyImplicitReceiver(val implicitReceiver: ReceiverValueWithSmartCastInfo) : TowerData()
     class TowerLevel(val level: ScopeTowerLevel) : TowerData()
     class BothTowerLevelAndImplicitReceiver(val level: ScopeTowerLevel, val implicitReceiver: ReceiverValueWithSmartCastInfo) : TowerData()
-    class BothTowerLevelAndMultipleReceivers(
-        val level: ScopeTowerLevel,
-        val implicitReceiver: ReceiverValueWithSmartCastInfo,
-        val additionalReceiver: ReceiverValueWithSmartCastInfo
-    ) : TowerData()
 
     // Has the same meaning as BothTowerLevelAndImplicitReceiver, but it's only used for names lookup, so it doesn't need implicit receiver
     class ForLookupForNoExplicitReceiver(val level: ScopeTowerLevel) : TowerData()
@@ -243,27 +237,14 @@ class TowerResolver {
                 // invokeExtension on local variable
                 TowerData.OnlyImplicitReceiver(implicitReceiver).process()?.let { return it }
 
-                fun processWithAdditionalReceiver(level: ScopeTowerLevel): Collection<C>? {
-                    implicitScopeTower.lexicalScope.parentsWithSelf
-                        .flatMap { if (it is LexicalScope) implicitScopeTower.getImplicitReceivers(it) else emptyList() }
-                        .forEach { rv ->
-                            if (rv != implicitReceiver) {
-                                TowerData.BothTowerLevelAndMultipleReceivers(level, implicitReceiver, rv).process()?.let { return it }
-                            }
-                        }
-                    return null
-                }
-
                 // local extensions for implicit receiver
                 for (localLevel in localLevels) {
                     TowerData.BothTowerLevelAndImplicitReceiver(localLevel, implicitReceiver).process()?.let { return it }
-                    processWithAdditionalReceiver(localLevel)
                 }
 
                 // extension for implicit receiver
                 for (nonLocalLevel in nonLocalLevels) {
                     TowerData.BothTowerLevelAndImplicitReceiver(nonLocalLevel, implicitReceiver).process()?.let { return it }
-                    processWithAdditionalReceiver(nonLocalLevel)
                 }
             }
 
