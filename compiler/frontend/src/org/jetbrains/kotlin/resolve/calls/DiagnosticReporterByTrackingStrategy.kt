@@ -81,6 +81,15 @@ class DiagnosticReporterByTrackingStrategy(
                     )
                 )
             }
+            NoAdditionalReceiver::class.java -> {
+                val callElement = psiKotlinCall.psiCall.callElement
+                trace.report(
+                    NO_ADDITIONAL_RECEIVER.on(
+                        callElement,
+                        (diagnostic as NoAdditionalReceiver).receiverDescriptor.value.toString()
+                    )
+                )
+            }
         }
     }
 

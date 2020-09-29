@@ -10,8 +10,7 @@ class Inner(arg: Any) {
 }
 
 fun f(outer: Outer) {
-    <!UNRESOLVED_REFERENCE!>Inner<!>(1)
-    outer.Inner(2)
+    <!NO_ADDITIONAL_RECEIVER!>Inner(1)<!>
     with(outer) {
         Inner(3)
     }
