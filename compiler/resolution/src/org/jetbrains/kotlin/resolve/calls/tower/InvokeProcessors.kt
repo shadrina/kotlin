@@ -179,8 +179,7 @@ private class InvokeExtensionScopeTowerProcessor<C : Candidate>(
                 candidateFactory.createCandidate(
                     invokeCandidateDescriptor,
                     ExplicitReceiverKind.BOTH_RECEIVERS,
-                    explicitReceiver,
-                    emptyList()
+                    explicitReceiver
                 )
             )
         }
@@ -190,8 +189,7 @@ private class InvokeExtensionScopeTowerProcessor<C : Candidate>(
                 candidateFactory.createCandidate(
                     invokeCandidateDescriptor,
                     ExplicitReceiverKind.DISPATCH_RECEIVER,
-                    data.implicitReceiver,
-                    emptyList()
+                    data.implicitReceiver
                 )
             )
         }

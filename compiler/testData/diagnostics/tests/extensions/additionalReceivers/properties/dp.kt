@@ -16,5 +16,5 @@ fun Int.g(v: View) {
 }
 
 fun h() {
-    123.<!UNRESOLVED_REFERENCE!>dp<!>
+    123.<!NO_ADDITIONAL_RECEIVER!>dp<!>
 }

@@ -8,5 +8,7 @@ class B {
 }
 
 fun box(): String {
-    return A().B().result()
+    with(A()) {
+        return B().result()
+    }
 }

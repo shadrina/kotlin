@@ -14,5 +14,5 @@ fun A.q(b: B) {
     with(b) {
         f()
     }
-    <!UNRESOLVED_REFERENCE!>f<!>()
+    <!UNRESOLVED_REFERENCE_WRONG_RECEIVER!>f<!>()
 }
