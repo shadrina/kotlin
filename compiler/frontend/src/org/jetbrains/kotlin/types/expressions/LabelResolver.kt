@@ -33,12 +33,14 @@ import org.jetbrains.kotlin.resolve.calls.context.ResolutionContext
 import org.jetbrains.kotlin.resolve.scopes.utils.getDeclarationsByLabel
 
 object LabelResolver {
-    private fun getElementsByLabelName(labelName: Name, labelExpression: KtSimpleNameExpression): Set<KtElement> {
+    private fun getElementsByLabelName(labelName: Name, labelElement: KtSimpleNameExpression): Set<KtElement> {
         val elements = linkedSetOf<KtElement>()
-        var parent: PsiElement? = labelExpression.parent
+        val labelExpression = labelElement.parent.parent
+        val addAdditionalReceiverNames = labelExpression is KtThisExpression
+        var parent: PsiElement? = labelElement.parent
         while (parent != null) {
-            val name = getLabelNameIfAny(parent)
-            if (name != null && name == labelName) {
+            val names = getLabelNamesIfAny(parent, addAdditionalReceiverNames)
+            if (names.contains(labelName)) {
                 elements.add(getExpressionUnderLabel(parent as KtExpression))
             }
             parent = if (parent is KtCodeFragment) parent.context else parent.parent
@@ -46,20 +48,27 @@ object LabelResolver {
         return elements
     }
 
-    fun getLabelNameIfAny(element: PsiElement): Name? {
-        return when (element) {
-            is KtLabeledExpression -> element.getLabelNameAsName()
-            is KtFunctionLiteral -> getLabelNameIfAny(element.parent)
-            is KtLambdaExpression -> getLabelForFunctionalExpression(element)
-            is KtNamedFunction -> element.nameAsName ?: getLabelForFunctionalExpression(element)
-            else -> null
+    fun getLabelNamesIfAny(element: PsiElement, addAdditionalReceiverNames: Boolean = false): List<Name> {
+        val result = mutableListOf<Name>()
+        when (element) {
+            is KtLabeledExpression -> element.getLabelNameAsName()?.let { result.add(it) }
+            is KtFunctionLiteral -> return getLabelNamesIfAny(element.parent)
+            is KtLambdaExpression -> getLabelForFunctionalExpression(element)?.let { result.add(it) }
+            is KtNamedFunction -> {
+                if (addAdditionalReceiverNames) {
+                    element.additionalReceiverTypeReferences
+                        .mapNotNullTo(result) { it.nameForAdditionalReceiverLabel()?.let { s -> Name.identifier(s) } }
+                }
+                (element.nameAsName ?: getLabelForFunctionalExpression(element))?.let { result.add(it) }
+            }
         }
+        return result
     }
 
     private fun getLabelForFunctionalExpression(element: KtExpression): Name? {
         val parent = element.parent
         return when (parent) {
-            is KtLabeledExpression -> getLabelNameIfAny(parent)
+            is KtLabeledExpression -> getLabelNamesIfAny(parent).singleOrNull()
             is KtBinaryExpression -> parent.operationReference.getReferencedNameAsName()
             else -> getCallerName(element)
         }
@@ -163,7 +172,10 @@ object LabelResolver {
                 val element = resolveNamedLabel(labelName, targetLabel, context.trace)
                 val declarationDescriptor = context.trace.bindingContext[BindingContext.DECLARATION_TO_DESCRIPTOR, element]
                 if (declarationDescriptor is FunctionDescriptor) {
-                    val thisReceiver = declarationDescriptor.extensionReceiverParameter
+                    val additionalReceivers = declarationDescriptor.additionalReceiverParameters
+                    val thisReceiver = additionalReceivers.find {
+                        it.value.type.toString() == labelName.identifier
+                    } ?: declarationDescriptor.extensionReceiverParameter
                     if (thisReceiver != null) {
                         context.trace.record(LABEL_TARGET, targetLabel, element)
                         context.trace.record(REFERENCE_TARGET, referenceExpression, declarationDescriptor)
