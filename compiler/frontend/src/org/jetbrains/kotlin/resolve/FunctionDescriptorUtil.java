@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.types.expressions.ExpressionTypingServices;
 import org.jetbrains.kotlin.types.typeUtil.TypeUtilsKt;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -111,7 +112,9 @@ public class FunctionDescriptorUtil {
             implicitReceivers.add(extensionReceiverParameter);
         }
         if (!descriptor.getAdditionalReceiverParameters().isEmpty()) {
-            implicitReceivers.addAll(descriptor.getAdditionalReceiverParameters());
+            List<ReceiverParameterDescriptor> additionalReceivers = descriptor.getAdditionalReceiverParameters();
+            Collections.reverse(additionalReceivers);
+            implicitReceivers.addAll(additionalReceivers);
         }
         return new LexicalScopeImpl(
                 outerScope, descriptor, true, implicitReceivers,
