@@ -29,7 +29,7 @@ fun main(a: A, b: B, c: C) {
     }
     with(a) {
         with(c) {
-            <!NO_ADDITIONAL_RECEIVER!>f()<!>
+            f()
         }
     }
 }
