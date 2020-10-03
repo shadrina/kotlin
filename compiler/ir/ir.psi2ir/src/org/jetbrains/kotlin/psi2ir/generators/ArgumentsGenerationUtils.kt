@@ -91,7 +91,7 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
         when (receiver) {
             is ExtensionReceiver -> {
                 val receivers =
-                    receiver.declarationDescriptor.additionalReceiverParameters + receiver.declarationDescriptor.extensionReceiverParameter!!
+                    receiver.declarationDescriptor.additionalReceiverParameters + listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter)
                 receivers.first {
                     it.value === receiver
                 }.type.toIrType()
@@ -146,7 +146,7 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                 )
             is ExtensionReceiver -> {
                 val receiverParameter =
-                    (receiver.declarationDescriptor.additionalReceiverParameters + receiver.declarationDescriptor.extensionReceiverParameter!!).single {
+                    (receiver.declarationDescriptor.additionalReceiverParameters + listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter)).single {
                         it.value === receiver
                     }
                 IrGetValueImpl(
