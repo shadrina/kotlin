@@ -144,7 +144,7 @@ class SimpleCandidateFactory(
     ): KotlinResolutionCandidate {
         val resolvedKtCall = MutableResolvedCallAtom(
             kotlinCall, descriptor, explicitReceiverKind,
-            dispatchArgumentReceiver, extensionArgumentReceiver, mutableListOf()
+            dispatchArgumentReceiver, extensionArgumentReceiver
         )
 
         if (ErrorUtils.isError(descriptor)) {
