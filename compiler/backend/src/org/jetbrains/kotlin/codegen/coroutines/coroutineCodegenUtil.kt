@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.backend.common.COROUTINE_SUSPENDED_NAME
 import org.jetbrains.kotlin.backend.common.isBuiltInSuspendCoroutineUninterceptedOrReturn
 import org.jetbrains.kotlin.builtins.isBuiltinFunctionalClassDescriptor
-import org.jetbrains.kotlin.builtins.isBuiltinFunctionalType
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.binding.CodegenBinding
 import org.jetbrains.kotlin.codegen.inline.addFakeContinuationMarker
@@ -166,9 +165,13 @@ fun ResolvedCall<*>.replaceSuspensionFunctionWithRealDescriptor(
     val newCall = ResolvedCallImpl(
         call,
         newCandidateDescriptor,
-        dispatchReceiver, extensionReceiver, explicitReceiverKind, additionalReceivers,
-        null, DelegatingBindingTrace(BindingTraceContext().bindingContext, "Temporary trace for unwrapped suspension function"),
-        TracingStrategy.EMPTY, MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
+        dispatchReceiver,
+        extensionReceiver,
+        explicitReceiverKind,
+        null,
+        DelegatingBindingTrace(BindingTraceContext().bindingContext, "Temporary trace for unwrapped suspension function"),
+        TracingStrategy.EMPTY,
+        MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
     )
 
     this.valueArguments.forEach {
@@ -213,9 +216,9 @@ private fun NewResolvedCallImpl<VariableDescriptor>.asDummyOldResolvedCall(bindi
     return ResolvedCallImpl(
         call,
         candidateDescriptor,
-        dispatchReceiver, extensionReceiver, explicitReceiverKind, additionalReceivers,
-        null, DelegatingBindingTrace(bindingContext, "Trace for old call"),
-        TracingStrategy.EMPTY, MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
+        dispatchReceiver, extensionReceiver, explicitReceiverKind, null,
+        DelegatingBindingTrace(bindingContext, "Trace for old call"), TracingStrategy.EMPTY,
+        MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
     )
 }
 

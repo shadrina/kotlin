@@ -175,9 +175,9 @@ private fun <D : FunctionDescriptor> ResolvedCall<D>.replaceAssertWithAssertInne
     val newResolvedCall = ResolvedCallImpl(
         call,
         newCandidateDescriptor,
-        dispatchReceiver, extensionReceiver, explicitReceiverKind, additionalReceivers,
-        null, DelegatingBindingTrace(BindingTraceContext().bindingContext, "Temporary trace for assertInner"),
-        TracingStrategy.EMPTY, MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
+        dispatchReceiver, extensionReceiver, explicitReceiverKind, null,
+        DelegatingBindingTrace(BindingTraceContext().bindingContext, "Temporary trace for assertInner"), TracingStrategy.EMPTY,
+        MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
     )
     valueArguments.forEach {
         newResolvedCall.recordValueArgument(newCandidateDescriptor.valueParameters[it.key.index], it.value)
