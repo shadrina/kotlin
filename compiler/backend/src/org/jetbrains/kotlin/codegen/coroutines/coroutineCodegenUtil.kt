@@ -168,9 +168,13 @@ fun ResolvedCall<*>.replaceSuspensionFunctionWithRealDescriptor(
     val newCall = ResolvedCallImpl(
         call,
         newCandidateDescriptor,
-        dispatchReceiver, extensionReceiver, explicitReceiverKind, additionalReceivers,
-        null, DelegatingBindingTrace(BindingTraceContext().bindingContext, "Temporary trace for unwrapped suspension function"),
-        TracingStrategy.EMPTY, MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
+        dispatchReceiver,
+        extensionReceiver,
+        explicitReceiverKind,
+        null,
+        DelegatingBindingTrace(BindingTraceContext().bindingContext, "Temporary trace for unwrapped suspension function"),
+        TracingStrategy.EMPTY,
+        MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
     )
 
     this.valueArguments.forEach {
@@ -215,9 +219,9 @@ private fun NewResolvedCallImpl<VariableDescriptor>.asDummyOldResolvedCall(bindi
     return ResolvedCallImpl(
         call,
         candidateDescriptor,
-        dispatchReceiver, extensionReceiver, explicitReceiverKind, additionalReceivers,
-        null, DelegatingBindingTrace(bindingContext, "Trace for old call"),
-        TracingStrategy.EMPTY, MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
+        dispatchReceiver, extensionReceiver, explicitReceiverKind, null,
+        DelegatingBindingTrace(bindingContext, "Trace for old call"), TracingStrategy.EMPTY,
+        MutableDataFlowInfoForArguments.WithoutArgumentsCheck(DataFlowInfo.EMPTY)
     )
 }
 
