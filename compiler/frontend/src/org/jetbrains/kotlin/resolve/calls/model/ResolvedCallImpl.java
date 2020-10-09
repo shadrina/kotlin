@@ -65,7 +65,6 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
     private D resultingDescriptor; // Probably substituted
     private final ReceiverValue dispatchReceiver; // receiver object of a method
     private ReceiverValue extensionReceiver; // receiver of an extension function
-    private final List<ReceiverValue> additionalReceivers = Collections.emptyList(); // additional receivers of an extension function
     private final ExplicitReceiverKind explicitReceiverKind;
     private final TypeSubstitutor knownTypeParametersSubstitutor;
 
@@ -279,7 +278,7 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements MutableRe
     @NotNull
     @Override
     public List<ReceiverValue> getAdditionalReceivers() {
-        return additionalReceivers;
+        return Collections.emptyList();
     }
 
     @Override
