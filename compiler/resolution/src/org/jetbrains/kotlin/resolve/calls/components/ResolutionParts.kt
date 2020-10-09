@@ -667,8 +667,7 @@ internal object CheckReceivers : ResolutionPart() {
             val selectedCandidate = candidateReceivers.firstOrNull { candidateReceiver ->
                 val candidateReceiverType = candidateReceiver.receiverValue.type.replaceArgumentsWithStarProjections()
                 NewKotlinTypeChecker.Default.isSubtypeOf(candidateReceiverType, expectedReceiverTypeClosestBound)
-            }
-            if (selectedCandidate == null) {
+            } ?: run {
                 this.diagnosticsFromResolutionParts.add(NoAdditionalReceiver(receiver))
                 return null
             }
@@ -692,8 +691,7 @@ internal object CheckReceivers : ResolutionPart() {
                 )
             }
             else -> {
-                val additionalReceiverArguments = searchForAdditionalReceivers() ?: return
-                resolvedCall.additionalReceiversArguments.addAll(additionalReceiverArguments)
+                resolvedCall.additionalReceiversArguments = searchForAdditionalReceivers() ?: return
                 for (i in resolvedCall.additionalReceiversArguments.indices) {
                     checkReceiver(
                         resolvedCall.additionalReceiversArguments[i],
