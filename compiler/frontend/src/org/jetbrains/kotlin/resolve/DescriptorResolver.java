@@ -966,8 +966,8 @@ public class DescriptorResolver {
         if (receiverType != null) {
             AnnotationSplitter splitter = new AnnotationSplitter(storageManager, receiverType.getAnnotations(), EnumSet.of(RECEIVER));
             receiverDescriptor = DescriptorFactory.createExtensionReceiverParameterForCallable(
-                    propertyDescriptor, receiverType, splitter.getAnnotationsForTarget(RECEIVER)
-            );
+                    propertyDescriptor, receiverType, splitter.getAnnotationsForTarget(RECEIVER),
+                    false);
         }
         else {
             receiverDescriptor = null;
@@ -976,8 +976,8 @@ public class DescriptorResolver {
         List<ReceiverParameterDescriptor> additionalReceiverDescriptors = additionalReceiverTypes.map((type) -> {
             AnnotationSplitter splitter = new AnnotationSplitter(storageManager, type.getAnnotations(), EnumSet.of(RECEIVER));
             return DescriptorFactory.createExtensionReceiverParameterForCallable(
-                    propertyDescriptor, type, splitter.getAnnotationsForTarget(RECEIVER)
-            );
+                    propertyDescriptor, type, splitter.getAnnotationsForTarget(RECEIVER),
+                    true);
         }).collect(Collectors.toList());
 
         LexicalScope scopeForInitializer = ScopeUtils.makeScopeForPropertyInitializer(scopeForInitializerResolutionWithTypeParameters, propertyDescriptor);

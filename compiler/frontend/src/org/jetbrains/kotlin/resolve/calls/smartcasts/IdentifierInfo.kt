@@ -177,7 +177,7 @@ internal fun getIdForStableIdentifier(
 
         is KtThisExpression -> {
             val declarationDescriptor = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.instanceReference)
-            getIdForThisReceiver(declarationDescriptor)
+            getIdForThisReceiver(declarationDescriptor, expression.getLabelName())
         }
 
         is KtPostfixExpression -> {
@@ -264,17 +264,21 @@ private fun getIdForImplicitReceiver(receiverValue: ReceiverValue?, expression: 
         else -> null
     }
 
-private fun getIdForThisReceiver(descriptorOfThisReceiver: DeclarationDescriptor?) = when (descriptorOfThisReceiver) {
-    is CallableDescriptor -> {
-        val receiverParameter = descriptorOfThisReceiver.extensionReceiverParameter
+private fun getIdForThisReceiver(descriptorOfThisReceiver: DeclarationDescriptor?, labelName: String? = null) =
+    when (descriptorOfThisReceiver) {
+        is CallableDescriptor -> {
+            val receiverParameters =
+                listOfNotNull(descriptorOfThisReceiver.extensionReceiverParameter) + descriptorOfThisReceiver.additionalReceiverParameters
+            val receiverParameter = receiverParameters.find { it.value.type.toString() == labelName }
+                ?: receiverParameters.firstOrNull()
                 ?: error("'This' refers to the callable member without a receiver parameter: $descriptorOfThisReceiver")
-        IdentifierInfo.Receiver(receiverParameter.value)
+            IdentifierInfo.Receiver(receiverParameter.value)
+        }
+
+        is ClassDescriptor -> IdentifierInfo.Receiver(descriptorOfThisReceiver.thisAsReceiverParameter.value)
+
+        else -> IdentifierInfo.NO
     }
-
-    is ClassDescriptor -> IdentifierInfo.Receiver(descriptorOfThisReceiver.thisAsReceiverParameter.value)
-
-    else -> IdentifierInfo.NO
-}
 
 private fun postfix(argumentInfo: IdentifierInfo, op: KtToken): IdentifierInfo =
     if (argumentInfo == IdentifierInfo.NO) IdentifierInfo.NO else IdentifierInfo.PostfixIdentifierInfo(argumentInfo, op)

@@ -426,9 +426,10 @@ class CandidateResolver(
         }
         checkReceiverTypeError(dispatchReceiver, candidateCall.dispatchReceiver)
 
-        assert(additionalReceivers.size == candidateCall.additionalReceivers.size)
-        for (i in additionalReceivers.indices) {
-            checkReceiverTypeError(additionalReceivers[i], candidateCall.additionalReceivers[i])
+        if (additionalReceivers.size == candidateCall.additionalReceivers.size) {
+            for (i in additionalReceivers.indices) {
+                checkReceiverTypeError(additionalReceivers[i], candidateCall.additionalReceivers[i])
+            }
         }
     }
 
