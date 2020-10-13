@@ -188,9 +188,9 @@ public class KtNamedFunction extends KtTypeParameterListOwnerStub<KotlinFunction
     public List<KtTypeReference> getAdditionalReceiverTypeReferences() {
         KotlinFunctionStub stub = getStub();
         if (stub != null) {
-            List<KtAdditionalReceiver> childAdditionalReceivers = getStubOrPsiChildrenAsList(KtStubElementTypes.ADDITIONAL_RECEIVER);
-            if (!childAdditionalReceivers.isEmpty()) {
-                return childAdditionalReceivers.get(0).typeReferences();
+            KtAdditionalReceiverList childAdditionalReceiverList = getStubOrPsiChild(KtStubElementTypes.ADDITIONAL_RECEIVER_LIST);
+            if (childAdditionalReceiverList != null) {
+                return childAdditionalReceiverList.typeReferences();
             }
             else {
                 return Collections.emptyList();
@@ -204,8 +204,8 @@ public class KtNamedFunction extends KtTypeParameterListOwnerStub<KotlinFunction
         while (child != null) {
             IElementType tt = child.getNode().getElementType();
             if (tt == KtTokens.LPAR || tt == KtTokens.COLON) break;
-            if (child instanceof KtAdditionalReceiver) {
-                return ((KtAdditionalReceiver) child).typeReferences();
+            if (child instanceof KtAdditionalReceiverList) {
+                return ((KtAdditionalReceiverList) child).typeReferences();
             }
             child = child.getNextSibling();
         }

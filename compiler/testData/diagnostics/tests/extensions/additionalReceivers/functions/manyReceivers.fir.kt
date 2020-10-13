@@ -10,7 +10,7 @@ class C {
     val c = 3
 }
 
-with<A, B> fun C.f() {}
+with<A> with<B> fun C.f() {}
 
 fun main(a: A, b: B, c: C) {
     with(a) {
