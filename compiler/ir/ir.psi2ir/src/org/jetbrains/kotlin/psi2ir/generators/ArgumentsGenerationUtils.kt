@@ -68,10 +68,7 @@ fun StatementGenerator.generateReceiverForDelegatingCall(
     val irReceiverType = receiver.type.toIrType()
     return generateDelegatedValue(irReceiverType) {
         val receiverClassDescriptor = receiver.classDescriptor
-        val receiverParameter =
-            (receiverClassDescriptor.additionalReceivers).single {
-                it.value === receiver
-            }
+        val receiverParameter = receiverClassDescriptor.additionalReceivers.single { it.value == receiver }
         val receiverExpression = IrGetValueImpl(
             ktDefaultElement.startOffsetSkippingComments, ktDefaultElement.endOffset, irReceiverType,
             context.symbolTable.referenceValueParameter(receiverParameter)
@@ -90,11 +87,11 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
     val irReceiverType =
         when (receiver) {
             is ExtensionReceiver -> {
-                val receivers =
+                val receiverParameters =
                     receiver.declarationDescriptor.additionalReceiverParameters + listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter)
-                receivers.first {
-                    it.value === receiver
-                }.type.toIrType()
+                val receiverParameter = receiverParameters.firstOrNull { it.value == receiver }
+                    ?: receiver.declarationDescriptor.extensionReceiverParameter!!
+                receiverParameter.type.toIrType()
             }
             else ->
                 receiver.type.toIrType()
@@ -145,10 +142,10 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                     context.symbolTable.referenceClass(receiver.classQualifier.descriptor as ClassDescriptor)
                 )
             is ExtensionReceiver -> {
-                val receiverParameter =
-                    (receiver.declarationDescriptor.additionalReceiverParameters + listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter)).single {
-                        it.value === receiver
-                    }
+                val receiverParameters = listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter) +
+                        receiver.declarationDescriptor.additionalReceiverParameters
+                val receiverParameter = receiverParameters.singleOrNull { it.value == receiver }
+                    ?: receiver.declarationDescriptor.extensionReceiverParameter!!
                 IrGetValueImpl(
                     defaultStartOffset, defaultStartOffset, irReceiverType,
                     context.symbolTable.referenceValueParameter(receiverParameter)

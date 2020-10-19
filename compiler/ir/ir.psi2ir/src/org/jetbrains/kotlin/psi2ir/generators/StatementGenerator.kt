@@ -415,7 +415,7 @@ class StatementGenerator(
                 val receivers = listOfNotNull(referenceTarget.extensionReceiverParameter) + referenceTarget.additionalReceiverParameters
                 val receiver = receivers.find {
                     it == resolvedCall?.candidateDescriptor
-                } ?: TODO("No receiver: $referenceTarget")
+                } ?: referenceTarget.extensionReceiverParameter ?: TODO("No receiver: $referenceTarget")
                 val receiverType = receiver.type.toIrType()
                 IrGetValueImpl(
                     startOffset, endOffset,
