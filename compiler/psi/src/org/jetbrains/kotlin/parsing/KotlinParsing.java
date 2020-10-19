@@ -651,8 +651,13 @@ public class KotlinParsing extends AbstractKotlinParsing {
     private void parseAdditionalReceiverObjectList() {
         assert _at(WITH_KEYWORD);
         PsiBuilder.Marker additionalReceiverObjectList = mark();
-        while (at(WITH_KEYWORD)) {
-            parseAdditionalReceiverObject();
+        boolean additionalReceiverObjectParsed = tryParseAdditionalReceiverObject();
+        if (!additionalReceiverObjectParsed) {
+            additionalReceiverObjectList.rollbackTo();
+            return;
+        }
+        while (at(WITH_KEYWORD) & additionalReceiverObjectParsed) {
+            additionalReceiverObjectParsed = tryParseAdditionalReceiverObject();
         }
         additionalReceiverObjectList.done(ADDITIONAL_RECEIVER_OBJECT_LIST);
     }
@@ -661,15 +666,20 @@ public class KotlinParsing extends AbstractKotlinParsing {
      * additionalReceiverObject
      *   : "with" "(" expression ")"
      */
-    private void parseAdditionalReceiverObject() {
+    private boolean tryParseAdditionalReceiverObject() {
         assert _at(WITH_KEYWORD);
         PsiBuilder.Marker additionalReceiverObject = mark();
         advance();
-        if (expect(LPAR, "Expecting a receiver argument", TokenSet.EMPTY)) {
+        if (at(LPAR)) {
+            advance();
             myExpressionParsing.parseExpression();
-            expect(RPAR, "Expecting ')'", TokenSet.EMPTY);
+            expect(RPAR, "Expecting ')'");
+        } else {
+            additionalReceiverObject.rollbackTo();
+            return false;
         }
         additionalReceiverObject.done(ADDITIONAL_RECEIVER_OBJECT);
+        return true;
     }
 
     /*
@@ -1040,6 +1050,10 @@ public class KotlinParsing extends AbstractKotlinParsing {
         OptionalMarker whereMarker = new OptionalMarker(object);
         parseTypeConstraintsGuarded(typeParametersDeclared);
         whereMarker.error("Where clause is not allowed for objects");
+
+        if (at(WITH_KEYWORD)) {
+            parseAdditionalReceiverObjectList();
+        }
 
         if (at(LBRACE)) {
             if (enumClass) {
