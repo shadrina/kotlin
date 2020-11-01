@@ -658,15 +658,16 @@ internal object CheckReceivers : ResolutionPart() {
         val result = mutableListOf<ReceiverValueWithSmartCastInfo>()
         val candidateReceivers = scopeTower.lexicalScope.parentsWithSelf
             .flatMap { if (it is LexicalScope) scopeTower.getImplicitReceivers(it) else emptyList() }
+
+        fun KotlinType.prepared(): KotlinType = if (containsTypeParameter()) replaceArgumentsWithStarProjections() else this
         for (receiver in candidateDescriptor.additionalReceiverParameters) {
             val expectedReceiverType = receiver.type
             val expectedReceiverTypeClosestBound =
                 if (expectedReceiverType.isTypeParameter()) expectedReceiverType.supertypes().first()
-                    .replaceArgumentsWithStarProjections()
-                else expectedReceiverType.replaceArgumentsWithStarProjections()
+                else expectedReceiverType
             val selectedCandidate = candidateReceivers.firstOrNull { candidateReceiver ->
-                val candidateReceiverType = candidateReceiver.receiverValue.type.replaceArgumentsWithStarProjections()
-                NewKotlinTypeChecker.Default.isSubtypeOf(candidateReceiverType, expectedReceiverTypeClosestBound)
+                val candidateReceiverType = candidateReceiver.receiverValue.type
+                NewKotlinTypeChecker.Default.isSubtypeOf(candidateReceiverType.prepared(), expectedReceiverTypeClosestBound.prepared())
             } ?: run {
                 this.diagnosticsFromResolutionParts.add(NoAdditionalReceiver(receiver))
                 return null

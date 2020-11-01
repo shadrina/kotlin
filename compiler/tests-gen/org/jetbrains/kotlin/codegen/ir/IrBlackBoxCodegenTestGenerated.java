@@ -11735,9 +11735,29 @@ public class IrBlackBoxCodegenTestGenerated extends AbstractIrBlackBoxCodegenTes
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/dp.kt");
             }
 
+            @TestMetadata("greedyResolution.kt")
+            public void testGreedyResolution() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/greedyResolution.kt");
+            }
+
+            @TestMetadata("manyReceivers.kt")
+            public void testManyReceivers() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/manyReceivers.kt");
+            }
+
+            @TestMetadata("maxWithComparator.kt")
+            public void testMaxWithComparator() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/maxWithComparator.kt");
+            }
+
             @TestMetadata("plusMatrix.kt")
             public void testPlusMatrix() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/plusMatrix.kt");
+            }
+
+            @TestMetadata("printInContext.kt")
+            public void testPrintInContext() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/printInContext.kt");
             }
 
             @TestMetadata("simpleCall.kt")

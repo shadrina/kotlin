@@ -9472,6 +9472,16 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/insideDeclaration.kt");
                     }
 
+                    @TestMetadata("lazy.kt")
+                    public void testLazy() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/lazy.kt");
+                    }
+
+                    @TestMetadata("manyReceivers.kt")
+                    public void testManyReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/manyReceivers.kt");
+                    }
+
                     @TestMetadata("noExplicitReceiver.kt")
                     public void testNoExplicitReceiver() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/noExplicitReceiver.kt");
