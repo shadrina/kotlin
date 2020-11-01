@@ -11650,6 +11650,29 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
             runTest("compiler/testData/codegen/box/extensionFunctions/whenFail.kt");
         }
 
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditionalReceiverObjects extends AbstractFirBlackBoxCodegenTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTestWithCustomIgnoreDirective(this::doTest, TargetBackend.JVM_IR, testDataFilePath, "// IGNORE_BACKEND_FIR: ");
+            }
+
+            public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+            }
+
+            @TestMetadata("anyContext.kt")
+            public void testAnyContext() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/anyContext.kt");
+            }
+
+            @TestMetadata("simple.kt")
+            public void testSimple() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/simple.kt");
+            }
+        }
+
         @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
@@ -11667,9 +11690,29 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/dp.kt");
             }
 
+            @TestMetadata("greedyResolution.kt")
+            public void testGreedyResolution() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/greedyResolution.kt");
+            }
+
+            @TestMetadata("manyReceivers.kt")
+            public void testManyReceivers() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/manyReceivers.kt");
+            }
+
+            @TestMetadata("maxWithComparator.kt")
+            public void testMaxWithComparator() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/maxWithComparator.kt");
+            }
+
             @TestMetadata("plusMatrix.kt")
             public void testPlusMatrix() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/plusMatrix.kt");
+            }
+
+            @TestMetadata("printInContext.kt")
+            public void testPrintInContext() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/printInContext.kt");
             }
 
             @TestMetadata("simpleCall.kt")

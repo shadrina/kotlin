@@ -8137,6 +8137,37 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirOldFronte
             runTest("compiler/testData/diagnostics/tests/extensions/variableInvoke.kt");
         }
 
+        @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditionalReceiverObjects extends AbstractFirOldFrontendDiagnosticsTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+            }
+
+            @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions")
+            @TestDataPath("$PROJECT_ROOT")
+            @RunWith(JUnit3RunnerWithInners.class)
+            public static class Functions extends AbstractFirOldFrontendDiagnosticsTest {
+                private void runTest(String testDataFilePath) throws Exception {
+                    KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+                }
+
+                public void testAllFilesPresentInFunctions() throws Exception {
+                    KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                }
+
+                @TestMetadata("simple.kt")
+                public void testSimple() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions/simple.kt");
+                }
+            }
+        }
+
         @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceivers")
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
@@ -8187,6 +8218,16 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirOldFronte
                 @TestMetadata("insideDeclaration.kt")
                 public void testInsideDeclaration() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/insideDeclaration.kt");
+                }
+
+                @TestMetadata("lazy.kt")
+                public void testLazy() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/lazy.kt");
+                }
+
+                @TestMetadata("manyReceivers.kt")
+                public void testManyReceivers() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/manyReceivers.kt");
                 }
 
                 @TestMetadata("noExplicitReceiver.kt")
