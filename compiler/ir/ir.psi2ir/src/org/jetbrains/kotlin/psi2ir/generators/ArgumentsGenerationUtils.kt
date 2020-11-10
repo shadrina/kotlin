@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.ir.descriptors.WrappedSimpleFunctionDescriptor
 import org.jetbrains.kotlin.ir.descriptors.WrappedValueParameterDescriptor
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
+import org.jetbrains.kotlin.ir.symbols.IrFieldSymbol
 import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.isImmutable
@@ -115,28 +116,32 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                     )
             }
             is ExtensionClassReceiver -> {
-                val receiverClassDescriptor = receiver.classDescriptor
-                val thisAsReceiverParameter = receiverClassDescriptor.thisAsReceiverParameter
-                val thisReceiver = IrGetValueImpl(
-                    defaultStartOffset, defaultEndOffset,
-                    thisAsReceiverParameter.type.toIrType(),
-                    context.symbolTable.referenceValue(thisAsReceiverParameter)
-                )
-                IrGetFieldImpl(
-                    defaultStartOffset, defaultEndOffset,
-                    context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiver)),
-                    irReceiverType, thisReceiver
+                generateIrGetFieldForAdditionalReceiver(
+                    defaultStartOffset,
+                    defaultEndOffset,
+                    receiver.classDescriptor,
+                    irReceiverType,
+                    context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiver))
                 )
             }
             is ThisClassReceiver ->
                 generateThisOrSuperReceiver(receiver, receiver.classDescriptor)
             is SuperCallReceiverValue ->
                 generateThisOrSuperReceiver(receiver, receiver.thisType.constructor.declarationDescriptor as ClassDescriptor)
-            is ExpressionImplicitReceiver ->
-                IrGetValueImpl(
-                    defaultStartOffset, defaultEndOffset,
-                    context.symbolTable.referenceValue(context.additionalDescriptorStorage.getVariable(receiver.expression))
-                )
+            is ExpressionImplicitReceiver -> {
+                val declarationDescriptor = receiver.declarationDescriptor
+                if (declarationDescriptor is ClassDescriptor) {
+                    generateIrGetFieldForAdditionalReceiver(
+                        defaultStartOffset, defaultEndOffset, declarationDescriptor, irReceiverType,
+                        context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiver.expression))
+                    )
+                } else {
+                    IrGetValueImpl(
+                        defaultStartOffset, defaultEndOffset,
+                        context.symbolTable.referenceValue(context.additionalDescriptorStorage.getVariable(receiver.expression))
+                    )
+                }
+            }
             is ExpressionReceiver ->
                 generateExpression(receiver.expression)
             is ClassValueReceiver ->
@@ -208,6 +213,22 @@ private fun StatementGenerator.generateThisOrSuperReceiver(receiver: ReceiverVal
     val ktReceiver = expressionReceiver.expression
     val type = if (receiver is SuperCallReceiverValue) receiver.thisType else expressionReceiver.type
     return generateThisReceiver(ktReceiver.startOffsetSkippingComments, ktReceiver.endOffset, type, classDescriptor)
+}
+
+private fun StatementGenerator.generateIrGetFieldForAdditionalReceiver(
+    startOffset: Int,
+    endOffset: Int,
+    classDescriptor: ClassDescriptor,
+    irReceiverType: IrType,
+    fieldSymbol: IrFieldSymbol
+): IrGetField {
+    val thisAsReceiverParameter = classDescriptor.thisAsReceiverParameter
+    val thisReceiver = IrGetValueImpl(
+        startOffset, endOffset,
+        thisAsReceiverParameter.type.toIrType(),
+        context.symbolTable.referenceValue(thisAsReceiverParameter)
+    )
+    return IrGetFieldImpl(startOffset, endOffset, fieldSymbol, irReceiverType, thisReceiver)
 }
 
 fun IrExpression.implicitCastTo(expectedType: IrType?): IrExpression {

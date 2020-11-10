@@ -33,7 +33,6 @@ import org.jetbrains.kotlin.types.TypeUtils;
 import org.jetbrains.kotlin.types.expressions.typeInfoFactory.TypeInfoFactoryKt;
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -224,20 +223,18 @@ public class ExpressionTypingServices {
         LexicalScope functionInnerScope = FunctionDescriptorUtil.getFunctionInnerScope(outerScope, functionDescriptor, trace,
                                                                                        expressionTypingComponents.overloadChecker);
         if (function instanceof KtFunction) {
-            KtAdditionalReceiverObjectList ktAdditionalReceiverObjectList = ((KtFunction) function).getAdditionalReceiverObjectList();
-            if (ktAdditionalReceiverObjectList != null) {
-                ExpressionTypingContext context = ExpressionTypingContext.newContext(
-                        trace, functionInnerScope, dataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
-                        getLanguageVersionSettings(), expressionTypingComponents.dataFlowValueFactory
-                );
-                functionInnerScope = FunctionDescriptorUtil.makeFunctionInnerScopeWithAdditionalReceiverObjects(
-                        ktAdditionalReceiverObjectList,
-                        functionDescriptor,
-                        functionInnerScope,
-                        context,
-                        this
-                );
-            }
+            List<KtExpression> additionalReceiverExpressions = ((KtFunction) function).getAdditionalReceiverExpressions();
+            ExpressionTypingContext context = ExpressionTypingContext.newContext(
+                    trace, functionInnerScope, dataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
+                    getLanguageVersionSettings(), expressionTypingComponents.dataFlowValueFactory
+            );
+            functionInnerScope = FunctionDescriptorUtil.makeFunctionInnerScopeWithAdditionalReceiverExpressions(
+                    additionalReceiverExpressions,
+                    functionDescriptor,
+                    functionInnerScope,
+                    context,
+                    this
+            );
         }
 
         ExpressionTypingContext context = ExpressionTypingContext.newContext(

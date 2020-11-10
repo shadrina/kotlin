@@ -41,8 +41,10 @@ import org.jetbrains.kotlin.resolve.lazy.data.KtClassOrObjectInfo;
 import org.jetbrains.kotlin.resolve.lazy.data.KtObjectInfo;
 import org.jetbrains.kotlin.resolve.lazy.declarations.ClassMemberDeclarationProvider;
 import org.jetbrains.kotlin.resolve.scopes.LexicalScope;
+import org.jetbrains.kotlin.resolve.scopes.LexicalScopeImpl;
 import org.jetbrains.kotlin.resolve.scopes.MemberScope;
 import org.jetbrains.kotlin.resolve.scopes.StaticScopeForKotlinEnum;
+import org.jetbrains.kotlin.resolve.scopes.receivers.ExpressionImplicitReceiver;
 import org.jetbrains.kotlin.resolve.scopes.receivers.ExtensionClassReceiver;
 import org.jetbrains.kotlin.resolve.source.KotlinSourceElementKt;
 import org.jetbrains.kotlin.storage.MemoizedFunctionToNotNull;
@@ -52,10 +54,7 @@ import org.jetbrains.kotlin.storage.StorageManager;
 import org.jetbrains.kotlin.types.*;
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static kotlin.collections.CollectionsKt.firstOrNull;
@@ -385,7 +384,28 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
     @Override
     @NotNull
     public LexicalScope getScopeForMemberDeclarationResolution() {
-        return resolutionScopesSupport.getScopeForMemberDeclarationResolution().invoke();
+        LexicalScope scopeForMemberDeclarationResolution = resolutionScopesSupport.getScopeForMemberDeclarationResolution().invoke();
+        if (classOrObject == null) {
+            return scopeForMemberDeclarationResolution;
+        }
+        List<KtExpression> expressions = classOrObject.getAdditionalReceiverExpressions();
+        List<ReceiverParameterDescriptor> implicitReceiverExpressions = expressions.stream().map(expression -> {
+            KotlinType kotlinType = c.getDescriptorResolver()
+                    .getAdditionalReceiverExpressionKotlinType(expression, getScopeForClassHeaderResolution(), c.getTrace());
+            return kotlinType != null
+                   ? new ReceiverParameterDescriptorImpl(
+                           this,
+                           new ExpressionImplicitReceiver(this, expression, kotlinType, null),
+                           Annotations.Companion.getEMPTY())
+                   : null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        return new LexicalScopeImpl(
+                scopeForMemberDeclarationResolution,
+                scopeForMemberDeclarationResolution.getOwnerDescriptor(),
+                scopeForMemberDeclarationResolution.isOwnerDescriptorAccessibleByLabel(),
+                implicitReceiverExpressions,
+                scopeForMemberDeclarationResolution.getKind()
+        );
     }
 
     @Override
