@@ -158,6 +158,10 @@ public class KtVisitor<R, D> extends PsiElementVisitor {
         return visitSuperTypeListEntry(specifier, data);
     }
 
+    public R visitAdditionalReceiverList(@NotNull KtAdditionalReceiverList additionalReceiverList, D data) {
+        return visitKtElement(additionalReceiverList, data);
+    }
+
     public R visitAdditionalReceiver(@NotNull KtAdditionalReceiver additionalReceiver, D data) {
         return visitKtElement(additionalReceiver, data);
     }

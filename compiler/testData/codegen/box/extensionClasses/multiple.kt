@@ -1,7 +1,8 @@
 class O(val o: String)
 class K(val k: String)
 
-with<O, K>
+with<O>
+with<K>
 class R {
     fun result() = o + k
 }
