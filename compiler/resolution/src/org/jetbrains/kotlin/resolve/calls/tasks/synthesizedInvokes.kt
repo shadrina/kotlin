@@ -70,7 +70,7 @@ private fun createSynthesizedFunctionWithFirstParameterAsReceiver(descriptor: Fu
     descriptor.original.newCopyBuilder().apply {
         setExtensionReceiverParameter(
             DescriptorFactory.createExtensionReceiverParameterForCallable(
-                descriptor.original, descriptor.original.valueParameters.first().type, Annotations.EMPTY
+                descriptor.original, descriptor.original.valueParameters.first().type, Annotations.EMPTY, false
             )
         )
         setValueParameters(

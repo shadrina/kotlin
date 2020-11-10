@@ -168,7 +168,7 @@ abstract class LazyJavaScope(
 
         functionDescriptorImpl.initialize(
             effectiveSignature.receiverType?.let {
-                DescriptorFactory.createExtensionReceiverParameterForCallable(functionDescriptorImpl, it, Annotations.EMPTY)
+                DescriptorFactory.createExtensionReceiverParameterForCallable(functionDescriptorImpl, it, Annotations.EMPTY, false)
             },
             getDispatchReceiverParameter(),
             emptyList(),

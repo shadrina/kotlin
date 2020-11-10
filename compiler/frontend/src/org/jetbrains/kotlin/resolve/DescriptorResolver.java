@@ -69,8 +69,7 @@ import java.util.stream.Stream;
 import static org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget.*;
 import static org.jetbrains.kotlin.diagnostics.Errors.*;
 import static org.jetbrains.kotlin.lexer.KtTokens.*;
-import static org.jetbrains.kotlin.resolve.BindingContext.CONSTRUCTOR;
-import static org.jetbrains.kotlin.resolve.BindingContext.TYPE_ALIAS;
+import static org.jetbrains.kotlin.resolve.BindingContext.*;
 import static org.jetbrains.kotlin.resolve.DescriptorUtils.*;
 import static org.jetbrains.kotlin.resolve.ModifiersChecker.resolveMemberModalityFromModifiers;
 import static org.jetbrains.kotlin.resolve.ModifiersChecker.resolveVisibilityFromModifiers;
@@ -921,8 +920,8 @@ public class DescriptorResolver {
         List<TypeParameterDescriptorImpl> typeParameterDescriptors;
         LexicalScope scopeForDeclarationResolutionWithTypeParameters;
         LexicalScope scopeForInitializerResolutionWithTypeParameters;
-        KotlinType receiverType = null;
-        Stream<KotlinType> additionalReceiverTypes = Stream.empty();
+        Pair<KotlinType, KtTypeReference> receiverTypeToRef = null;
+        List<Pair<KotlinType, KtTypeReference>> additionalReceiverTypesToRefs = new ArrayList<>();
 
         {
             List<KtTypeParameter> typeParameters = variableDeclaration.getTypeParameters();
@@ -954,31 +953,44 @@ public class DescriptorResolver {
 
             KtTypeReference receiverTypeRef = variableDeclaration.getReceiverTypeReference();
             if (receiverTypeRef != null) {
-                receiverType = typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, receiverTypeRef, trace, true);
+                receiverTypeToRef = new Pair<>(
+                        typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, receiverTypeRef, trace, true),
+                        receiverTypeRef
+                );
             }
 
             List<KtTypeReference> additionalReceiverTypeRefs = variableDeclaration.getAdditionalReceiverTypeReferences();
-            additionalReceiverTypes = additionalReceiverTypeRefs.stream()
-                    .map((typeRef) -> typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, typeRef, trace, true));
+            for (KtTypeReference additionalReceiverTypeRef: additionalReceiverTypeRefs) {
+                additionalReceiverTypesToRefs.add(new Pair<>(
+                        typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, additionalReceiverTypeRef, trace, true),
+                        additionalReceiverTypeRef
+                ));
+            }
         }
 
-        ReceiverParameterDescriptor receiverDescriptor;
-        if (receiverType != null) {
+        ReceiverParameterDescriptor receiverDescriptor = null;
+        if (receiverTypeToRef != null) {
+            KotlinType receiverType = receiverTypeToRef.getFirst();
             AnnotationSplitter splitter = new AnnotationSplitter(storageManager, receiverType.getAnnotations(), EnumSet.of(RECEIVER));
             receiverDescriptor = DescriptorFactory.createExtensionReceiverParameterForCallable(
-                    propertyDescriptor, receiverType, splitter.getAnnotationsForTarget(RECEIVER)
-            );
-        }
-        else {
-            receiverDescriptor = null;
+                    propertyDescriptor, receiverType, splitter.getAnnotationsForTarget(RECEIVER),
+                    false);
+            String label = receiverTypeToRef.getSecond().nameForReceiverLabel();
+            if (label != null) {
+                trace.record(RECEIVER_LABEL_NAME, receiverDescriptor.getValue(), label);
+            }
         }
 
-        List<ReceiverParameterDescriptor> additionalReceiverDescriptors = additionalReceiverTypes.map((type) -> {
-            AnnotationSplitter splitter = new AnnotationSplitter(storageManager, type.getAnnotations(), EnumSet.of(RECEIVER));
-            return DescriptorFactory.createExtensionReceiverParameterForCallable(
-                    propertyDescriptor, type, splitter.getAnnotationsForTarget(RECEIVER)
-            );
-        }).collect(Collectors.toList());
+        List<ReceiverParameterDescriptor> additionalReceiverDescriptors = new ArrayList<>();
+        for (Pair<KotlinType, KtTypeReference> additionalReceiverTypeToRef: additionalReceiverTypesToRefs) {
+            KotlinType additionalReceiverType = additionalReceiverTypeToRef.getFirst();
+            AnnotationSplitter splitter = new AnnotationSplitter(storageManager, additionalReceiverType.getAnnotations(), EnumSet.of(RECEIVER));
+            ReceiverParameterDescriptor additionalReceiverDescriptor = DescriptorFactory.createExtensionReceiverParameterForCallable(
+                    propertyDescriptor, additionalReceiverType, splitter.getAnnotationsForTarget(RECEIVER),
+                    true);
+            additionalReceiverDescriptors.add(additionalReceiverDescriptor);
+            trace.record(RECEIVER_LABEL_NAME, additionalReceiverDescriptor.getValue(), additionalReceiverTypeToRef.getSecond().nameForReceiverLabel());
+        }
 
         LexicalScope scopeForInitializer = ScopeUtils.makeScopeForPropertyInitializer(scopeForInitializerResolutionWithTypeParameters, propertyDescriptor);
         KotlinType propertyType = propertyInfo.getVariableType();
