@@ -980,6 +980,7 @@ public class BodyResolver {
             PropertyAccessorDescriptor accessorDescriptor = (PropertyAccessorDescriptor) functionDescriptor;
             KtProperty property = (KtProperty) function.getParent();
             SyntheticFieldDescriptor fieldDescriptor = new SyntheticFieldDescriptor(accessorDescriptor, property);
+            // TODO: What if property has object receivers?
             innerScope = new LexicalScopeImpl(innerScope, functionDescriptor, true, Collections.emptyList(),
                                               LexicalScopeKind.PROPERTY_ACCESSOR_BODY,
                                               LocalRedeclarationChecker.DO_NOTHING.INSTANCE, handler -> {

@@ -82,6 +82,10 @@ fun KotlinType.isTypeParameter(): Boolean = TypeUtils.isTypeParameter(this)
 
 fun KotlinType.containsTypeParameter(): Boolean = TypeUtils.contains(this) { t -> TypeUtils.isTypeParameter(t) }
 
+fun KotlinType.representativeUpperBoundIfTypeParameter(): KotlinType = if (isTypeParameter()) supertypes().first() else this
+
+fun KotlinType.withTypeParametersErased(): KotlinType = if (containsTypeParameter()) replaceArgumentsWithStarProjections() else this
+
 fun KotlinType.upperBoundedByPrimitiveNumberOrNullableType(): Boolean =
     TypeUtils.getTypeParameterDescriptorOrNull(this)?.upperBounds?.any { it.isPrimitiveNumberOrNullableType() } == true
 
