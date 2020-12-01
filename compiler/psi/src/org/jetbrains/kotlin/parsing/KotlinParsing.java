@@ -645,31 +645,31 @@ public class KotlinParsing extends AbstractKotlinParsing {
     }
 
     /*
-     * additionalReceiverObjectList
-     *   : additionalReceiverObject+
+     * additionalReceiverExpressionList
+     *   : additionalReceiverExpression+
      */
-    private void parseAdditionalReceiverObjectList() {
+    private void parseAdditionalReceiverExpressionList() {
         assert _at(WITH_KEYWORD);
-        PsiBuilder.Marker additionalReceiverObjectList = mark();
+        PsiBuilder.Marker additionalReceiverExpressionList = mark();
         while (at(WITH_KEYWORD)) {
-            parseAdditionalReceiverObject();
+            parseAdditionalReceiverExpression();
         }
-        additionalReceiverObjectList.done(ADDITIONAL_RECEIVER_OBJECT_LIST);
+        additionalReceiverExpressionList.done(ADDITIONAL_RECEIVER_EXPRESSION_LIST);
     }
 
     /*
-     * additionalReceiverObject
+     * additionalReceiverExpression
      *   : "with" "(" expression ")"
      */
-    private void parseAdditionalReceiverObject() {
+    private void parseAdditionalReceiverExpression() {
         assert _at(WITH_KEYWORD);
-        PsiBuilder.Marker additionalReceiverObject = mark();
+        PsiBuilder.Marker additionalReceiverExpression = mark();
         advance();
-        if (expect(LPAR, "Expecting a receiver argument", TokenSet.EMPTY)) {
+        if (expect(LPAR, "Expecting a receiver expression", TokenSet.EMPTY)) {
             myExpressionParsing.parseExpression();
             expect(RPAR, "Expecting ')'", TokenSet.EMPTY);
         }
-        additionalReceiverObject.done(ADDITIONAL_RECEIVER_OBJECT);
+        additionalReceiverExpression.done(ADDITIONAL_RECEIVER_EXPRESSION);
     }
 
     /*
@@ -1040,6 +1040,10 @@ public class KotlinParsing extends AbstractKotlinParsing {
         OptionalMarker whereMarker = new OptionalMarker(object);
         parseTypeConstraintsGuarded(typeParametersDeclared);
         whereMarker.error("Where clause is not allowed for objects");
+
+        if (at(WITH_KEYWORD) && lookahead(1) == LPAR) {
+            parseAdditionalReceiverExpressionList();
+        }
 
         if (at(LBRACE)) {
             if (enumClass) {
@@ -1744,8 +1748,8 @@ public class KotlinParsing extends AbstractKotlinParsing {
         if (!functionContractOccurred) {
             parseFunctionContract();
         }
-        if (at(WITH_KEYWORD)) {
-            parseAdditionalReceiverObjectList();
+        if (at(WITH_KEYWORD) && lookahead(1) == LPAR) {
+            parseAdditionalReceiverExpressionList();
         }
 
         if (at(SEMICOLON)) {

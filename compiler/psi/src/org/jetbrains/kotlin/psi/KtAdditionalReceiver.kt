@@ -17,5 +17,5 @@ class KtAdditionalReceiver : KtElementImplStub<KotlinPlaceHolderStub<KtAdditiona
         return visitor.visitAdditionalReceiver(this, data)
     }
 
-    fun typeReference(): KtTypeReference = children.find { it is KtTypeReference } as KtTypeReference
+    fun typeReference(): KtTypeReference? = children.find { it is KtTypeReference } as? KtTypeReference
 }

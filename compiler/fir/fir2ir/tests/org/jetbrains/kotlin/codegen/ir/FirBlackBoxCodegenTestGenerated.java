@@ -11512,9 +11512,32 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
             runTest("compiler/testData/codegen/box/extensionClasses/generics.kt");
         }
 
+        @TestMetadata("multiple.kt")
+        public void testMultiple() throws Exception {
+            runTest("compiler/testData/codegen/box/extensionClasses/multiple.kt");
+        }
+
         @TestMetadata("simple.kt")
         public void testSimple() throws Exception {
             runTest("compiler/testData/codegen/box/extensionClasses/simple.kt");
+        }
+
+        @TestMetadata("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditonalReceiverExpressions extends AbstractFirBlackBoxCodegenTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTestWithCustomIgnoreDirective(this::doTest, TargetBackend.JVM_IR, testDataFilePath, "// IGNORE_BACKEND_FIR: ");
+            }
+
+            public void testAllFilesPresentInAdditonalReceiverExpressions() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+            }
+
+            @TestMetadata("simple.kt")
+            public void testSimple() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions/simple.kt");
+            }
         }
     }
 
@@ -11650,6 +11673,29 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
             runTest("compiler/testData/codegen/box/extensionFunctions/whenFail.kt");
         }
 
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditionalReceiverExpressions extends AbstractFirBlackBoxCodegenTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTestWithCustomIgnoreDirective(this::doTest, TargetBackend.JVM_IR, testDataFilePath, "// IGNORE_BACKEND_FIR: ");
+            }
+
+            public void testAllFilesPresentInAdditionalReceiverExpressions() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+            }
+
+            @TestMetadata("anyContext.kt")
+            public void testAnyContext() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/anyContext.kt");
+            }
+
+            @TestMetadata("simple.kt")
+            public void testSimple() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/simple.kt");
+            }
+        }
+
         @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
@@ -11667,14 +11713,39 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/dp.kt");
             }
 
+            @TestMetadata("greedyResolution.kt")
+            public void testGreedyResolution() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/greedyResolution.kt");
+            }
+
+            @TestMetadata("manyReceivers.kt")
+            public void testManyReceivers() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/manyReceivers.kt");
+            }
+
+            @TestMetadata("maxWithComparator.kt")
+            public void testMaxWithComparator() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/maxWithComparator.kt");
+            }
+
             @TestMetadata("plusMatrix.kt")
             public void testPlusMatrix() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/plusMatrix.kt");
             }
 
+            @TestMetadata("printInContext.kt")
+            public void testPrintInContext() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/printInContext.kt");
+            }
+
             @TestMetadata("simpleCall.kt")
             public void testSimpleCall() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/simpleCall.kt");
+            }
+
+            @TestMetadata("this.kt")
+            public void testThis() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/this.kt");
             }
         }
     }
