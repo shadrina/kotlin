@@ -166,12 +166,12 @@ public class KtVisitor<R, D> extends PsiElementVisitor {
         return visitKtElement(additionalReceiver, data);
     }
 
-    public R visitAdditionalReceiverObjectList(@NotNull KtAdditionalReceiverObjectList additionalReceiverObjectList, D data) {
-        return visitKtElement(additionalReceiverObjectList, data);
+    public R visitAdditionalReceiverExpressionList(@NotNull KtAdditionalReceiverExpressionList additionalReceiverExpressionList, D data) {
+        return visitKtElement(additionalReceiverExpressionList, data);
     }
 
-    public R visitAdditionalReceiverObject(@NotNull KtAdditionalReceiverObject additionalReceiverObject, D data) {
-        return visitKtElement(additionalReceiverObject, data);
+    public R visitAdditionalReceiverExpression(@NotNull KtAdditionalReceiverExpression additionalReceiverExpression, D data) {
+        return visitKtElement(additionalReceiverExpression, data);
     }
 
     public R visitConstructorDelegationCall(@NotNull KtConstructorDelegationCall call, D data) {

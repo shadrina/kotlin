@@ -9886,6 +9886,24 @@ public class JsCodegenBoxTestGenerated extends AbstractJsCodegenBoxTest {
         public void testSimple() throws Exception {
             runTest("compiler/testData/codegen/box/extensionClasses/simple.kt");
         }
+
+        @TestMetadata("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditonalReceiverExpressions extends AbstractJsCodegenBoxTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest0(this::doTest, TargetBackend.JS, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAdditonalReceiverExpressions() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS, true);
+            }
+
+            @TestMetadata("simple.kt")
+            public void testSimple() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions/simple.kt");
+            }
+        }
     }
 
     @TestMetadata("compiler/testData/codegen/box/extensionFunctions")
@@ -10020,26 +10038,26 @@ public class JsCodegenBoxTestGenerated extends AbstractJsCodegenBoxTest {
             runTest("compiler/testData/codegen/box/extensionFunctions/whenFail.kt");
         }
 
-        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects")
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions")
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
-        public static class AdditionalReceiverObjects extends AbstractJsCodegenBoxTest {
+        public static class AdditionalReceiverExpressions extends AbstractJsCodegenBoxTest {
             private void runTest(String testDataFilePath) throws Exception {
                 KotlinTestUtils.runTest0(this::doTest, TargetBackend.JS, testDataFilePath);
             }
 
-            public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
-                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS, true);
+            public void testAllFilesPresentInAdditionalReceiverExpressions() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS, true);
             }
 
             @TestMetadata("anyContext.kt")
             public void testAnyContext() throws Exception {
-                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/anyContext.kt");
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/anyContext.kt");
             }
 
             @TestMetadata("simple.kt")
             public void testSimple() throws Exception {
-                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/simple.kt");
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/simple.kt");
             }
         }
 

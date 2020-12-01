@@ -62,7 +62,7 @@ class BodyGenerator(
 
         val irBlockBody = context.irFactory.createBlockBody(ktBody.startOffsetSkippingComments, ktBody.endOffset)
         ktFunction?.let {
-            generateAdditionalReceiverObjectVariables(
+            generateVariablesForAdditionalReceiverExpressions(
                 statementGenerator,
                 irBlockBody,
                 ktFunction
@@ -134,12 +134,12 @@ class BodyGenerator(
         return irBlockBody
     }
 
-    private fun generateAdditionalReceiverObjectVariables(
+    private fun generateVariablesForAdditionalReceiverExpressions(
         statementGenerator: StatementGenerator,
         irBlockBody: IrBlockBody,
         ktFunction: KtFunction
     ) {
-        val additionalObjectReceiverExpressions = ktFunction.additionalReceiverObjectList?.additionalReceiverObjectExpressions() ?: return
+        val additionalObjectReceiverExpressions = ktFunction.additionalReceiverExpressions
         val functionDescriptor = getOrFail(BindingContext.FUNCTION, ktFunction)
         for ((variableIndex, expression) in additionalObjectReceiverExpressions.withIndex()) {
             val descriptor = LocalVariableDescriptor(

@@ -192,6 +192,11 @@ abstract class KtClassOrObject :
         }
         return emptyList()
     }
+
+    override fun getAdditionalReceiverExpressions(): List<KtExpression> {
+        val child = findChildByType<KtAdditionalReceiverExpressionList>(KtNodeTypes.ADDITIONAL_RECEIVER_EXPRESSION_LIST) ?: return emptyList()
+        return child.additionalReceiverObjectExpressions()
+    }
 }
 
 fun KtClassOrObject.getOrCreateBody(): KtClassBody {

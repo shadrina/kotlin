@@ -22,6 +22,10 @@ object JvmNameProvider : NameProvider {
         return NameProvider.DEFAULT.nameForDeclaration(descriptor)
     }
 
+    override fun nameForAdditionalReceiver(index: Int): Name = NameProvider.DEFAULT.nameForAdditionalReceiver(index)
+
+    override fun nameForAdditionalReceiverExpression(index: Int): Name = NameProvider.DEFAULT.nameForAdditionalReceiverExpression(index)
+
     private fun nameForValueParameter(descriptor: ValueParameterDescriptor): Name {
         getNameForDestructuredParameterOrNull(descriptor)?.let { return Name.identifier(it) }
         if (DescriptorToSourceUtils.getSourceFromDescriptor(descriptor)?.safeAs<KtParameter>()?.isSingleUnderscore == true) {

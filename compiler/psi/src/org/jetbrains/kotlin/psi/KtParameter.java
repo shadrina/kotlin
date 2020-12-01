@@ -168,10 +168,10 @@ public class KtParameter extends KtNamedDeclarationStub<KotlinParameterStub> imp
         return Collections.emptyList();
     }
 
-    @Nullable
+    @NotNull
     @Override
-    public KtAdditionalReceiverObjectList getAdditionalReceiverObjectList() {
-        return null;
+    public List<KtExpression> getAdditionalReceiverExpressions() {
+        return Collections.emptyList();
     }
 
     @Nullable

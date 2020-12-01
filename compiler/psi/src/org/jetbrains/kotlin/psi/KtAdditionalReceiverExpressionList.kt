@@ -9,17 +9,17 @@ import com.intellij.lang.ASTNode
 import org.jetbrains.kotlin.psi.stubs.KotlinPlaceHolderStub
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 
-class KtAdditionalReceiverObjectList : KtElementImplStub<KotlinPlaceHolderStub<KtAdditionalReceiverObjectList>> {
+class KtAdditionalReceiverExpressionList : KtElementImplStub<KotlinPlaceHolderStub<KtAdditionalReceiverExpressionList>> {
     constructor(node: ASTNode) : super(node)
-    constructor(stub: KotlinPlaceHolderStub<KtAdditionalReceiverObjectList>) : super(
+    constructor(stub: KotlinPlaceHolderStub<KtAdditionalReceiverExpressionList>) : super(
         stub,
-        KtStubElementTypes.ADDITIONAL_RECEIVER_OBJECT_LIST
+        KtStubElementTypes.ADDITIONAL_RECEIVER_EXPRESSION_LIST
     )
 
     override fun <R : Any?, D : Any?> accept(visitor: KtVisitor<R, D>, data: D): R {
-        return visitor.visitAdditionalReceiverObjectList(this, data)
+        return visitor.visitAdditionalReceiverExpressionList(this, data)
     }
 
     fun additionalReceiverObjectExpressions(): List<KtExpression> =
-        children.filterIsInstance(KtAdditionalReceiverObject::class.java).map { it.expression() }
+        children.filterIsInstance(KtAdditionalReceiverExpression::class.java).mapNotNull { it.expression() }
 }

@@ -17,6 +17,7 @@
 package org.jetbrains.kotlin.psi;
 
 import com.intellij.psi.PsiElement;
+import kotlin.annotations.jvm.ReadOnly;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,10 +34,12 @@ public interface KtCallableDeclaration extends KtNamedDeclaration, KtTypeParamet
     KtTypeReference getReceiverTypeReference();
 
     @NotNull
+    @ReadOnly
     List<KtTypeReference> getAdditionalReceiverTypeReferences();
 
-    @Nullable
-    KtAdditionalReceiverObjectList getAdditionalReceiverObjectList();
+    @NotNull
+    @ReadOnly
+    List<KtExpression> getAdditionalReceiverExpressions();
 
     @Nullable
     KtTypeReference getTypeReference();

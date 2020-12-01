@@ -11,11 +11,16 @@ import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue
 
 class DescriptorStorageForAdditionalReceivers {
-    private val fieldStorage: MutableMap<ReceiverValue, PropertyDescriptor> = mutableMapOf()
+    private val fieldStorageByReceiverValue: MutableMap<ReceiverValue, PropertyDescriptor> = mutableMapOf()
+    private val fieldStorageByExpression: MutableMap<KtExpression, PropertyDescriptor> = mutableMapOf()
     private val variableStorage: MutableMap<KtExpression, VariableDescriptor> = mutableMapOf()
 
     fun put(receiverValue: ReceiverValue, descriptor: PropertyDescriptor) {
-        fieldStorage[receiverValue] = descriptor
+        fieldStorageByReceiverValue[receiverValue] = descriptor
+    }
+
+    fun put(expression: KtExpression, descriptor: PropertyDescriptor) {
+        fieldStorageByExpression[expression] = descriptor
     }
 
     fun put(expression: KtExpression, descriptor: VariableDescriptor) {
@@ -23,7 +28,9 @@ class DescriptorStorageForAdditionalReceivers {
     }
 
     fun getField(receiverValue: ReceiverValue) =
-        fieldStorage[receiverValue] ?: error("No field descriptor for receiver value $receiverValue")
+        fieldStorageByReceiverValue[receiverValue] ?: error("No field descriptor for receiver value $receiverValue")
+
+    fun getField(expression: KtExpression) = fieldStorageByExpression[expression] ?: error("No field descriptor for expression $expression")
 
     fun getVariable(expression: KtExpression) = variableStorage[expression] ?: error("No variable descriptor for receiver $expression")
 }

@@ -4945,6 +4945,24 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
         public void testSimple() throws Exception {
             runTest("compiler/testData/codegen/box/extensionClasses/simple.kt");
         }
+
+        @TestMetadata("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AdditonalReceiverExpressions extends AbstractIrCodegenBoxWasmTest {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest0(this::doTest, TargetBackend.WASM, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAdditonalReceiverExpressions() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.WASM, true);
+            }
+
+            @TestMetadata("simple.kt")
+            public void testSimple() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionClasses/additonalReceiverExpressions/simple.kt");
+            }
+        }
     }
 
     @TestMetadata("compiler/testData/codegen/box/extensionFunctions")
@@ -5044,26 +5062,26 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             runTest("compiler/testData/codegen/box/extensionFunctions/virtual.kt");
         }
 
-        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects")
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions")
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
-        public static class AdditionalReceiverObjects extends AbstractIrCodegenBoxWasmTest {
+        public static class AdditionalReceiverExpressions extends AbstractIrCodegenBoxWasmTest {
             private void runTest(String testDataFilePath) throws Exception {
                 KotlinTestUtils.runTest0(this::doTest, TargetBackend.WASM, testDataFilePath);
             }
 
-            public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
-                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.WASM, true);
+            public void testAllFilesPresentInAdditionalReceiverExpressions() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.WASM, true);
             }
 
             @TestMetadata("anyContext.kt")
             public void testAnyContext() throws Exception {
-                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/anyContext.kt");
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/anyContext.kt");
             }
 
             @TestMetadata("simple.kt")
             public void testSimple() throws Exception {
-                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverObjects/simple.kt");
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/simple.kt");
             }
         }
 

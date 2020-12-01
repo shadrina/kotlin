@@ -143,10 +143,10 @@ public interface KtStubElementTypes {
             new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER_LIST", KtAdditionalReceiverList.class);
     KtPlaceHolderStubElementType<KtAdditionalReceiver> ADDITIONAL_RECEIVER =
             new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER", KtAdditionalReceiver.class);
-    KtPlaceHolderStubElementType<KtAdditionalReceiverObjectList> ADDITIONAL_RECEIVER_OBJECT_LIST =
-            new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER_OBJECT_LIST", KtAdditionalReceiverObjectList.class);
-    KtPlaceHolderStubElementType<KtAdditionalReceiverObject> ADDITIONAL_RECEIVER_OBJECT =
-            new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER_OBJECT", KtAdditionalReceiverObject.class);
+    KtPlaceHolderStubElementType<KtAdditionalReceiverExpressionList> ADDITIONAL_RECEIVER_EXPRESSION_LIST =
+            new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER_EXPRESSION_LIST", KtAdditionalReceiverExpressionList.class);
+    KtPlaceHolderStubElementType<KtAdditionalReceiverExpression> ADDITIONAL_RECEIVER_EXPRESSION =
+            new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER_EXPRESSION", KtAdditionalReceiverExpression.class);
 
     KtConstantExpressionElementType NULL                = new KtConstantExpressionElementType("NULL");
     KtConstantExpressionElementType BOOLEAN_CONSTANT    = new KtConstantExpressionElementType("BOOLEAN_CONSTANT");

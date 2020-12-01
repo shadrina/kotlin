@@ -23,7 +23,6 @@ import org.jetbrains.kotlin.descriptors.*;
 import org.jetbrains.kotlin.descriptors.annotations.Annotations;
 import org.jetbrains.kotlin.descriptors.impl.ReceiverParameterDescriptorImpl;
 import org.jetbrains.kotlin.descriptors.impl.ValueParameterDescriptorImpl;
-import org.jetbrains.kotlin.psi.KtAdditionalReceiverObjectList;
 import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.resolve.scopes.*;
 import org.jetbrains.kotlin.resolve.scopes.receivers.ExpressionImplicitReceiver;
@@ -63,15 +62,14 @@ public class FunctionDescriptorUtil {
     }
 
     @NotNull
-    public static LexicalScope makeFunctionInnerScopeWithAdditionalReceiverObjects(
-            @NotNull KtAdditionalReceiverObjectList additionalReceiverObjectList,
+    public static LexicalScope makeFunctionInnerScopeWithAdditionalReceiverExpressions(
+            @NotNull List<KtExpression> expressions,
             @NotNull FunctionDescriptor functionDescriptor,
             @NotNull LexicalScope innerScope,
             @NotNull ExpressionTypingContext context,
             @NotNull ExpressionTypingServices expressionTypingServices
     ) {
-        List<KtExpression> expressions = additionalReceiverObjectList.additionalReceiverObjectExpressions();
-        List<ReceiverParameterDescriptor> implicitObjectReceivers = expressions.stream().map(expression -> {
+        List<ReceiverParameterDescriptor> implicitExpressionReceivers = expressions.stream().map(expression -> {
             KotlinType kotlinType = expressionTypingServices.getTypeInfo(expression, context.replaceExpectedType(null)).getType();
             if (kotlinType != null) {
                 return new ReceiverParameterDescriptorImpl(
@@ -87,7 +85,7 @@ public class FunctionDescriptorUtil {
                 innerScope,
                 innerScope.getOwnerDescriptor(),
                 innerScope.isOwnerDescriptorAccessibleByLabel(),
-                implicitObjectReceivers,
+                implicitExpressionReceivers,
                 innerScope.getKind()
         );
     }

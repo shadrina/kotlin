@@ -255,17 +255,14 @@ public class KtNamedFunction extends KtTypeParameterListOwnerStub<KotlinFunction
         return findChildByType(KtTokens.COLON);
     }
 
-    @Nullable
+    @NotNull
     @Override
-    public KtAdditionalReceiverObjectList getAdditionalReceiverObjectList() {
-        PsiElement child = getFirstChild();
-        while (child != null) {
-            if (child instanceof KtAdditionalReceiverObjectList) {
-                return (KtAdditionalReceiverObjectList) child;
-            }
-            child = child.getNextSibling();
+    public List<KtExpression> getAdditionalReceiverExpressions() {
+        KtAdditionalReceiverExpressionList child = findChildByType(KtNodeTypes.ADDITIONAL_RECEIVER_EXPRESSION_LIST);
+        if (child == null) {
+            return Collections.emptyList();
         }
-        return null;
+        return child.additionalReceiverObjectExpressions();
     }
 
     @Override

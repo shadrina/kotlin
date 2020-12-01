@@ -9383,19 +9383,37 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                 runTest("compiler/testData/diagnostics/tests/extensions/variableInvoke.kt");
             }
 
-            @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects")
+            @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions")
             @TestDataPath("$PROJECT_ROOT")
             @RunWith(JUnit3RunnerWithInners.class)
-            public static class AdditionalReceiverObjects extends AbstractDiagnosticsUsingJavacTest {
+            public static class AdditionalReceiverExpressions extends AbstractDiagnosticsUsingJavacTest {
                 private void runTest(String testDataFilePath) throws Exception {
                     KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
                 }
 
-                public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
-                    KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                public void testAllFilesPresentInAdditionalReceiverExpressions() throws Exception {
+                    KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
                 }
 
-                @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions")
+                @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions/classes")
+                @TestDataPath("$PROJECT_ROOT")
+                @RunWith(JUnit3RunnerWithInners.class)
+                public static class Classes extends AbstractDiagnosticsUsingJavacTest {
+                    private void runTest(String testDataFilePath) throws Exception {
+                        KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+                    }
+
+                    public void testAllFilesPresentInClasses() throws Exception {
+                        KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions/classes"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                    }
+
+                    @TestMetadata("simple.kt")
+                    public void testSimple() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions/classes/simple.kt");
+                    }
+                }
+
+                @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions/functions")
                 @TestDataPath("$PROJECT_ROOT")
                 @RunWith(JUnit3RunnerWithInners.class)
                 public static class Functions extends AbstractDiagnosticsUsingJavacTest {
@@ -9404,12 +9422,12 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                     }
 
                     public void testAllFilesPresentInFunctions() throws Exception {
-                        KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                        KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions/functions"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
                     }
 
                     @TestMetadata("simple.kt")
                     public void testSimple() throws Exception {
-                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions/simple.kt");
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceiverExpressions/functions/simple.kt");
                     }
                 }
             }

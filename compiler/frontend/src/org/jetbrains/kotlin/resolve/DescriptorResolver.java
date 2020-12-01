@@ -846,6 +846,19 @@ public class DescriptorResolver {
         return ExpressionReceiver.Companion.create(initializer, initializerType, context.trace.getBindingContext());
     }
 
+    @Nullable
+    public KotlinType getAdditionalReceiverExpressionKotlinType(
+            @NotNull KtExpression expression,
+            @NotNull LexicalScope scopeForClassHeaderResolution,
+            @NotNull BindingTrace trace
+    ) {
+        ExpressionTypingContext resolutionContext = ExpressionTypingContext.newContext(
+                trace, scopeForClassHeaderResolution, DataFlowInfoFactory.EMPTY, TypeUtils.NO_EXPECTED_TYPE,
+                languageVersionSettings, dataFlowValueFactory
+        );
+        return expressionTypingServices.getTypeInfo(expression, resolutionContext).getType();
+    }
+
     @NotNull
     public PropertyDescriptor resolvePropertyDescriptor(
             @NotNull DeclarationDescriptor containingDeclaration,
