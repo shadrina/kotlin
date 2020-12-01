@@ -21,5 +21,5 @@ class KtAdditionalReceiverList : KtElementImplStub<KotlinPlaceHolderStub<KtAddit
     }
 
     fun typeReferences(): List<KtTypeReference> =
-        children.filterIsInstance(KtAdditionalReceiver::class.java).map { it.typeReference() }
+        children.filterIsInstance(KtAdditionalReceiver::class.java).mapNotNull { it.typeReference() }
 }

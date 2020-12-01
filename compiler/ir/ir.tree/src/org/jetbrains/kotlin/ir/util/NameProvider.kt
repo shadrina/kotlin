@@ -11,7 +11,15 @@ import org.jetbrains.kotlin.name.Name
 interface NameProvider {
     fun nameForDeclaration(descriptor: DeclarationDescriptor): Name
 
+    fun nameForAdditionalReceiver(index: Int): Name
+
+    fun nameForAdditionalReceiverExpression(index: Int): Name
+
     object DEFAULT : NameProvider {
         override fun nameForDeclaration(descriptor: DeclarationDescriptor): Name = descriptor.name
+
+        override fun nameForAdditionalReceiver(index: Int): Name = Name.identifier("\$additionalReceiver_$index")
+
+        override fun nameForAdditionalReceiverExpression(index: Int): Name = Name.identifier("\$additionalReceiverExpression_$index")
     }
 }
