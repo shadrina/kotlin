@@ -8144,6 +8144,37 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTestWithFirVali
                 runTest("compiler/testData/diagnostics/tests/extensions/variableInvoke.kt");
             }
 
+            @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects")
+            @TestDataPath("$PROJECT_ROOT")
+            @RunWith(JUnit3RunnerWithInners.class)
+            public static class AdditionalReceiverObjects extends AbstractDiagnosticsTestWithFirValidation {
+                private void runTest(String testDataFilePath) throws Exception {
+                    KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+                }
+
+                public void testAllFilesPresentInAdditionalReceiverObjects() throws Exception {
+                    KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                }
+
+                @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions")
+                @TestDataPath("$PROJECT_ROOT")
+                @RunWith(JUnit3RunnerWithInners.class)
+                public static class Functions extends AbstractDiagnosticsTestWithFirValidation {
+                    private void runTest(String testDataFilePath) throws Exception {
+                        KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+                    }
+
+                    public void testAllFilesPresentInFunctions() throws Exception {
+                        KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                    }
+
+                    @TestMetadata("simple.kt")
+                    public void testSimple() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceiverObjects/functions/simple.kt");
+                    }
+                }
+            }
+
             @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceivers")
             @TestDataPath("$PROJECT_ROOT")
             @RunWith(JUnit3RunnerWithInners.class)
@@ -8177,6 +8208,16 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTestWithFirVali
                     public void testOuterClass() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/outerClass.kt");
                     }
+
+                    @TestMetadata("superWithContext.kt")
+                    public void testSuperWithContext() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/superWithContext.kt");
+                    }
+
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/thisWithReceiverLabels.kt");
+                    }
                 }
 
                 @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions")
@@ -8196,6 +8237,11 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTestWithFirVali
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/insideDeclaration.kt");
                     }
 
+                    @TestMetadata("manyReceivers.kt")
+                    public void testManyReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/manyReceivers.kt");
+                    }
+
                     @TestMetadata("noExplicitReceiver.kt")
                     public void testNoExplicitReceiver() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/noExplicitReceiver.kt");
@@ -8204,6 +8250,21 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTestWithFirVali
                     @TestMetadata("plusMatrix.kt")
                     public void testPlusMatrix() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/plusMatrix.kt");
+                    }
+
+                    @TestMetadata("resolutionFailure.kt")
+                    public void testResolutionFailure() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/resolutionFailure.kt");
+                    }
+
+                    @TestMetadata("thisIdentifierInfo.kt")
+                    public void testThisIdentifierInfo() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisIdentifierInfo.kt");
+                    }
+
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisWithReceiverLabels.kt");
                     }
 
                     @TestMetadata("typeParameterized.kt")
@@ -8242,6 +8303,11 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTestWithFirVali
                     @TestMetadata("dp.kt")
                     public void testDp() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/dp.kt");
+                    }
+
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/thisWithReceiverLabels.kt");
                     }
                 }
             }

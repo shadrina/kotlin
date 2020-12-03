@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.resolve;
 
+import com.google.common.collect.Lists;
 import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.descriptors.*;
@@ -111,7 +112,8 @@ public class FunctionDescriptorUtil {
             implicitReceivers.add(extensionReceiverParameter);
         }
         if (!descriptor.getAdditionalReceiverParameters().isEmpty()) {
-            implicitReceivers.addAll(descriptor.getAdditionalReceiverParameters());
+            List<ReceiverParameterDescriptor> additionalReceivers = Lists.reverse(descriptor.getAdditionalReceiverParameters());
+            implicitReceivers.addAll(additionalReceivers);
         }
         return new LexicalScopeImpl(
                 outerScope, descriptor, true, implicitReceivers,

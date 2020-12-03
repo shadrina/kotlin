@@ -183,7 +183,8 @@ class DebuggerFieldSyntheticScope(val javaSyntheticPropertiesScope: JavaSyntheti
         val extensionReceiverParameter = DescriptorFactory.createExtensionReceiverParameterForCallable(
             propertyDescriptor,
             clazz.defaultType.replaceArgumentsWithStarProjections(),
-            Annotations.EMPTY
+            Annotations.EMPTY,
+            false
         )
 
         propertyDescriptor.setType(

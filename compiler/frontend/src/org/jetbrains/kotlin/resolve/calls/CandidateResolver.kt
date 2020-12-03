@@ -425,11 +425,6 @@ class CandidateResolver(
             checkReceiverTypeError(extensionReceiver, candidateCall.extensionReceiver)
         }
         checkReceiverTypeError(dispatchReceiver, candidateCall.dispatchReceiver)
-
-        assert(additionalReceivers.size == candidateCall.additionalReceivers.size)
-        for (i in additionalReceivers.indices) {
-            checkReceiverTypeError(additionalReceivers[i], candidateCall.additionalReceivers[i])
-        }
     }
 
     private fun CallCandidateResolutionContext<*>.checkReceiverTypeError(
