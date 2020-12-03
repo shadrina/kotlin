@@ -11719,6 +11719,11 @@ public class IrBlackBoxCodegenTestGenerated extends AbstractIrBlackBoxCodegenTes
             public void testSimpleCall() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/simpleCall.kt");
             }
+
+            @TestMetadata("this.kt")
+            public void testThis() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceivers/this.kt");
+            }
         }
     }
 

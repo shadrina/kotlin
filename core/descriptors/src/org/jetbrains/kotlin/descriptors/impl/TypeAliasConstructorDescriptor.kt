@@ -198,7 +198,8 @@ class TypeAliasConstructorDescriptorImpl private constructor(
                 DescriptorFactory.createExtensionReceiverParameterForCallable(
                     typeAliasConstructor,
                     substitutorForUnderlyingClass.safeSubstitute(it.type, Variance.INVARIANT),
-                    Annotations.EMPTY
+                    Annotations.EMPTY,
+                    false
                 )
             }
 

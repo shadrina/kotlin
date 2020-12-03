@@ -154,8 +154,8 @@ public class JavaPropertyDescriptor extends PropertyDescriptorImpl implements Ja
 
         ReceiverParameterDescriptor enhancedReceiver =
                 enhancedReceiverType == null ? null : DescriptorFactory.createExtensionReceiverParameterForCallable(
-                        this, enhancedReceiverType, Annotations.Companion.getEMPTY()
-                );
+                        this, enhancedReceiverType, Annotations.Companion.getEMPTY(),
+                        false);
 
         enhanced.setType(
                 enhancedReturnType,

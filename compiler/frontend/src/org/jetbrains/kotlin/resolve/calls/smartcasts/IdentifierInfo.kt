@@ -31,7 +31,6 @@ import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue.Kind.OTHER
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue.Kind.STABLE_VALUE
 import org.jetbrains.kotlin.resolve.scopes.receivers.*
 import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlin.types.KotlinTypeRefinerImpl
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner
 
 interface IdentifierInfo {
@@ -177,7 +176,7 @@ internal fun getIdForStableIdentifier(
 
         is KtThisExpression -> {
             val declarationDescriptor = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.instanceReference)
-            getIdForThisReceiver(declarationDescriptor)
+            getIdForThisReceiver(declarationDescriptor, bindingContext, expression.getLabelName())
         }
 
         is KtPostfixExpression -> {
@@ -226,7 +225,7 @@ private fun getIdForSimpleNameExpression(
             if (implicitReceiver == null) {
                 selectorInfo
             } else {
-                val receiverInfo = getIdForImplicitReceiver(implicitReceiver, simpleNameExpression)
+                val receiverInfo = getIdForImplicitReceiver(implicitReceiver, simpleNameExpression, bindingContext)
 
                 if (receiverInfo == null) {
                     selectorInfo
@@ -252,11 +251,11 @@ private fun getIdForSimpleNameExpression(
     }
 }
 
-private fun getIdForImplicitReceiver(receiverValue: ReceiverValue?, expression: KtExpression?) =
+private fun getIdForImplicitReceiver(receiverValue: ReceiverValue?, expression: KtExpression?, bindingContext: BindingContext) =
     when (receiverValue) {
         is ExpressionImplicitReceiver -> IdentifierInfo.NO
 
-        is ImplicitReceiver -> getIdForThisReceiver(receiverValue.declarationDescriptor)
+        is ImplicitReceiver -> getIdForThisReceiver(receiverValue.declarationDescriptor, bindingContext)
 
         is TransientReceiver ->
             throw AssertionError("Transient receiver is implicit for an explicit expression: $expression. Receiver: $receiverValue")
@@ -264,17 +263,28 @@ private fun getIdForImplicitReceiver(receiverValue: ReceiverValue?, expression: 
         else -> null
     }
 
-private fun getIdForThisReceiver(descriptorOfThisReceiver: DeclarationDescriptor?) = when (descriptorOfThisReceiver) {
-    is CallableDescriptor -> {
-        val receiverParameter = descriptorOfThisReceiver.extensionReceiverParameter
-                ?: error("'This' refers to the callable member without a receiver parameter: $descriptorOfThisReceiver")
-        IdentifierInfo.Receiver(receiverParameter.value)
+private fun getIdForThisReceiver(
+    descriptorOfThisReceiver: DeclarationDescriptor?,
+    bindingContext: BindingContext,
+    labelName: String? = null
+) =
+    when (descriptorOfThisReceiver) {
+        is CallableDescriptor -> {
+            val receiverToLabelMap = bindingContext.get(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, descriptorOfThisReceiver)
+            val receiverParameter = receiverToLabelMap?.entries?.find {
+                it.value == labelName
+            }?.key ?: descriptorOfThisReceiver.extensionReceiverParameter
+            ?: error("'This' refers to the callable member without a receiver parameter: $descriptorOfThisReceiver")
+            IdentifierInfo.Receiver(receiverParameter.value)
+        }
+
+        is ClassDescriptor -> {
+            // TODO: Do something with additional receivers
+            IdentifierInfo.Receiver(descriptorOfThisReceiver.thisAsReceiverParameter.value)
+        }
+
+        else -> IdentifierInfo.NO
     }
-
-    is ClassDescriptor -> IdentifierInfo.Receiver(descriptorOfThisReceiver.thisAsReceiverParameter.value)
-
-    else -> IdentifierInfo.NO
-}
 
 private fun postfix(argumentInfo: IdentifierInfo, op: KtToken): IdentifierInfo =
     if (argumentInfo == IdentifierInfo.NO) IdentifierInfo.NO else IdentifierInfo.PostfixIdentifierInfo(argumentInfo, op)
