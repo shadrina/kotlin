@@ -129,8 +129,8 @@ public class JavaClassConstructorDescriptor extends ClassConstructorDescriptorIm
                 getContainingDeclaration(), /* original = */ null, getKind(), null, getAnnotations(), getSource());
         ReceiverParameterDescriptor enhancedReceiver =
                 enhancedReceiverType == null ? null : DescriptorFactory.createExtensionReceiverParameterForCallable(
-                        enhanced, enhancedReceiverType, Annotations.Companion.getEMPTY()
-                );
+                        enhanced, enhancedReceiverType, Annotations.Companion.getEMPTY(),
+                        false);
         // We do not use doSubstitute here as in JavaMethodDescriptor.enhance because type parameters of constructor belongs to class
         enhanced.initialize(
                 enhancedReceiver, getDispatchReceiverParameter(), CollectionsKt.<ReceiverParameterDescriptor>emptyList(),

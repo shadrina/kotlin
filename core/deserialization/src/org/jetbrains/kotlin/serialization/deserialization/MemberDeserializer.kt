@@ -63,7 +63,7 @@ class MemberDeserializer(private val c: DeserializationContext) {
             local.typeDeserializer.ownTypeParameters,
             getDispatchReceiverParameter(),
             proto.receiverType(c.typeTable)?.let(local.typeDeserializer::type)?.let { receiverType ->
-                DescriptorFactory.createExtensionReceiverParameterForCallable(property, receiverType, receiverAnnotations)
+                DescriptorFactory.createExtensionReceiverParameterForCallable(property, receiverType, receiverAnnotations, false)
             },
             emptyList()
         )
@@ -278,7 +278,7 @@ class MemberDeserializer(private val c: DeserializationContext) {
 
         function.initializeWithCoroutinesExperimentalityStatus(
             proto.receiverType(c.typeTable)?.let(local.typeDeserializer::type)?.let { receiverType ->
-                DescriptorFactory.createExtensionReceiverParameterForCallable(function, receiverType, receiverAnnotations)
+                DescriptorFactory.createExtensionReceiverParameterForCallable(function, receiverType, receiverAnnotations, false)
             },
             getDispatchReceiverParameter(),
             local.typeDeserializer.ownTypeParameters,

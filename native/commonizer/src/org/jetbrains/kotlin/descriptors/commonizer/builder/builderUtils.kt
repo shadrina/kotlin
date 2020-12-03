@@ -78,7 +78,8 @@ internal fun CirExtensionReceiver.buildExtensionReceiver(
 ) = DescriptorFactory.createExtensionReceiverParameterForCallable(
     containingDeclaration,
     type.buildType(targetComponents, typeParameterResolver),
-    annotations.buildDescriptors(targetComponents)
+    annotations.buildDescriptors(targetComponents),
+    false
 )
 
 internal fun buildDispatchReceiver(callableDescriptor: CallableDescriptor) =

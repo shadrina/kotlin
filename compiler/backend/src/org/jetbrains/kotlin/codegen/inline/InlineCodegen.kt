@@ -715,9 +715,10 @@ abstract class InlineCodegen<out T : BaseExpressionCodegen>(
             val result = HashSet<String>()
 
             if (lambdaOrFun != null) {
-                val label = LabelResolver.getLabelNameIfAny(lambdaOrFun)
-                if (label != null) {
-                    result.add(label.asString())
+                // TODO: Do we need to add additional receiver names here?
+                val labels = LabelResolver.getLabelNamesIfAny(lambdaOrFun, addAdditionalReceiverNames = false)
+                if (labels.singleOrNull() != null) {
+                    result.add(labels.single().asString())
                 }
             }
 

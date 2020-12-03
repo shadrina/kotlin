@@ -163,8 +163,8 @@ public class JavaMethodDescriptor extends SimpleFunctionDescriptorImpl implement
 
         ReceiverParameterDescriptor enhancedReceiver =
                 enhancedReceiverType == null ? null : DescriptorFactory.createExtensionReceiverParameterForCallable(
-                        this, enhancedReceiverType, Annotations.Companion.getEMPTY()
-                );
+                        this, enhancedReceiverType, Annotations.Companion.getEMPTY(),
+                        false);
 
         JavaMethodDescriptor enhancedMethod =
                 (JavaMethodDescriptor) newCopyBuilder()

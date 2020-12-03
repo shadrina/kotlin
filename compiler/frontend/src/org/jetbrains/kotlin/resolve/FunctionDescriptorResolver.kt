@@ -54,6 +54,7 @@ import org.jetbrains.kotlin.resolve.scopes.LexicalScope
 import org.jetbrains.kotlin.resolve.scopes.LexicalScopeKind
 import org.jetbrains.kotlin.resolve.scopes.LexicalWritableScope
 import org.jetbrains.kotlin.resolve.scopes.TraceBasedLocalRedeclarationChecker
+import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue
 import org.jetbrains.kotlin.resolve.source.toSourceElement
 import org.jetbrains.kotlin.storage.StorageManager
 import org.jetbrains.kotlin.types.ErrorUtils
@@ -66,6 +67,7 @@ import org.jetbrains.kotlin.types.expressions.ExpressionTypingUtils.isFunctionEx
 import org.jetbrains.kotlin.types.expressions.ExpressionTypingUtils.isFunctionLiteral
 import org.jetbrains.kotlin.types.typeUtil.replaceAnnotations
 import java.util.*
+import kotlin.collections.HashMap
 
 class FunctionDescriptorResolver(
     private val typeResolver: TypeResolver,
@@ -215,19 +217,32 @@ class FunctionDescriptorResolver(
             }
         }
 
+        val receiverToLabelMap = linkedMapOf<ReceiverParameterDescriptor, String>()
         val extensionReceiver = receiverType?.let {
             val splitter = AnnotationSplitter(storageManager, receiverType.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
             DescriptorFactory.createExtensionReceiverParameterForCallable(
-                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
+                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER), false
             )
-        }
-        val additionalReceivers = additionalReceiverTypes.map {
-            val splitter = AnnotationSplitter(storageManager, it.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
-            DescriptorFactory.createExtensionReceiverParameterForCallable(
-                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
-            )
+        }?.apply {
+            val extensionReceiverName = receiverTypeRef?.nameForReceiverLabel()
+            if (extensionReceiverName != null) {
+                receiverToLabelMap[this] = extensionReceiverName
+            }
         }
 
+        val additionalReceivers = additionalReceiverTypes.mapNotNull { type ->
+            val splitter = AnnotationSplitter(storageManager, type.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
+            DescriptorFactory.createExtensionReceiverParameterForCallable(
+                functionDescriptor, type, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER), true
+            )
+        }
+        additionalReceivers.reversed().forEachIndexed { i, additionalReceiver ->
+            val additionalReceiverName = additionalReceiverTypeRefs[additionalReceiverTypeRefs.lastIndex - i].nameForReceiverLabel()
+            if (additionalReceiverName != null) {
+                receiverToLabelMap[additionalReceiver] = additionalReceiverName
+            }
+        }
+        trace.record(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, functionDescriptor, receiverToLabelMap)
         functionDescriptor.initialize(
             extensionReceiver,
             getDispatchReceiverParameterIfNeeded(container),

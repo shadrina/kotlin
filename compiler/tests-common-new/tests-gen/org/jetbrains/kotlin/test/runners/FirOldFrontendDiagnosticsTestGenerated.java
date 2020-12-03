@@ -9447,6 +9447,16 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                     public void testOuterClass() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/outerClass.kt");
                     }
+
+                    @TestMetadata("superWithContext.kt")
+                    public void testSuperWithContext() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/superWithContext.kt");
+                    }
+
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/thisWithReceiverLabels.kt");
+                    }
                 }
 
                 @TestMetadata("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions")
@@ -9486,6 +9496,16 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/plusMatrix.kt");
                     }
 
+                    @TestMetadata("thisIdentifierInfo.kt")
+                    public void testThisIdentifierInfo() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisIdentifierInfo.kt");
+                    }
+
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisWithReceiverLabels.kt");
+                    }
+
                     @TestMetadata("typeParameterized.kt")
                     public void testTypeParameterized() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/typeParameterized.kt");
@@ -9522,6 +9542,11 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                     @TestMetadata("dp.kt")
                     public void testDp() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/dp.kt");
+                    }
+
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/thisWithReceiverLabels.kt");
                     }
                 }
             }
