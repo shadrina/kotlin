@@ -272,21 +272,40 @@ private fun getIdForThisReceiver(
 ) =
     when (descriptorOfThisReceiver) {
         is CallableDescriptor -> {
-            val receiverToLabelMap = bindingContext.get(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, descriptorOfThisReceiver)
-            val receiverParameter = receiverToLabelMap?.entries?.find {
-                it.value == labelName
-            }?.key ?: descriptorOfThisReceiver.extensionReceiverParameter
-            ?: error("'This' refers to the callable member without a receiver parameter: $descriptorOfThisReceiver")
+            val receiverParameter = findReceiverByLabelOrGetDefault(
+                descriptorOfThisReceiver,
+                descriptorOfThisReceiver.extensionReceiverParameter,
+                bindingContext,
+                labelName
+            )
             IdentifierInfo.Receiver(receiverParameter.value)
         }
 
         is ClassDescriptor -> {
-            // TODO: Do something with additional receivers
-            IdentifierInfo.Receiver(descriptorOfThisReceiver.thisAsReceiverParameter.value)
+            val receiverParameter = findReceiverByLabelOrGetDefault(
+                descriptorOfThisReceiver,
+                descriptorOfThisReceiver.thisAsReceiverParameter,
+                bindingContext,
+                labelName
+            )
+            IdentifierInfo.Receiver(receiverParameter.value)
         }
 
         else -> IdentifierInfo.NO
     }
+
+private fun findReceiverByLabelOrGetDefault(
+    descriptorOfThisReceiver: DeclarationDescriptor,
+    default: ReceiverParameterDescriptor?,
+    bindingContext: BindingContext,
+    labelName: String? = null
+): ReceiverParameterDescriptor {
+    val receiverToLabelMap = bindingContext.get(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, descriptorOfThisReceiver)
+    return receiverToLabelMap?.entries?.find {
+        it.value == labelName
+    }?.key ?: default ?: error("'This' refers to the callable member without a receiver parameter: $descriptorOfThisReceiver")
+}
+
 
 private fun postfix(argumentInfo: IdentifierInfo, op: KtToken): IdentifierInfo =
     if (argumentInfo == IdentifierInfo.NO) IdentifierInfo.NO else IdentifierInfo.PostfixIdentifierInfo(argumentInfo, op)
