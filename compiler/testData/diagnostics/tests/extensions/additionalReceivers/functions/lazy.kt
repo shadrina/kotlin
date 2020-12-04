@@ -1,6 +1,6 @@
 interface Lazy<T>
 
-with<Lazy<Int>, Lazy<CharSequence>>
+with<Lazy<Int>> with<Lazy<CharSequence>>
 fun test1() {}
 
 with<Lazy<T>>

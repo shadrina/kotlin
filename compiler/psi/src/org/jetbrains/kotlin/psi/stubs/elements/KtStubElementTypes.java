@@ -139,6 +139,8 @@ public interface KtStubElementTypes {
     KtPlaceHolderStubElementType<KtConstructorCalleeExpression> CONSTRUCTOR_CALLEE =
             new KtPlaceHolderStubElementType<>("CONSTRUCTOR_CALLEE", KtConstructorCalleeExpression.class);
 
+    KtPlaceHolderStubElementType<KtAdditionalReceiverList> ADDITIONAL_RECEIVER_LIST =
+            new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER_LIST", KtAdditionalReceiverList.class);
     KtPlaceHolderStubElementType<KtAdditionalReceiver> ADDITIONAL_RECEIVER =
             new KtPlaceHolderStubElementType<>("ADDITIONAL_RECEIVER", KtAdditionalReceiver.class);
     KtPlaceHolderStubElementType<KtAdditionalReceiverObjectList> ADDITIONAL_RECEIVER_OBJECT_LIST =

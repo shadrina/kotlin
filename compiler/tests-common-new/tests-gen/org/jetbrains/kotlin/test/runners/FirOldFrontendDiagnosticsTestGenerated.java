@@ -9443,6 +9443,11 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/genericOuterClass.kt");
                     }
 
+                    @TestMetadata("multiple.kt")
+                    public void testMultiple() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/multiple.kt");
+                    }
+
                     @TestMetadata("outerClass.kt")
                     public void testOuterClass() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/outerClass.kt");

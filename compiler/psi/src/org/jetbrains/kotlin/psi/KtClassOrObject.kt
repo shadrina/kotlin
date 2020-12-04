@@ -184,9 +184,9 @@ abstract class KtClassOrObject :
         var node = node.firstChildNode
         while (node != null) {
             val tt = node.elementType
-            if (tt === KtNodeTypes.ADDITIONAL_RECEIVER) {
-                val additionalReceiver = node.psi as KtAdditionalReceiver
-                return additionalReceiver.typeReferences()
+            if (tt === KtNodeTypes.ADDITIONAL_RECEIVER_LIST) {
+                val additionalReceiverList = node.psi as KtAdditionalReceiverList
+                return additionalReceiverList.typeReferences()
             }
             node = node.treeNext
         }

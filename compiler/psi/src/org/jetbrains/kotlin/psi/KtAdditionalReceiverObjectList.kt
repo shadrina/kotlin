@@ -21,5 +21,5 @@ class KtAdditionalReceiverObjectList : KtElementImplStub<KotlinPlaceHolderStub<K
     }
 
     fun additionalReceiverObjectExpressions(): List<KtExpression> =
-        children.filterIsInstance(KtAdditionalReceiverObject::class.java).mapNotNull { it.expression() }
+        children.filterIsInstance(KtAdditionalReceiverObject::class.java).map { it.expression() }
 }

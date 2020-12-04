@@ -2,7 +2,7 @@ class A<T>(val a: T)
 class B(val b: Any)
 class C(val c: Any)
 
-with<A<Int>, A<String>, B> var p: Int
+with<A<Int>> with<A<String>> with<B> var p: Int
     get() {
         <!UNRESOLVED_LABEL!>this@A<!>.<!UNRESOLVED_REFERENCE!>a<!>.<!UNRESOLVED_REFERENCE!>toDouble<!>()
         <!UNRESOLVED_LABEL!>this@A<!>.<!UNRESOLVED_REFERENCE!>a<!>.<!UNRESOLVED_REFERENCE!>length<!>
@@ -17,7 +17,7 @@ with<A<Int>, A<String>, B> var p: Int
         field = value
     }
 
-with<A<Int>, A<String>, B> val C.p: Int
+with<A<Int>> with<A<String>> with<B> val C.p: Int
     get() {
         <!UNRESOLVED_LABEL!>this@A<!>.<!UNRESOLVED_REFERENCE!>a<!>.<!UNRESOLVED_REFERENCE!>length<!>
         <!UNRESOLVED_LABEL!>this@B<!>.<!UNRESOLVED_REFERENCE!>b<!>
