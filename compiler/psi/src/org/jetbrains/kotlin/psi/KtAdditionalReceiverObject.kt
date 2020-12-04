@@ -17,5 +17,5 @@ class KtAdditionalReceiverObject : KtElementImplStub<KotlinPlaceHolderStub<KtAdd
         return visitor.visitAdditionalReceiverObject(this, data)
     }
 
-    fun expression(): KtExpression? = children.find { it is KtExpression } as KtExpression
+    fun expression(): KtExpression = children.find { it is KtExpression } as KtExpression
 }

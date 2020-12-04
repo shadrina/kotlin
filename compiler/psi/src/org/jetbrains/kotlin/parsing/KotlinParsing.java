@@ -424,7 +424,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
         PsiBuilder.Marker decl = mark();
 
         if (at(WITH_KEYWORD)) {
-            parseAdditionalReceiver();
+            parseAdditionalReceiverList();
         }
 
         ModifierDetector detector = new ModifierDetector();
@@ -617,14 +617,30 @@ public class KotlinParsing extends AbstractKotlinParsing {
     }
 
     /*
+     * additionalReceiverList
+     *   : additionalReceiver+
+     */
+    private void parseAdditionalReceiverList() {
+        assert _at(WITH_KEYWORD);
+        PsiBuilder.Marker additionalReceiverList = mark();
+        while (at(WITH_KEYWORD)) {
+            parseAdditionalReceiver();
+        }
+        additionalReceiverList.done(ADDITIONAL_RECEIVER_LIST);
+    }
+
+    /*
      * additionalReceiver
-     *   : "with" typeArguments
+     *   : "with" "<" typeReference ">"
      */
     private void parseAdditionalReceiver() {
         assert _at(WITH_KEYWORD);
         PsiBuilder.Marker additionalReceiver = mark();
         advance();
-        parseTypeArgumentList();
+        if (expect(LT, "Expecting a receiver argument", TokenSet.EMPTY)) {
+            parseTypeRef();
+            expect(GT, "Expecting '>'", TokenSet.EMPTY);
+        }
         additionalReceiver.done(ADDITIONAL_RECEIVER);
     }
 
@@ -1223,7 +1239,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
         PsiBuilder.Marker decl = mark();
 
         if (at(WITH_KEYWORD)) {
-            parseAdditionalReceiver();
+            parseAdditionalReceiverList();
         }
 
         ModifierDetector detector = new ModifierDetector();
