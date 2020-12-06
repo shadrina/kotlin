@@ -953,7 +953,7 @@ public class DescriptorResolver {
 
         KtTypeReference receiverTypeRef = variableDeclaration.getReceiverTypeReference();
         List<KtTypeReference> additionalReceiverTypeRefs = variableDeclaration.getAdditionalReceiverTypeReferences();
-        LinkedHashMap<ReceiverParameterDescriptor, String> receiverToLabelMap = new LinkedHashMap<>();
+        Map<ReceiverParameterDescriptor, String> receiverToLabelMap = new LinkedHashMap<>();
         ReceiverParameterDescriptor receiverDescriptor =
                 receiverTypeRef == null
                 ? null
