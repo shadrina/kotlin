@@ -51,10 +51,7 @@ import org.jetbrains.kotlin.storage.StorageManager;
 import org.jetbrains.kotlin.types.*;
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static kotlin.collections.CollectionsKt.emptyList;
@@ -63,6 +60,7 @@ import static org.jetbrains.kotlin.descriptors.DescriptorVisibilities.PRIVATE;
 import static org.jetbrains.kotlin.descriptors.DescriptorVisibilities.PUBLIC;
 import static org.jetbrains.kotlin.diagnostics.Errors.*;
 import static org.jetbrains.kotlin.lexer.KtTokens.INNER_KEYWORD;
+import static org.jetbrains.kotlin.resolve.BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS;
 import static org.jetbrains.kotlin.resolve.BindingContext.TYPE;
 import static org.jetbrains.kotlin.resolve.ModifiersChecker.resolveModalityFromModifiers;
 import static org.jetbrains.kotlin.resolve.ModifiersChecker.resolveVisibilityFromModifiers;
@@ -286,17 +284,23 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
         });
 
         this.additionalReceivers = storageManager.createLazyValue(() -> {
+            Map<ReceiverParameterDescriptor, String> receiverToLabelMap = new LinkedHashMap<>();
+            receiverToLabelMap.put(getThisAsReceiverParameter(), null);
+            c.getTrace().record(DESCRIPTOR_TO_NAMED_RECEIVERS, this, receiverToLabelMap);
             if (classOrObject == null) {
                 return CollectionsKt.emptyList();
             }
-            return classOrObject.getAdditionalReceiverTypeReferences().stream().map(typeReference -> {
-                KotlinType kotlinType =
-                        c.getTypeResolver().resolveType(getScopeForClassHeaderResolution(), typeReference, c.getTrace(), true);
-                return new ReceiverParameterDescriptorImpl(
+            return classOrObject.getAdditionalReceiverTypeReferences().stream()
+                    .filter(Objects::nonNull)
+                    .map(typeReference -> {
+                KotlinType kotlinType = c.getTypeResolver().resolveType(getScopeForClassHeaderResolution(), typeReference, c.getTrace(), true);
+                ReceiverParameterDescriptor receiverParameterDescriptor = new ReceiverParameterDescriptorImpl(
                         this,
                         new ExtensionClassReceiver(this, kotlinType, null),
                         Annotations.Companion.getEMPTY()
                 );
+                receiverToLabelMap.put(receiverParameterDescriptor, typeReference.nameForReceiverLabel());
+                return receiverParameterDescriptor;
             }).collect(Collectors.toList());
         });
     }
