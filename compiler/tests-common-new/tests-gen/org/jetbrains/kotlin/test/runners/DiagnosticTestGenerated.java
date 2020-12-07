@@ -9472,6 +9472,12 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     public void testOuterClass() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/outerClass.kt");
                     }
+
+                    @Test
+                    @TestMetadata("subtypingBetweenReceivers.kt")
+                    public void testSubtypingBetweenReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/subtypingBetweenReceivers.kt");
+                    }
                 }
 
                 @Nested
@@ -9514,6 +9520,12 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     }
 
                     @Test
+                    @TestMetadata("subtypingBetweenReceivers.kt")
+                    public void testSubtypingBetweenReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/subtypingBetweenReceivers.kt");
+                    }
+
+                    @Test
                     @TestMetadata("typeParameterized.kt")
                     public void testTypeParameterized() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/typeParameterized.kt");
@@ -9551,6 +9563,12 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     @TestMetadata("dp.kt")
                     public void testDp() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/dp.kt");
+                    }
+
+                    @Test
+                    @TestMetadata("subtypingBetweenReceivers.kt")
+                    public void testSubtypingBetweenReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/subtypingBetweenReceivers.kt");
                     }
                 }
             }

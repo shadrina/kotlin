@@ -1159,6 +1159,7 @@ public interface Errors {
 
     // Additional receivers
     DiagnosticFactory1<KtElement, String> NO_ADDITIONAL_RECEIVER = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory2<KtElement, KotlinType, KotlinType> SUBTYPING_BETWEEN_ADDITIONAL_RECEIVERS = DiagnosticFactory2.create(ERROR);
 
     // Error sets
     ImmutableSet<? extends DiagnosticFactory<?>> UNRESOLVED_REFERENCE_DIAGNOSTICS = ImmutableSet.of(
