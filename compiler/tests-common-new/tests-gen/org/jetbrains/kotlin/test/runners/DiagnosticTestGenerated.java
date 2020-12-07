@@ -9835,6 +9835,12 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                 }
 
                 @Test
+                @TestMetadata("noBackingField.kt")
+                public void testNoBackingField() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/contextReceivers/noBackingField.kt");
+                }
+
+                @Test
                 @TestMetadata("noExplicitReceiver.kt")
                 public void testNoExplicitReceiver() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/extensions/contextReceivers/noExplicitReceiver.kt");
