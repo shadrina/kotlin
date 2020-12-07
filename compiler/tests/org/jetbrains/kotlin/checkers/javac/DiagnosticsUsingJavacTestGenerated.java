@@ -8227,6 +8227,11 @@ public class DiagnosticsUsingJavacTestGenerated extends AbstractDiagnosticsUsing
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/outerClass.kt");
                     }
 
+                    @TestMetadata("subtypingBetweenReceivers.kt")
+                    public void testSubtypingBetweenReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/subtypingBetweenReceivers.kt");
+                    }
+
                     @TestMetadata("superWithContext.kt")
                     public void testSuperWithContext() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/superWithContext.kt");
@@ -8275,6 +8280,11 @@ public class DiagnosticsUsingJavacTestGenerated extends AbstractDiagnosticsUsing
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/plusMatrix.kt");
                     }
 
+                    @TestMetadata("subtypingBetweenReceivers.kt")
+                    public void testSubtypingBetweenReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/subtypingBetweenReceivers.kt");
+                    }
+
                     @TestMetadata("thisIdentifierInfo.kt")
                     public void testThisIdentifierInfo() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisIdentifierInfo.kt");
@@ -8321,6 +8331,11 @@ public class DiagnosticsUsingJavacTestGenerated extends AbstractDiagnosticsUsing
                     @TestMetadata("dp.kt")
                     public void testDp() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/dp.kt");
+                    }
+
+                    @TestMetadata("subtypingBetweenReceivers.kt")
+                    public void testSubtypingBetweenReceivers() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/subtypingBetweenReceivers.kt");
                     }
 
                     @TestMetadata("thisWithReceiverLabels.kt")
