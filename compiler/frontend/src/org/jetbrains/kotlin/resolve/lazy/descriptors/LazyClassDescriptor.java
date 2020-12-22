@@ -391,7 +391,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
         List<KtExpression> expressions = classOrObject.getAdditionalReceiverExpressions();
         List<ReceiverParameterDescriptor> implicitReceiverExpressions = expressions.stream().map(expression -> {
             KotlinType kotlinType = c.getDescriptorResolver()
-                    .getAdditionalReceiverExpressionKotlinType(expression, getScopeForClassHeaderResolution(), c.getTrace());
+                    .getAdditionalReceiverExpressionKotlinType(expression, scopeForMemberDeclarationResolution, c.getTrace());
             return kotlinType != null
                    ? new ReceiverParameterDescriptorImpl(
                            this,
