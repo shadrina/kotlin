@@ -100,7 +100,7 @@ abstract class KotlinUsageTypeProvider : UsageTypeProviderEx {
                 }
             } -> CLASS_OBJECT_ACCESS
 
-            refExpr.getParentOfTypeAndBranch<KtSuperExpression> { superTypeQualifier } != null -> SUPER_TYPE_QUALIFIER
+            refExpr.getParentOfTypeAndBranch<KtSuperExpression> { typeQualifier } != null -> SUPER_TYPE_QUALIFIER
 
             refExpr.getParentOfTypeAndBranch<KtTypeAlias> { getTypeReference() } != null -> TYPE_ALIAS
 

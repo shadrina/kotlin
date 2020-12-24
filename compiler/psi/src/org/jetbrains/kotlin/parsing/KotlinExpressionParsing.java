@@ -1772,7 +1772,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     }
 
     /*
-     * "this" label?
+     * "this" ("<" type ">")? label?
      */
     private void parseThisExpression() {
         assert _at(THIS_KEYWORD);
@@ -1782,13 +1782,14 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         advance(); // THIS_KEYWORD
         thisReference.done(REFERENCE_EXPRESSION);
 
+        parseTypeAfterThisOrSuper();
         parseLabelReferenceWithNoWhitespace();
 
         mark.done(THIS_EXPRESSION);
     }
 
     /*
-     * "this" ("<" type ">")? label?
+     * "super" ("<" type ">")? label?
      */
     private void parseSuperExpression() {
         assert _at(SUPER_KEYWORD);
@@ -1798,9 +1799,16 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         advance(); // SUPER_KEYWORD
         superReference.done(REFERENCE_EXPRESSION);
 
+        parseTypeAfterThisOrSuper();
+        parseLabelReferenceWithNoWhitespace();
+
+        mark.done(SUPER_EXPRESSION);
+    }
+
+    private void parseTypeAfterThisOrSuper() {
         if (at(LT)) {
             // This may be "super < foo" or "super<foo>", thus the backtracking
-            PsiBuilder.Marker supertype = mark();
+            PsiBuilder.Marker type = mark();
 
             myBuilder.disableNewlines();
             advance(); // LT
@@ -1809,16 +1817,13 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
             if (at(GT)) {
                 advance(); // GT
-                supertype.drop();
+                type.drop();
             }
             else {
-                supertype.rollbackTo();
+                type.rollbackTo();
             }
             myBuilder.restoreNewlinesState();
         }
-        parseLabelReferenceWithNoWhitespace();
-
-        mark.done(SUPER_EXPRESSION);
     }
 
     /*

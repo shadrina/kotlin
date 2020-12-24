@@ -10058,6 +10058,11 @@ public class IrJsCodegenBoxES6TestGenerated extends AbstractIrJsCodegenBoxES6Tes
             public void testSimple() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/simple.kt");
             }
+
+            @TestMetadata("thisWithReceiverType.kt")
+            public void testThisWithReceiverType() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/thisWithReceiverType.kt");
+            }
         }
 
         @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")

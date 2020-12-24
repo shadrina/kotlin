@@ -36,7 +36,7 @@ class RemoveExplicitSuperQualifierIntention : SelfTargetingRangeIntention<KtSupe
     KotlinBundle.lazyMessage("remove.explicit.supertype.qualification")
 ) {
     override fun applicabilityRange(element: KtSuperExpression): TextRange? {
-        if (element.superTypeQualifier == null) return null
+        if (element.typeQualifier == null) return null
 
         val qualifiedExpression = element.getQualifiedExpressionForReceiver() ?: return null
         val selector = qualifiedExpression.selectorExpression ?: return null

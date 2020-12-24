@@ -8303,6 +8303,11 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirOldFronte
                     runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisWithReceiverLabels.kt");
                 }
 
+                @TestMetadata("thisWithReceiverType.kt")
+                public void testThisWithReceiverType() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisWithReceiverType.kt");
+                }
+
                 @TestMetadata("typeParameterized.kt")
                 public void testTypeParameterized() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/typeParameterized.kt");

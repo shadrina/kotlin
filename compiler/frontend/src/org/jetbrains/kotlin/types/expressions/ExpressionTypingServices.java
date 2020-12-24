@@ -233,7 +233,8 @@ public class ExpressionTypingServices {
                     functionDescriptor,
                     functionInnerScope,
                     context,
-                    this
+                    this,
+                    trace
             );
         }
 

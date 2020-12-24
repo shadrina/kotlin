@@ -136,7 +136,7 @@ fun KtElement.renderTrimmed(): String {
 
         override fun visitSuperExpression(expression: KtSuperExpression) {
             builder.append("super")
-            expression.superTypeQualifier?.let {
+            expression.typeQualifier?.let {
                 builder.append("<")
                 it.accept(this)
                 builder.append(">")

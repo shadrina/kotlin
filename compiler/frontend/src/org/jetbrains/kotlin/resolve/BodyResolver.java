@@ -976,7 +976,8 @@ public class BodyResolver {
                     functionDescriptor,
                     innerScope,
                     context,
-                    expressionTypingServices
+                    expressionTypingServices,
+                    trace
             );
         }
 

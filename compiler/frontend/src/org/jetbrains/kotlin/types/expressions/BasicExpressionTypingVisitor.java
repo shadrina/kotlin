@@ -71,6 +71,7 @@ import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.kotlin.resolve.scopes.utils.ScopeUtilsKt;
 import org.jetbrains.kotlin.types.*;
 import org.jetbrains.kotlin.types.checker.KotlinTypeChecker;
+import org.jetbrains.kotlin.types.checker.NewKotlinTypeChecker;
 import org.jetbrains.kotlin.types.expressions.ControlStructureTypingUtils.ResolveConstruct;
 import org.jetbrains.kotlin.types.expressions.typeInfoFactory.TypeInfoFactoryKt;
 import org.jetbrains.kotlin.types.expressions.unqualifiedSuper.UnqualifiedSuperKt;
@@ -379,7 +380,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     @Override
     public KotlinTypeInfo visitThisExpression(@NotNull KtThisExpression expression, ExpressionTypingContext context) {
         KotlinType result = null;
-        LabelResolver.LabeledReceiverResolutionResult resolutionResult = resolveToReceiver(expression, context, false);
+        LabelResolver.LabeledReceiverResolutionResult resolutionResult =
+                resolveToReceiver(expression, context, false, expression.getTypeQualifier() != null);
 
         switch (resolutionResult.getCode()) {
             case LABEL_RESOLUTION_ERROR:
@@ -398,7 +400,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
     @Override
     public KotlinTypeInfo visitSuperExpression(@NotNull KtSuperExpression expression, ExpressionTypingContext context) {
-        LabelResolver.LabeledReceiverResolutionResult resolutionResult = resolveToReceiver(expression, context, true);
+        LabelResolver.LabeledReceiverResolutionResult resolutionResult = resolveToReceiver(expression, context, true, false);
 
         if (!KtPsiUtil.isLHSOfDot(expression)) {
             context.trace.report(SUPER_IS_NOT_AN_EXPRESSION.on(expression, expression.getText()));
@@ -423,7 +425,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     private KotlinTypeInfo errorInSuper(KtSuperExpression expression, ExpressionTypingContext context) {
-        KtTypeReference superTypeQualifier = expression.getSuperTypeQualifier();
+        KtTypeReference superTypeQualifier = expression.getTypeQualifier();
         if (superTypeQualifier != null) {
             components.typeResolver.resolveType(context.scope, superTypeQualifier, context.trace, true);
         }
@@ -440,7 +442,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         Collection<KotlinType> supertypes = thisType.getConstructor().getSupertypes();
         TypeSubstitutor substitutor = TypeSubstitutor.create(thisType);
 
-        KtTypeReference superTypeQualifier = expression.getSuperTypeQualifier();
+        KtTypeReference superTypeQualifier = expression.getTypeQualifier();
         if (superTypeQualifier != null) {
             KtTypeElement typeElement = superTypeQualifier.getTypeElement();
 
@@ -562,7 +564,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     private LabelResolver.LabeledReceiverResolutionResult resolveToReceiver(
             KtInstanceExpressionWithLabel expression,
             ExpressionTypingContext context,
-            boolean onlyClassReceivers
+            boolean onlyClassReceiversForSuperExpressions,
+            boolean isThisExpressionWithType
     ) {
         Name labelName = expression.getLabelNameAsName();
         if (labelName != null) {
@@ -571,7 +574,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             if (resolutionResult.success()) {
                 ReceiverParameterDescriptor receiverParameterDescriptor = resolutionResult.getReceiverParameterDescriptor();
                 recordThisOrSuperCallInTraceAndCallExtension(context, receiverParameterDescriptor, expression);
-                if (onlyClassReceivers && !isDeclaredInClass(receiverParameterDescriptor)) {
+                if (onlyClassReceiversForSuperExpressions && !isDeclaredInClass(receiverParameterDescriptor)) {
                     return LabelResolver.LabeledReceiverResolutionResult.Companion.labelResolutionSuccess(null);
                 }
             }
@@ -580,7 +583,17 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         else {
             ReceiverParameterDescriptor result = null;
             List<ReceiverParameterDescriptor> receivers = ScopeUtilsKt.getImplicitReceiversHierarchy(context.scope);
-            if (onlyClassReceivers) {
+            if (isThisExpressionWithType) {
+                KotlinType kotlinType = components.typeResolver.resolveType(context.scope, expression.getTypeQualifier(), context.trace, true);
+                context.trace.record(TYPE, expression.getTypeQualifier(), kotlinType);
+                for (ReceiverParameterDescriptor receiver : receivers) {
+                    KotlinType receiverType = receiver.getValue().getType();
+                    if (KotlinTypeChecker.DEFAULT.isSubtypeOf(receiverType, kotlinType)) {
+                        result = receiver;
+                        break;
+                    }
+                }
+            } else if (onlyClassReceiversForSuperExpressions) {
                 for (ReceiverParameterDescriptor receiver : receivers) {
                     if (isDeclaredInClass(receiver)) {
                         result = receiver;

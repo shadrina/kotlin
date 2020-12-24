@@ -54,7 +54,7 @@ class KotlinRedundantOverrideInspection : AbstractKotlinInspection(), CleanupLoc
             } as? KtDotQualifiedExpression ?: return
 
             val superExpression = qualifiedExpression.receiverExpression as? KtSuperExpression ?: return
-            if (superExpression.superTypeQualifier != null) return
+            if (superExpression.typeQualifier != null) return
 
             val superCallElement = qualifiedExpression.selectorExpression as? KtCallElement ?: return
             if (!isSameFunctionName(superCallElement, function)) return

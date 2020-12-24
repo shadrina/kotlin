@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.idea.util
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.config.LanguageFeature
-import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.idea.FrontendInternals
 import org.jetbrains.kotlin.idea.resolve.ResolutionFacade
@@ -23,7 +22,6 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.bindingContextUtil.getDataFlowInfoBefore
 import org.jetbrains.kotlin.resolve.calls.DslMarkerUtils
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 import org.jetbrains.kotlin.resolve.calls.smartcasts.SmartCastManager
 import org.jetbrains.kotlin.resolve.descriptorUtil.classValueType
 import org.jetbrains.kotlin.resolve.descriptorUtil.parentsWithSelf
@@ -286,7 +284,7 @@ fun CallTypeAndReceiver<*, *>.receiverTypesWithIndex(
         is CallTypeAndReceiver.DELEGATE -> receiverExpression = receiver
 
         is CallTypeAndReceiver.SUPER_MEMBERS -> {
-            val qualifier = receiver.superTypeQualifier
+            val qualifier = receiver.typeQualifier
             return if (qualifier != null) {
                 listOfNotNull(bindingContext.getType(receiver)).map { ReceiverType(it, 0) }
             } else {

@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.psi;
 
 import com.intellij.lang.ASTNode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.KtNodeTypes;
 
 public abstract class KtInstanceExpressionWithLabel extends KtExpressionWithLabel {
@@ -29,5 +30,18 @@ public abstract class KtInstanceExpressionWithLabel extends KtExpressionWithLabe
     @NotNull
     public KtReferenceExpression getInstanceReference() {
         return (KtReferenceExpression) findChildByType(KtNodeTypes.REFERENCE_EXPRESSION);
+    }
+
+    /**
+     * class A : B, C {
+     *     override fun foo() {
+     *         super<B>.foo()
+     *         super<C>.foo()
+     *     }
+     * }
+     */
+    @Nullable
+    public KtTypeReference getTypeQualifier() {
+        return (KtTypeReference) findChildByType(KtNodeTypes.TYPE_REFERENCE);
     }
 }

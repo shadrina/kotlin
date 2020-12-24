@@ -31,9 +31,7 @@ import org.jetbrains.kotlin.types.expressions.ExpressionTypingContext;
 import org.jetbrains.kotlin.types.expressions.ExpressionTypingServices;
 import org.jetbrains.kotlin.types.typeUtil.TypeUtilsKt;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class FunctionDescriptorUtil {
@@ -67,7 +65,8 @@ public class FunctionDescriptorUtil {
             @NotNull FunctionDescriptor functionDescriptor,
             @NotNull LexicalScope innerScope,
             @NotNull ExpressionTypingContext context,
-            @NotNull ExpressionTypingServices expressionTypingServices
+            @NotNull ExpressionTypingServices expressionTypingServices,
+            @NotNull BindingTrace trace
     ) {
         List<ReceiverParameterDescriptor> implicitExpressionReceivers = expressions.stream().map(expression -> {
             KotlinType kotlinType = expressionTypingServices.getTypeInfo(expression, context.replaceExpectedType(null)).getType();
@@ -81,6 +80,15 @@ public class FunctionDescriptorUtil {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
+        Map<ReceiverParameterDescriptor, String> expressionReceiverToNameMap =
+                implicitExpressionReceivers.stream().collect(Collectors.toMap(r -> r, r -> "null"));
+        Map<ReceiverParameterDescriptor, String> descriptorToNamedReceivers =
+                trace.get(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, functionDescriptor);
+        if (descriptorToNamedReceivers != null) {
+            descriptorToNamedReceivers.putAll(expressionReceiverToNameMap);
+        } else {
+            trace.record(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, functionDescriptor, expressionReceiverToNameMap);
+        }
         return new LexicalScopeImpl(
                 innerScope,
                 innerScope.getOwnerDescriptor(),

@@ -1993,7 +1993,7 @@ class RawFirBuilder(
         }
 
         override fun visitSuperExpression(expression: KtSuperExpression, data: Unit): FirElement {
-            val superType = expression.superTypeQualifier
+            val superType = expression.typeQualifier
             val theSource = expression.toFirSourceElement()
             return buildQualifiedAccessExpression {
                 this.source = theSource

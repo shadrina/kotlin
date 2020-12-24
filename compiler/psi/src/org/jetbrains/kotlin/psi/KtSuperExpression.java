@@ -31,17 +31,4 @@ public class KtSuperExpression extends KtInstanceExpressionWithLabel implements 
     public <R, D> R accept(@NotNull KtVisitor<R, D> visitor, D data) {
         return visitor.visitSuperExpression(this, data);
     }
-
-    /**
-     * class A : B, C {
-     *     override fun foo() {
-     *         super<B>.foo()
-     *         super<C>.foo()
-     *     }
-     * }
-     */
-    @Nullable
-    public KtTypeReference getSuperTypeQualifier() {
-        return (KtTypeReference) findChildByType(KtNodeTypes.TYPE_REFERENCE);
-    }
 }

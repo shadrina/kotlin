@@ -17,10 +17,7 @@
 package org.jetbrains.kotlin.psi2ir.generators
 
 import org.jetbrains.kotlin.backend.common.BackendException
-import org.jetbrains.kotlin.descriptors.CallableDescriptor
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.descriptors.VariableDescriptorWithAccessors
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.assertCast
 import org.jetbrains.kotlin.ir.builders.Scope
@@ -44,6 +41,7 @@ import org.jetbrains.kotlin.resolve.calls.model.VariableAsFunctionResolvedCall
 import org.jetbrains.kotlin.resolve.calls.tasks.isDynamic
 import org.jetbrains.kotlin.resolve.constants.CompileTimeConstant
 import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
+import org.jetbrains.kotlin.resolve.scopes.receivers.ExpressionImplicitReceiver
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.expressions.ExpressionTypingUtils
 import org.jetbrains.kotlin.util.OperatorNameConventions
@@ -412,15 +410,20 @@ class StatementGenerator(
 
             is CallableDescriptor -> {
                 val resolvedCall = getResolvedCall(expression)
-                val receivers = listOfNotNull(referenceTarget.extensionReceiverParameter) + referenceTarget.additionalReceiverParameters
+                val receiversToNames = context.bindingContext.get(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, referenceTarget) ?: mapOf()
+                val receivers = receiversToNames.keys
                 val receiver = receivers.find {
                     it == resolvedCall?.candidateDescriptor
                 } ?: referenceTarget.extensionReceiverParameter ?: TODO("No receiver: $referenceTarget")
                 val receiverType = receiver.type.toIrType()
-                IrGetValueImpl(
+                val receiverValue = receiver.value
+                val symbol = if (receiversToNames[receiver] == "null" && receiverValue is ExpressionImplicitReceiver)
+                    context.symbolTable.referenceVariable(context.additionalDescriptorStorage.getVariable(receiverValue.expression))
+                else context.symbolTable.referenceValueParameter(receiver)
+                return IrGetValueImpl(
                     startOffset, endOffset,
                     receiverType,
-                    context.symbolTable.referenceValueParameter(receiver)
+                    symbol
                 )
             }
 

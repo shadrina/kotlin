@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue.Kind.OTHER
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue.Kind.STABLE_VALUE
 import org.jetbrains.kotlin.resolve.scopes.receivers.*
 import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.kotlin.types.checker.KotlinTypeChecker
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner
 
 interface IdentifierInfo {
@@ -178,7 +179,8 @@ internal fun getIdForStableIdentifier(
 
         is KtThisExpression -> {
             val declarationDescriptor = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.instanceReference)
-            getIdForThisReceiver(declarationDescriptor, bindingContext, null, expression.getLabelName())
+            val kotlinType = bindingContext[BindingContext.TYPE, expression.typeQualifier]
+            getIdForThisReceiver(declarationDescriptor, bindingContext, null, expression.getLabelName(), kotlinType)
         }
 
         is KtPostfixExpression -> {
@@ -257,7 +259,7 @@ private fun getIdForImplicitReceiver(receiverValue: ReceiverValue?, expression: 
     when (receiverValue) {
         is ExpressionImplicitReceiver -> IdentifierInfo.NO
 
-        is ImplicitReceiver -> getIdForThisReceiver(receiverValue.declarationDescriptor, bindingContext, receiverValue, null)
+        is ImplicitReceiver -> getIdForThisReceiver(receiverValue.declarationDescriptor, bindingContext, receiverValue, null, null)
 
         is TransientReceiver ->
             throw AssertionError("Transient receiver is implicit for an explicit expression: $expression. Receiver: $receiverValue")
@@ -269,25 +271,28 @@ private fun getIdForThisReceiver(
     descriptorOfThisReceiver: DeclarationDescriptor?,
     bindingContext: BindingContext,
     receiverValue: ReceiverValue?,
-    labelName: String?
+    labelName: String?,
+    kotlinType: KotlinType?
 ) =
     when (descriptorOfThisReceiver) {
         is CallableDescriptor -> {
-            val receiverParameter = findReceiverByValueOrLabel(
+            val receiverParameter = findReceiverByValueOrLabelOrType(
                 descriptorOfThisReceiver,
                 bindingContext,
                 receiverValue,
-                labelName
+                labelName,
+                kotlinType
             )
             IdentifierInfo.Receiver(receiverParameter.value)
         }
 
         is ClassDescriptor -> {
-            val receiverParameter = findReceiverByValueOrLabel(
+            val receiverParameter = findReceiverByValueOrLabelOrType(
                 descriptorOfThisReceiver,
                 bindingContext,
                 receiverValue,
-                labelName
+                labelName,
+                kotlinType
             )
             IdentifierInfo.Receiver(receiverParameter.value)
         }
@@ -295,19 +300,22 @@ private fun getIdForThisReceiver(
         else -> IdentifierInfo.NO
     }
 
-private fun findReceiverByValueOrLabel(
+private fun findReceiverByValueOrLabelOrType(
     descriptorOfThisReceiver: DeclarationDescriptor,
     bindingContext: BindingContext,
     receiverValue: ReceiverValue?,
-    labelName: String?
+    labelName: String?,
+    kotlinType: KotlinType?
 ): ReceiverParameterDescriptor {
     val receiverToLabelEntries = bindingContext.get(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, descriptorOfThisReceiver)?.entries
     val receiverParameter = receiverToLabelEntries?.find {
-        val receiverParameter = it.key
+        val value = it.key.value
+        val type = it.key.type
         val label = it.value
         when {
-            receiverValue != null -> receiverParameter.value == receiverValue
+            receiverValue != null -> value == receiverValue
             labelName != null -> label == labelName
+            kotlinType != null -> KotlinTypeChecker.DEFAULT.isSubtypeOf(type, kotlinType)
             else -> false
         }
     } ?: receiverToLabelEntries?.firstOrNull()

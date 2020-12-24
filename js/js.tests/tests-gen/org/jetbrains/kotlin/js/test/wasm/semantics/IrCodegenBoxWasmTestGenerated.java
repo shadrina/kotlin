@@ -5082,6 +5082,11 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             public void testSimple() throws Exception {
                 runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/simple.kt");
             }
+
+            @TestMetadata("thisWithReceiverType.kt")
+            public void testThisWithReceiverType() throws Exception {
+                runTest("compiler/testData/codegen/box/extensionFunctions/additionalReceiverExpressions/thisWithReceiverType.kt");
+            }
         }
 
         @TestMetadata("compiler/testData/codegen/box/extensionFunctions/additionalReceivers")
