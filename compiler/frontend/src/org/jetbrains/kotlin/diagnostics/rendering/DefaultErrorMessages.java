@@ -253,6 +253,7 @@ public class DefaultErrorMessages {
         MAP.put(PROPERTY_INITIALIZER_IN_INTERFACE, "Property initializers are not allowed in interfaces");
         MAP.put(PRIVATE_PROPERTY_IN_INTERFACE, "Abstract property in an interface cannot be private");
         MAP.put(EXTENSION_PROPERTY_WITH_BACKING_FIELD, "Extension property cannot be initialized because it has no backing field");
+        MAP.put(ADDITIONAL_RECEIVERS_WITH_BACKING_FIELD, "Property with additional receivers cannot be initialized because it has no backing field");
         MAP.put(PROPERTY_INITIALIZER_NO_BACKING_FIELD, "Initializer is not allowed here because this property has no backing field");
         MAP.put(ABSTRACT_PROPERTY_IN_NON_ABSTRACT_CLASS, "Abstract property ''{0}'' in non-abstract class ''{1}''", STRING, NAME);
         MAP.put(ABSTRACT_FUNCTION_IN_NON_ABSTRACT_CLASS, "Abstract function ''{0}'' in non-abstract class ''{1}''", STRING, NAME);
@@ -1045,6 +1046,7 @@ public class DefaultErrorMessages {
         MAP.put(CONTRACT_NOT_ALLOWED, "{0}", TO_STRING);
 
         MAP.put(NO_ADDITIONAL_RECEIVER, "No required additional receiver found: {0}", TO_STRING);
+        MAP.put(SUBTYPING_BETWEEN_ADDITIONAL_RECEIVERS, "Subtyping between additional receivers is prohibited: {0} is subtype of {1}", RENDER_TYPE, RENDER_TYPE);
 
         MAP.setImmutable();
 
