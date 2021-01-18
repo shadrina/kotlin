@@ -215,19 +215,32 @@ class FunctionDescriptorResolver(
             }
         }
 
+        val receiverToLabelMap = linkedMapOf<ReceiverParameterDescriptor, String>()
         val extensionReceiver = receiverType?.let {
             val splitter = AnnotationSplitter(storageManager, receiverType.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
             DescriptorFactory.createExtensionReceiverParameterForCallable(
-                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
+                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER), false
             )
-        }
-        val additionalReceivers = additionalReceiverTypes.map {
-            val splitter = AnnotationSplitter(storageManager, it.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
-            DescriptorFactory.createExtensionReceiverParameterForCallable(
-                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
-            )
+        }?.apply {
+            val extensionReceiverName = receiverTypeRef?.nameForReceiverLabel()
+            if (extensionReceiverName != null) {
+                receiverToLabelMap[this] = extensionReceiverName
+            }
         }
 
+        val additionalReceivers = additionalReceiverTypes.mapNotNull { type ->
+            val splitter = AnnotationSplitter(storageManager, type.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
+            DescriptorFactory.createExtensionReceiverParameterForCallable(
+                functionDescriptor, type, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER), true
+            )
+        }
+        additionalReceivers.reversed().zip(additionalReceiverTypeRefs.lastIndex downTo 0).forEach { (additionalReceiver, i) ->
+            val additionalReceiverName = additionalReceiverTypeRefs[i].nameForReceiverLabel()
+            if (additionalReceiverName != null) {
+                receiverToLabelMap[additionalReceiver] = additionalReceiverName
+            }
+        }
+        trace.record(BindingContext.DESCRIPTOR_TO_NAMED_RECEIVERS, functionDescriptor, receiverToLabelMap)
         functionDescriptor.initialize(
             extensionReceiver,
             getDispatchReceiverParameterIfNeeded(container),

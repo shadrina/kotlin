@@ -9478,6 +9478,18 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     public void testSubtypingBetweenReceivers() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/subtypingBetweenReceivers.kt");
                     }
+
+                    @Test
+                    @TestMetadata("superWithContext.kt")
+                    public void testSuperWithContext() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/superWithContext.kt");
+                    }
+
+                    @Test
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/classes/thisWithReceiverLabels.kt");
+                    }
                 }
 
                 @Nested
@@ -9526,6 +9538,18 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     }
 
                     @Test
+                    @TestMetadata("thisIdentifierInfo.kt")
+                    public void testThisIdentifierInfo() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisIdentifierInfo.kt");
+                    }
+
+                    @Test
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/thisWithReceiverLabels.kt");
+                    }
+
+                    @Test
                     @TestMetadata("typeParameterized.kt")
                     public void testTypeParameterized() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/functions/typeParameterized.kt");
@@ -9569,6 +9593,12 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     @TestMetadata("subtypingBetweenReceivers.kt")
                     public void testSubtypingBetweenReceivers() throws Exception {
                         runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/subtypingBetweenReceivers.kt");
+                    }
+
+                    @Test
+                    @TestMetadata("thisWithReceiverLabels.kt")
+                    public void testThisWithReceiverLabels() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/additionalReceivers/properties/thisWithReceiverLabels.kt");
                     }
                 }
             }
