@@ -363,7 +363,7 @@ class CallableBuilder(val config: CallableBuilderConfiguration) {
             val memberScope = receiverClassDescriptor.getMemberScope(projections)
 
             return LexicalScopeImpl(
-                memberScope.memberScopeAsImportingScope(), receiverClassDescriptor, false, listOf(),
+                memberScope.memberScopeAsImportingScope(), receiverClassDescriptor, false, null, listOf(),
                 LexicalScopeKind.SYNTHETIC
             ) {
                 receiverClassDescriptor.typeConstructor.parameters.forEach { addClassifierDescriptor(it) }
