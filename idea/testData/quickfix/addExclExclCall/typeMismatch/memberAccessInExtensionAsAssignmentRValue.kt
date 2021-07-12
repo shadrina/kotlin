@@ -5,7 +5,6 @@ class C {
 
 // Test for KTIJ-10052
 fun C.test() {
-    val z: String = <caret>s
+    var z: String = ""
+    z = <caret>s
 }
-// TODO: Enable when FIR reports TYPE_MISMATCH for assignments
-/* IGNORE_FIR */

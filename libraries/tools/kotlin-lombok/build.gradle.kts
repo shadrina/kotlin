@@ -17,10 +17,11 @@ dependencies {
 
 projectTest(parallel = true)
 
-publish()
+publishGradlePlugin()
 
 sourcesJar()
 javadocJar()
+noDefaultJar()
 runtimeJar(rewriteDefaultJarDepsToShadedCompiler())
 
 tasks {

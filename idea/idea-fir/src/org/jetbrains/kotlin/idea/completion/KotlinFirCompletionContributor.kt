@@ -20,7 +20,6 @@ import org.jetbrains.kotlin.idea.completion.contributors.*
 import org.jetbrains.kotlin.idea.completion.contributors.FirAnnotationCompletionContributor
 import org.jetbrains.kotlin.idea.completion.contributors.FirCallableCompletionContributor
 import org.jetbrains.kotlin.idea.completion.contributors.FirClassifierCompletionContributor
-import org.jetbrains.kotlin.idea.completion.contributors.FirKeywordCompletionContributor
 import org.jetbrains.kotlin.idea.completion.contributors.complete
 import org.jetbrains.kotlin.idea.completion.weighers.Weighers
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.originalKtFile
@@ -77,69 +76,9 @@ private object KotlinFirCompletionProvider : CompletionProvider<CompletionParame
         basicContext: FirBasicCompletionContext,
         positionContext: FirRawPositionCompletionContext,
     ) {
-        val keywordContributor = FirKeywordCompletionContributor(basicContext)
-        val callableContributor = FirCallableCompletionContributor(basicContext)
-        val classifierContributor = FirClassifierCompletionContributor(basicContext)
-        val annotationsContributor = FirAnnotationCompletionContributor(basicContext)
-        val packageCompletionContributor = FirPackageCompletionContributor(basicContext)
-        val importDirectivePackageMembersCompletionContributor = FirImportDirectivePackageMembersCompletionContributor(basicContext)
-        val typeParameterConstraintNameInWhereClauseContributor =
-            FirTypeParameterConstraintNameInWhereClauseCompletionContributor(basicContext)
-        val classifierNameContributor = FirSameAsFileClassifierNameCompletionContributor(basicContext)
-        val whenWithSubjecConditionContributor = FirWhenWithSubjectConditionContributor(basicContext)
-
-        when (positionContext) {
-            is FirExpressionNameReferencePositionContext -> {
-                complete(keywordContributor, positionContext)
-                complete(packageCompletionContributor, positionContext)
-                complete(callableContributor, positionContext)
-                complete(classifierContributor, positionContext)
-            }
-
-            is FirTypeNameReferencePositionContext -> {
-                complete(keywordContributor, positionContext)
-                complete(packageCompletionContributor, positionContext)
-                complete(classifierContributor, positionContext)
-            }
-
-            is FirAnnotationTypeNameReferencePositionContext -> {
-                complete(keywordContributor, positionContext)
-                complete(packageCompletionContributor, positionContext)
-                complete(annotationsContributor, positionContext)
-            }
-
-            is FirSuperTypeCallNameReferencePositionContext -> {
-                complete(FirSuperEntryContributor(basicContext), positionContext)
-            }
-
-            is FirImportDirectivePositionContext -> {
-                complete(packageCompletionContributor, positionContext)
-                complete(importDirectivePackageMembersCompletionContributor, positionContext)
-            }
-
-            is FirPackageDirectivePositionContext -> {
-                complete(packageCompletionContributor, positionContext)
-            }
-
-            is FirTypeConstraintNameInWhereClausePositionContext -> {
-                complete(typeParameterConstraintNameInWhereClauseContributor, positionContext)
-            }
-
-            is FirUnknownPositionContext -> {
-                complete(keywordContributor, positionContext)
-            }
-
-            is FirClassifierNamePositionContext -> {
-                complete(classifierNameContributor, positionContext)
-            }
-
-            is FirWithSubjectEntryPositionContext -> {
-                complete(whenWithSubjecConditionContributor, positionContext)
-            }
-
-            is FirIncorrectPositionContext -> {
-                // do nothing, completion is not suposed to be called here
-            }
+        val factory = FirCompletionContributorFactory(basicContext)
+        with(Completions) {
+            complete(factory, positionContext)
         }
     }
 

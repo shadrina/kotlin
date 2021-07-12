@@ -13,4 +13,12 @@ import org.junit.jupiter.api.Tag
 @Target(AnnotationTarget.CLASS, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @Tag("SimpleKGP")
-annotation class SimpleGradlePluginPTests
+annotation class SimpleGradlePluginTests
+
+/**
+ * Add it to test classes performing Gradle or Kotlin daemon checks.
+ */
+@Target(AnnotationTarget.CLASS, AnnotationTarget.ANNOTATION_CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+@Tag("DaemonsKGP")
+annotation class DaemonsGradlePluginTests

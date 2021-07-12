@@ -8,14 +8,13 @@ package org.jetbrains.kotlin.idea.frontend.api
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationListener
 import com.intellij.openapi.application.ApplicationManager
-import org.jetbrains.kotlin.miniStdLib.multithreadings.javaThreadLocal
 
 @KtInternalApiMarker
-class NoWriteActionInAnalyseCallChecker(parentDisposable: Disposable) {
+public class NoWriteActionInAnalyseCallChecker(parentDisposable: Disposable) {
     init {
         val listener = object : ApplicationListener {
             override fun writeActionFinished(action: Any) {
-                if (currentAnalysisContextEnteringCount > 0) {
+                if (currentAnalysisContextEnteringCount.get() > 0) {
                     throw WriteActionStartInsideAnalysisContextException()
                 }
             }
@@ -23,17 +22,17 @@ class NoWriteActionInAnalyseCallChecker(parentDisposable: Disposable) {
         ApplicationManager.getApplication().addApplicationListener(listener, parentDisposable)
     }
 
-    fun beforeEnteringAnalysisContext() {
-        currentAnalysisContextEnteringCount++
+    public fun beforeEnteringAnalysisContext() {
+        currentAnalysisContextEnteringCount.set(currentAnalysisContextEnteringCount.get() + 1)
     }
 
-    fun afterLeavingAnalysisContext() {
-        currentAnalysisContextEnteringCount--
+    public fun afterLeavingAnalysisContext() {
+        currentAnalysisContextEnteringCount.set(currentAnalysisContextEnteringCount.get() - 1)
     }
 
-    private var currentAnalysisContextEnteringCount by javaThreadLocal(0)
+    private val currentAnalysisContextEnteringCount = ThreadLocal.withInitial { 0 }
 }
 
-class WriteActionStartInsideAnalysisContextException : IllegalStateException(
+public class WriteActionStartInsideAnalysisContextException : IllegalStateException(
     "write action should be never executed inside analysis context (e,g. analyse call)"
 )

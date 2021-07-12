@@ -6,11 +6,13 @@
 package org.jetbrains.kotlin.fir.analysis.checkers.declaration
 
 import org.jetbrains.kotlin.descriptors.Visibilities
-import org.jetbrains.kotlin.fir.*
+import org.jetbrains.kotlin.fir.FirFakeSourceElementKind
+import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
-import org.jetbrains.kotlin.fir.analysis.checkers.extractTypeRefAndSourceFromTypeArgument
+import org.jetbrains.kotlin.fir.analysis.checkers.extractArgumentTypeRefAndSource
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
+import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.resolve.toSymbol
@@ -19,7 +21,7 @@ import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.types.checker.TypeCheckingProcedure
 
 object FirClassVarianceChecker : FirClassChecker() {
-    override fun check(declaration: FirClass<*>, context: CheckerContext, reporter: DiagnosticReporter) {
+    override fun check(declaration: FirClass, context: CheckerContext, reporter: DiagnosticReporter) {
         checkTypeParameters(declaration.typeParameters, Variance.OUT_VARIANCE, context, reporter)
 
         for (superTypeRef in declaration.superTypeRefs) {
@@ -37,14 +39,14 @@ object FirClassVarianceChecker : FirClassChecker() {
                 checkTypeParameters(member.typeParameters, Variance.IN_VARIANCE, context, reporter)
             }
 
-            if (member is FirCallableDeclaration<*>) {
+            if (member is FirCallableDeclaration) {
                 checkCallableDeclaration(member, context, reporter)
             }
         }
     }
 
     private fun checkCallableDeclaration(
-        member: FirCallableDeclaration<*>,
+        member: FirCallableDeclaration,
         context: CheckerContext,
         reporter: DiagnosticReporter
     ) {
@@ -116,14 +118,13 @@ object FirClassVarianceChecker : FirClassChecker() {
             ) {
                 val factory =
                     if (isInAbbreviation) FirErrors.TYPE_VARIANCE_CONFLICT_IN_EXPANDED_TYPE else FirErrors.TYPE_VARIANCE_CONFLICT
-                reporter.report(
-                    factory.on(
-                        resultSource,
-                        typeParameter.symbol,
-                        typeParameter.variance,
-                        variance,
-                        containingType
-                    ),
+                reporter.reportOn(
+                    resultSource,
+                    factory,
+                    typeParameter.symbol,
+                    typeParameter.variance,
+                    variance,
+                    containingType,
                     context
                 )
             }
@@ -133,7 +134,7 @@ object FirClassVarianceChecker : FirClassChecker() {
         if (type is ConeClassLikeType) {
             val fullyExpandedType = type.fullyExpandedType(context.session)
             val declFir = fullyExpandedType.lookupTag.toSymbol(context.session)?.fir
-            if (declFir is FirClass<*>) {
+            if (declFir is FirClass) {
                 for ((index, typeArgument) in fullyExpandedType.typeArguments.withIndex()) {
                     val paramVariance = (declFir.typeParameters.getOrNull(index) as? FirTypeParameter)?.variance ?: continue
 
@@ -155,11 +156,11 @@ object FirClassVarianceChecker : FirClassChecker() {
                     }
 
                     if (newVariance != null) {
-                        val subTypeRefAndSource = extractTypeRefAndSourceFromTypeArgument(typeRef, index)
+                        val subTypeRefAndSource = extractArgumentTypeRefAndSource(typeRef, index)
 
                         checkVarianceConflict(
-                            typeArgumentType, newVariance, subTypeRefAndSource?.first, containingType,
-                            context, reporter, subTypeRefAndSource?.first?.source ?: source,
+                            typeArgumentType, newVariance, subTypeRefAndSource?.typeRef, containingType,
+                            context, reporter, subTypeRefAndSource?.typeRef?.source ?: source,
                             fullyExpandedType != type
                         )
                     }

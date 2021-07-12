@@ -1,5 +1,4 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.pill.PillExtension
 
 plugins {
@@ -15,6 +14,7 @@ val kotlinGradlePluginTest = project(":kotlin-gradle-plugin").sourceSets.named("
 
 dependencies {
     testImplementation(project(":kotlin-gradle-plugin"))
+    testImplementation(project(":kotlin-project-model"))
     testImplementation(project(":kotlin-tooling-metadata"))
     testImplementation(kotlinGradlePluginTest)
     testImplementation(project(":kotlin-gradle-subplugin-example"))
@@ -171,9 +171,23 @@ val simpleTestsTask = tasks.register<Test>("kgpSimpleTests") {
     }
 }
 
+// Daemon tests could run only sequentially as they could not be shared between parallel test builds
+val daemonsTestsTask = tasks.register<Test>("kgpDaemonTests") {
+    group = KGP_TEST_TASKS_GROUP
+    description = "Run only Gradle and Kotlin daemon tests for Kotlin Gradle Plugin"
+    maxParallelForks = 1
+
+    mustRunAfter(simpleTestsTask)
+
+    useJUnitPlatform {
+        includeTags("DaemonsKGP")
+        includeEngines("junit-jupiter")
+    }
+}
+
 tasks.named<Task>("check") {
     dependsOn("testAdvanceGradleVersion")
-    dependsOn(simpleTestsTask)
+    dependsOn(simpleTestsTask, daemonsTestsTask)
     if (isTeamcityBuild) {
         dependsOn("testAdvanceGradleVersionMppAndAndroid")
         dependsOn("testMppAndAndroid")
@@ -183,22 +197,6 @@ tasks.named<Task>("check") {
     }
 }
 
-val kgpJunit5Tests = tasks.register<Test>("kgpJunit5Tests") {
-    group = KGP_TEST_TASKS_GROUP
-    description = "Run only JUnit 5 tests for Kotlin Gradle Plugin"
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1)
-
-    useJUnitPlatform {
-        includeTags("JUnit5")
-        includeEngines("junit-jupiter")
-    }
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jdkHome = rootProject.extra["JDK_18"] as String
-    kotlinOptions.jvmTarget = "1.8"
-}
-
 tasks.withType<Test> {
     val noTestProperty = project.providers.gradleProperty("noTest")
     onlyIf { !noTestProperty.isPresent }
@@ -206,24 +204,34 @@ tasks.withType<Test> {
     dependsOn(":kotlin-gradle-plugin:validatePlugins")
     dependsOnKotlinGradlePluginInstall()
 
-    executable = "${rootProject.extra["JDK_18"]!!}/bin/java"
-
     systemProperty("kotlinVersion", rootProject.extra["kotlinVersion"] as String)
     systemProperty("runnerGradleVersion", gradle.gradleVersion)
-    systemProperty("jdk9Home", rootProject.extra["JDK_9"] as String)
-    systemProperty("jdk10Home", rootProject.extra["JDK_10"] as String)
-    systemProperty("jdk11Home", rootProject.extra["JDK_11"] as String)
 
+    val installCocoapods = project.findProperty("installCocoapods") as String?
+    if (installCocoapods != null) {
+        systemProperty("installCocoapods", installCocoapods)
+    }
+
+    val jdk9Provider = project.getToolchainLauncherFor(JdkMajorVersion.JDK_9).map { it.metadata.installationPath.asFile.absolutePath }
+    val jdk10Provider = project.getToolchainLauncherFor(JdkMajorVersion.JDK_10).map { it.metadata.installationPath.asFile.absolutePath }
+    val jdk11Provider = project.getToolchainLauncherFor(JdkMajorVersion.JDK_11).map { it.metadata.installationPath.asFile.absolutePath }
     val mavenLocalRepo = project.providers.systemProperty("maven.repo.local").forUseAtConfigurationTime().orNull
-    if (mavenLocalRepo != null) {
-        systemProperty("maven.repo.local", mavenLocalRepo)
+
+    // Query required JDKs paths only on execution phase to avoid triggering auto-download on project configuration phase
+    doFirst {
+        systemProperty("jdk9Home", jdk9Provider.get())
+        systemProperty("jdk10Home", jdk10Provider.get())
+        systemProperty("jdk11Home", jdk11Provider.get())
+        if (mavenLocalRepo != null) {
+            systemProperty("maven.repo.local", mavenLocalRepo)
+        }
     }
 
     useAndroidSdk()
 
     val shouldApplyJunitPlatform = name !in setOf(
         simpleTestsTask.name,
-        kgpJunit5Tests.name
+        daemonsTestsTask.name
     )
     if (shouldApplyJunitPlatform) {
         maxHeapSize = "512m"

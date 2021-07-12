@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.fir.checkers.generator.diagnostics.model.DiagnosticP
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccess
-import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.FirTypeRef
@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.idea.frontend.api.symbols.*
 import org.jetbrains.kotlin.idea.frontend.api.types.KtType
 import org.jetbrains.kotlin.lexer.KtKeywordToken
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.resolve.ForbiddenNamedArgumentsTarget
@@ -135,7 +136,7 @@ private object FirToKtConversionCreator {
     )
 
     private val typeMapping: Map<KClass<*>, HLFunctionCallConversion> = mapOf(
-        AbstractFirBasedSymbol::class to HLFunctionCallConversion(
+        FirBasedSymbol::class to HLFunctionCallConversion(
             "firSymbolBuilder.buildSymbol({0}.fir as FirDeclaration)",
             KtSymbol::class.createType(),
             importsToAdd = listOf("org.jetbrains.kotlin.fir.declarations.FirDeclaration")
@@ -143,6 +144,14 @@ private object FirToKtConversionCreator {
         FirClass::class to HLFunctionCallConversion(
             "firSymbolBuilder.classifierBuilder.buildClassLikeSymbol({0})",
             KtClassLikeSymbol::class.createType()
+        ),
+        FirRegularClass::class to HLFunctionCallConversion(
+            "firSymbolBuilder.classifierBuilder.buildClassLikeSymbol({0}) as KtNamedClassOrObjectSymbol",
+            KtNamedClassOrObjectSymbol::class.createType(),
+            importsToAdd = listOf(
+                "org.jetbrains.kotlin.fir.declarations.FirRegularClass",
+                "org.jetbrains.kotlin.idea.frontend.api.symbols.KtNamedClassOrObjectSymbol"
+            )
         ),
         FirExpression::class to HLFunctionCallConversion(
             "{0}.source!!.psi as KtExpression",
@@ -166,7 +175,7 @@ private object FirToKtConversionCreator {
             importsToAdd = listOf("org.jetbrains.kotlin.fir.declarations.FirDeclaration")
         ),
         FirClassLikeSymbol::class to HLFunctionCallConversion(
-            "firSymbolBuilder.classifierBuilder.buildClassLikeSymbol({0}.fir as FirClass<*>)",
+            "firSymbolBuilder.classifierBuilder.buildClassLikeSymbol({0}.fir as FirClass)",
             KtClassLikeSymbol::class.createType(),
             importsToAdd = listOf("org.jetbrains.kotlin.fir.declarations.FirClass")
         ),
@@ -244,7 +253,8 @@ private object FirToKtConversionCreator {
         ForbiddenNamedArgumentsTarget::class,
         LanguageFeature::class,
         LanguageVersionSettings::class,
-        Variance::class
+        Variance::class,
+        FqName::class,
     )
 
     private val KType.kClass: KClass<*>

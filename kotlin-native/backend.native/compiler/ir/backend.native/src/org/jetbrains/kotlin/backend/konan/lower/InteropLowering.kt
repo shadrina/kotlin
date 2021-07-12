@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.backend.konan.cgen.*
 import org.jetbrains.kotlin.backend.konan.descriptors.allOverriddenFunctions
 import org.jetbrains.kotlin.backend.konan.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.konan.ir.*
-import org.jetbrains.kotlin.backend.konan.ir.companionObject
 import org.jetbrains.kotlin.backend.konan.ir.isFinalClass
 import org.jetbrains.kotlin.backend.konan.llvm.IntrinsicType
 import org.jetbrains.kotlin.backend.konan.llvm.tryGetIntrinsicType
@@ -81,6 +80,7 @@ private abstract class BaseInteropIrTransformer(private val context: Context) : 
         return object : KotlinStubs {
             override val irBuiltIns get() = context.irBuiltIns
             override val symbols get() = context.ir.symbols
+            override val typeSystem: IrTypeSystemContext get() = context.typeSystem
 
             val klib: KonanLibrary? get() {
                 return (element as? IrCall)?.symbol?.owner?.konanLibrary as? KonanLibrary
@@ -785,6 +785,9 @@ private class InteropTransformer(val context: Context, override val irFile: IrFi
         // Calls to other ObjC class constructors must be lowered.
         require(constructedClass.isKotlinObjCClass()) { renderCompilerError(expression) }
         return builder.at(expression).irBlock {
+            // Note: using [interopAllocObjCObject] and [interopObjCRelease] here is suboptimal: they switch the thread to Native state
+            // and then back to Runnable.
+            // TODO: consider calling specialized versions of allocWithZoneImp and releaseImp directly.
             val rawPtr = irTemporary(irCall(symbols.interopAllocObjCObject.owner).apply {
                 putValueArgument(0, getObjCClass(symbols, constructedClass.symbol))
             })

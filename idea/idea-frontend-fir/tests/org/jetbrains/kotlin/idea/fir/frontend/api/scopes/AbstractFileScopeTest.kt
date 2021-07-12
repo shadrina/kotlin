@@ -5,20 +5,17 @@
 
 package org.jetbrains.kotlin.idea.fir.frontend.api.scopes
 
-import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.kotlin.idea.fir.executeOnPooledThreadInReadAction
+import org.jetbrains.kotlin.idea.fir.frontend.api.test.framework.AbstractHLApiSingleFileTest
 import org.jetbrains.kotlin.idea.frontend.api.analyse
 import org.jetbrains.kotlin.idea.frontend.api.symbols.DebugSymbolRenderer
-import org.jetbrains.kotlin.idea.test.KotlinLightCodeInsightFixtureTestCase
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.test.KotlinTestUtils
-import java.io.File
+import org.jetbrains.kotlin.test.model.TestModule
+import org.jetbrains.kotlin.test.services.TestServices
+import org.jetbrains.kotlin.test.services.assertions
 
-abstract class AbstractFileScopeTest : KotlinLightCodeInsightFixtureTestCase() {
-
-    protected fun doTest(path: String) {
-        val ktFile = myFixture.configureByText("file.kt", FileUtil.loadFile(File(path))) as KtFile
-
+abstract class AbstractFileScopeTest : AbstractHLApiSingleFileTest() {
+    override fun doTestByFileStructure(ktFile: KtFile, module: TestModule, testServices: TestServices) {
         val actual = executeOnPooledThreadInReadAction {
             analyse(ktFile) {
                 val symbol = ktFile.getFileSymbol()
@@ -31,13 +28,13 @@ abstract class AbstractFileScopeTest : KotlinLightCodeInsightFixtureTestCase() {
                 val renderedClassifiers = scope.getClassifierSymbols().map { DebugSymbolRenderer.render(it) }
 
                 "FILE SYMBOL:\n" + renderedSymbol +
-                    "\nCALLABLE NAMES:\n" + callableNames.joinToString(prefix = "[", postfix = "]\n", separator = ", ") +
-                    "\nCALLABLE SYMBOLS:\n" + renderedCallables.joinToString(separator = "\n") +
-                    "\nCLASSIFIER NAMES:\n" + classifierNames.joinToString(prefix = "[", postfix = "]\n", separator = ", ") +
-                    "\nCLASSIFIER SYMBOLS:\n" + renderedClassifiers.joinToString(separator = "\n")
+                        "\nCALLABLE NAMES:\n" + callableNames.joinToString(prefix = "[", postfix = "]\n", separator = ", ") +
+                        "\nCALLABLE SYMBOLS:\n" + renderedCallables.joinToString(separator = "\n") +
+                        "\nCLASSIFIER NAMES:\n" + classifierNames.joinToString(prefix = "[", postfix = "]\n", separator = ", ") +
+                        "\nCLASSIFIER SYMBOLS:\n" + renderedClassifiers.joinToString(separator = "\n")
             }
         }
 
-        KotlinTestUtils.assertEqualsToFile(File("$path.result"), actual)
+        testServices.assertions.assertEqualsToFile(testDataFileSibling(".txt"), actual)
     }
 }

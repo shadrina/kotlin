@@ -134,9 +134,9 @@ open class FatFrameworkTask : DefaultTask() {
      * Adds the specified frameworks in this fat framework.
      */
     fun from(frameworks: Iterable<Framework>) {
-        frameworks.forEach {
-            val arch = it.konanTarget.architecture
-            val family = it.konanTarget.family
+        frameworks.forEach { framework ->
+            val arch = framework.konanTarget.architecture
+            val family = framework.konanTarget.family
             val fatFrameworkFamily = getFatFrameworkFamily()
             require(fatFrameworkFamily == null || family == fatFrameworkFamily) {
                 "Cannot add a binary with platform family '${family.visibleName}' to the fat framework:\n" +
@@ -149,8 +149,20 @@ open class FatFrameworkTask : DefaultTask() {
                 "This fat framework already has a binary for architecture `${arch.name.toLowerCase()}` " +
                         "(${alreadyAdded.name} for target `${alreadyAdded.target.name}`)"
             }
-            archToFramework[arch] = it
-            dependsOn(it.linkTask)
+
+            require(archToFramework.all { it.value.isStatic == framework.isStatic }) {
+                fun Framework.staticOrDynamic(): String = if (isStatic) "static" else "dynamic"
+
+                buildString {
+                    append("Cannot create a fat framework from:\n")
+                    archToFramework.forEach { append("${it.value.baseName} - ${it.key.name.toLowerCase()} - ${it.value.staticOrDynamic()}\n") }
+                    append("${framework.baseName} - ${arch.name.toLowerCase()} - ${framework.staticOrDynamic()}\n")
+                    append("All input frameworks must be either static or dynamic")
+                }
+            }
+
+            archToFramework[arch] = framework
+            dependsOn(framework.linkTask)
 
         }
     }
@@ -171,10 +183,10 @@ open class FatFrameworkTask : DefaultTask() {
         }
 
     private val Framework.plistPlatform: String
-        get() = when(konanTarget) {
-            IOS_ARM32, IOS_ARM64, IOS_X64 -> "iPhoneOS"
-            TVOS_ARM64, TVOS_X64 -> "AppleTVOS"
-            WATCHOS_ARM32, WATCHOS_ARM64, WATCHOS_X86, WATCHOS_X64 -> "WatchOS"
+        get() = when (konanTarget) {
+            IOS_ARM32, IOS_ARM64, IOS_X64, IOS_SIMULATOR_ARM64 -> "iPhoneOS"
+            TVOS_ARM64, TVOS_X64, TVOS_SIMULATOR_ARM64 -> "AppleTVOS"
+            WATCHOS_ARM32, WATCHOS_ARM64, WATCHOS_X86, WATCHOS_X64, WATCHOS_SIMULATOR_ARM64 -> "WatchOS"
             else -> error("Fat frameworks are not supported for platform `${konanTarget.visibleName}`")
         }
 
@@ -218,8 +230,25 @@ open class FatFrameworkTask : DefaultTask() {
             )
         }
 
-    private fun mergeBinaries(outputFile: File) =
+    private fun runInstallNameTool(file: File, frameworkName: String) {
+        project.exec { exec ->
+            exec.executable = "install_name_tool"
+            exec.args = listOf(
+                "-id",
+                "@rpath/${frameworkName}.framework/${frameworkName}",
+                file.absolutePath
+            )
+        }
+    }
+
+    private fun mergeBinaries(outputFile: File) {
+
         runLipo(archToFramework.values.map { it.files.binary }, outputFile)
+
+        if (archToFramework.values.any{ it.isStatic.not() && it.baseName != fatFrameworkName }) {
+            runInstallNameTool(outputFile, fatFrameworkName)
+        }
+    }
 
     private fun mergeHeaders(outputFile: File) = outputFile.writer().use { writer ->
 

@@ -1,4 +1,3 @@
-// FIR_IDE_IGNORE
 // !LANGUAGE: +NewInference
 // !DIAGNOSTICS: -UNUSED_EXPRESSION
 // SKIP_TXT
@@ -180,7 +179,7 @@ fun case_12(x: TypealiasNullableStringIndirect, y: TypealiasNullableStringIndire
     else "-1"
 
 // TESTCASE NUMBER: 13
-fun case_13(x: <!UNRESOLVED_REFERENCE!>otherpackage.Case13?<!>) =
+fun case_13(x: <!UNRESOLVED_REFERENCE!>otherpackage.Case13<!>?) =
     <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.Nothing")!>if ((x == null !is Boolean) !== true) {
         throw Exception()
     } else {
@@ -190,7 +189,7 @@ fun case_13(x: <!UNRESOLVED_REFERENCE!>otherpackage.Case13?<!>) =
 
 // TESTCASE NUMBER: 14
 class Case14 {
-    val x: <!UNRESOLVED_REFERENCE!>otherpackage.Case14?<!>
+    val x: <!UNRESOLVED_REFERENCE!>otherpackage.Case14<!>?
     init {
         x = <!UNRESOLVED_REFERENCE!>otherpackage<!>.Case14()
     }

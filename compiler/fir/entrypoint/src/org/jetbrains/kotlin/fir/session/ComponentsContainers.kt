@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.analysis.CheckersComponent
+import org.jetbrains.kotlin.fir.analysis.FirOverridesBackwardCompatibilityHelper
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirNameConflictsTracker
 import org.jetbrains.kotlin.fir.caches.FirCachesFactory
 import org.jetbrains.kotlin.fir.caches.FirThreadUnsafeCachesFactory
@@ -71,7 +72,7 @@ fun FirSession.registerResolveComponents(lookupTracker: LookupTracker? = null) {
     register(FirNameConflictsTrackerComponent::class, FirNameConflictsTracker())
     if (lookupTracker != null) {
         val firFileToPath: (FirSourceElement) -> String = {
-            val psiSource = (it as? FirPsiSourceElement<*>) ?: TODO("Not implemented for non-FirPsiSourceElement")
+            val psiSource = (it as? FirPsiSourceElement) ?: TODO("Not implemented for non-FirPsiSourceElement")
             ((psiSource.psi as? PsiFile) ?: psiSource.psi.containingFile).virtualFile.path
         }
         register(
@@ -92,6 +93,7 @@ fun FirSession.registerJavaSpecificResolveComponents() {
     register(FirPlatformClassMapper::class, FirJavaClassMapper(this))
     register(FirSyntheticNamesProvider::class, FirJavaSyntheticNamesProvider)
     register(FirJsr305StateContainer::class, FirJsr305StateContainer.Default)
+    register(FirOverridesBackwardCompatibilityHelper::class, FirJvmOverridesBackwardCompatibilityHelper)
 }
 
 @OptIn(SessionConfiguration::class)

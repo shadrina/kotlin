@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.backend.common.lower.loops.ForLoopsLowering
 import org.jetbrains.kotlin.backend.common.lower.optimizations.FoldConstantLowering
 import org.jetbrains.kotlin.backend.common.lower.optimizations.PropertyAccessorInlineLowering
 import org.jetbrains.kotlin.backend.common.phaser.*
+import org.jetbrains.kotlin.backend.konan.ir.FunctionsWithoutBCGenerator
 import org.jetbrains.kotlin.backend.konan.lower.*
 import org.jetbrains.kotlin.backend.konan.lower.FinallyBlocksLowering
 import org.jetbrains.kotlin.backend.konan.lower.InitializersLowering
@@ -120,6 +121,12 @@ internal val sharedVariablesPhase = makeKonanModuleLoweringPhase(
         prerequisite = setOf(lateinitPhase)
 )
 
+internal val inventNamesForLocalClasses = makeKonanModuleLoweringPhase(
+        ::NativeInventNamesForLocalClasses,
+        name = "InventNamesForLocalClasses",
+        description = "Invent names for local classes and anonymous objects"
+)
+
 internal val extractLocalClassesFromInlineBodies = NamedCompilerPhase(
         lower = object : SameTypeCompilerPhase<Context, IrModuleFragment> {
             override fun invoke(phaseConfig: PhaseConfig, phaserState: PhaserState<IrModuleFragment>, context: Context, input: IrModuleFragment): IrModuleFragment {
@@ -137,7 +144,7 @@ internal val extractLocalClassesFromInlineBodies = NamedCompilerPhase(
         },
         name = "ExtractLocalClassesFromInlineBodies",
         description = "Extraction of local classes from inline bodies",
-        prerequisite = setOf(sharedVariablesPhase),
+        prerequisite = setOf(sharedVariablesPhase), // TODO: add "soft" dependency on inventNamesForLocalClasses
         nlevels = 0,
         actions = modulePhaseActions
 )
@@ -216,7 +223,7 @@ internal val localFunctionsPhase = makeKonanFileOpPhase(
         },
         name = "LocalFunctions",
         description = "Local function lowering",
-        prerequisite = setOf(sharedVariablesPhase)
+        prerequisite = setOf(sharedVariablesPhase) // TODO: add "soft" dependency on inventNamesForLocalClasses
 )
 
 internal val tailrecPhase = makeKonanFileLoweringPhase(
@@ -331,11 +338,19 @@ internal val interopPhase = makeKonanFileLoweringPhase(
         prerequisite = setOf(inlinePhase, localFunctionsPhase, functionReferencePhase)
 )
 
+internal val functionsWithoutBC = makeKonanModuleOpPhase(
+        name = "FunctionsWithoutBCGenerator",
+        description = "Functions without bounds check generation",
+        op = { context, _ ->
+            FunctionsWithoutBCGenerator(context).generate()
+        }
+)
+
 internal val varargPhase = makeKonanFileLoweringPhase(
         ::VarargInjectionLowering,
         name = "Vararg",
         description = "Vararg lowering",
-        prerequisite = setOf(functionReferencePhase, defaultParameterExtentPhase, interopPhase)
+        prerequisite = setOf(functionReferencePhase, defaultParameterExtentPhase, interopPhase, functionsWithoutBC)
 )
 
 internal val compileTimeEvaluatePhase = makeKonanFileLoweringPhase(

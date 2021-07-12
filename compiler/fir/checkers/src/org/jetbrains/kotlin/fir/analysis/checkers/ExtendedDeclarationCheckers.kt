@@ -14,15 +14,14 @@ object ExtendedDeclarationCheckers : DeclarationCheckers() {
     override val basicDeclarationCheckers: Set<FirBasicDeclarationChecker>
         get() = setOf(
             RedundantVisibilityModifierSyntaxChecker,
-        )
-
-    override val memberDeclarationCheckers: Set<FirMemberDeclarationChecker>
-        get() = setOf(
             RedundantModalityModifierSyntaxChecker,
-            RedundantExplicitTypeChecker,
-            RedundantSetterParameterTypeChecker,
         )
 
+    override val propertyCheckers: Set<FirPropertyChecker>
+        get() = setOf(
+            RedundantSetterParameterTypeChecker,
+            RedundantExplicitTypeChecker,
+        )
     override val variableAssignmentCfaBasedCheckers: Set<AbstractFirPropertyInitializationChecker>
         get() = setOf(
             CanBeValChecker,

@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.fir.analysis.checkers.expression
 
 import org.jetbrains.kotlin.fir.FirFakeSourceElementKind
-import org.jetbrains.kotlin.fir.FirSymbolOwner
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.isEnumEntryInitializer
 import org.jetbrains.kotlin.fir.analysis.checkers.getContainingClass
@@ -15,13 +14,12 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
-import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
-import org.jetbrains.kotlin.fir.expressions.FirLambdaArgumentExpression
-import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
-import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
+import org.jetbrains.kotlin.fir.declarations.utils.isCompanion
+import org.jetbrains.kotlin.fir.declarations.utils.isEnumClass
+import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 
-object FirUninitializedEnumChecker : FirQualifiedAccessChecker() {
+object FirUninitializedEnumChecker : FirQualifiedAccessExpressionChecker() {
     // Initialization order: member property initializers, enum entries, companion object (including members in it).
     //
     // When JVM loads a class, the corresponding class initializer, a.k.a. <clinit>, is executed first.
@@ -101,7 +99,7 @@ object FirUninitializedEnumChecker : FirQualifiedAccessChecker() {
             //     INSTANCE(EnumCompanion2.foo())
             //   }
             // find an accessed context within the same enum class.
-            (it as? FirSymbolOwner<*>)?.getContainingClass(context) == enumClass
+            it.getContainingClass(context) == enumClass
         } ?: return
 
         val enumMemberProperties = enumClass.declarations.filterIsInstance<FirProperty>()
@@ -222,6 +220,6 @@ object FirUninitializedEnumChecker : FirQualifiedAccessChecker() {
                 (delegateCall.calleeReference as? FirResolvedNamedReference)?.resolvedSymbol?.fir as? FirSimpleFunction ?: return null
             if (callee.symbol.callableId.asSingleFqName().asString() != "kotlin.lazy") return null
             val lazyCallArgument = delegateCall.argumentList.arguments.singleOrNull() as? FirLambdaArgumentExpression ?: return null
-            return lazyCallArgument.expression as? FirAnonymousFunction
+            return (lazyCallArgument.expression as? FirAnonymousFunctionExpression)?.anonymousFunction
         }
 }

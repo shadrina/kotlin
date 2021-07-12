@@ -87,6 +87,13 @@ internal class FirExpressionNameReferencePositionContext(
     override val explicitReceiver: KtExpression?
 ) : FirNameReferencePositionContext()
 
+internal class FirInfixCallPositionContext(
+    override val position: PsiElement,
+    override val reference: KtSimpleNameReference,
+    override val nameExpression: KtSimpleNameExpression,
+    override val explicitReceiver: KtExpression?
+) : FirNameReferencePositionContext()
+
 
 internal class FirWithSubjectEntryPositionContext(
     override val position: PsiElement,
@@ -94,6 +101,13 @@ internal class FirWithSubjectEntryPositionContext(
     override val nameExpression: KtSimpleNameExpression,
     override val explicitReceiver: KtExpression?,
     val whenCondition: KtWhenCondition,
+) : FirNameReferencePositionContext()
+
+internal class FirCallableReferencePositionContext(
+    override val position: PsiElement,
+    override val reference: KtSimpleNameReference,
+    override val nameExpression: KtSimpleNameExpression,
+    override val explicitReceiver: KtExpression?
 ) : FirNameReferencePositionContext()
 
 internal class FirUnknownPositionContext(
@@ -130,6 +144,11 @@ internal object FirPositionCompletionContextDetector {
             parent is KtUserType -> {
                 detectForTypeContext(parent, position, reference, nameExpression, explicitReceiver)
             }
+            parent is KtCallableReferenceExpression -> {
+                FirCallableReferencePositionContext(
+                    position, reference, nameExpression, parent.receiverExpression
+                )
+            }
             parent is KtWhenCondition && parent.isConditionOnWhenWithSubject() -> {
                 FirWithSubjectEntryPositionContext(
                     position,
@@ -159,6 +178,11 @@ internal object FirPositionCompletionContextDetector {
                 position,
                 position.parentOfType()!!,
             )
+            parent is KtBinaryExpression && parent.operationReference == nameExpression -> {
+                FirInfixCallPositionContext(
+                    position, reference, nameExpression, explicitReceiver
+                )
+            }
             else -> {
                 FirExpressionNameReferencePositionContext(position, reference, nameExpression, explicitReceiver)
             }

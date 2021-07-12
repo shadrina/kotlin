@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.util.IdSignature
 import org.jetbrains.kotlin.library.IrLibrary
+import org.jetbrains.kotlin.library.KotlinAbiVersion
 import org.jetbrains.kotlin.protobuf.CodedInputStream
 import org.jetbrains.kotlin.protobuf.ExtensionRegistryLite
 
@@ -25,9 +26,10 @@ abstract class BasicIrModuleDeserializer(
     moduleDescriptor: ModuleDescriptor,
     override val klib: IrLibrary,
     override val strategy: DeserializationStrategy,
+    libraryAbiVersion: KotlinAbiVersion,
     private val containsErrorCode: Boolean = false
 ) :
-    IrModuleDeserializer(moduleDescriptor) {
+    IrModuleDeserializer(moduleDescriptor, libraryAbiVersion) {
 
     private val fileToDeserializerMap = mutableMapOf<IrFile, IrFileDeserializer>()
 
@@ -84,8 +86,6 @@ abstract class BasicIrModuleDeserializer(
     override fun contains(idSig: IdSignature): Boolean = idSig in moduleReversedFileIndex
 
     override fun deserializeIrSymbol(idSig: IdSignature, symbolKind: BinarySymbolData.SymbolKind): IrSymbol {
-        assert(idSig.isPublic)
-
         val topLevelSignature = idSig.topLevelSignature()
         val fileLocalDeserializationState = moduleReversedFileIndex[topLevelSignature]
             ?: error("No file for $topLevelSignature (@ $idSig) in module $moduleDescriptor")
@@ -134,18 +134,21 @@ abstract class BasicIrModuleDeserializer(
         return file
     }
 
-    // TODO useless
     override fun addModuleReachableTopLevel(idSig: IdSignature) {
         moduleDeserializationState.addIdSignature(idSig)
     }
+
+    override fun deserializeReachableDeclarations() {
+        moduleDeserializationState.deserializeReachableDeclarations()
+    }
 }
 
-internal class ModuleDeserializationState(val linker: KotlinIrLinker, val moduleDeserializer: BasicIrModuleDeserializer) {
+private class ModuleDeserializationState(val linker: KotlinIrLinker, val moduleDeserializer: BasicIrModuleDeserializer) {
     private val filesWithPendingTopLevels = mutableSetOf<FileDeserializationState>()
 
     fun enqueueFile(fileDeserializationState: FileDeserializationState) {
         filesWithPendingTopLevels.add(fileDeserializationState)
-        linker.modulesWithReachableTopLevels.add(this)
+        linker.modulesWithReachableTopLevels.add(moduleDeserializer)
     }
 
     fun addIdSignature(key: IdSignature) {

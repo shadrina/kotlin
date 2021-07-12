@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusIm
 import org.jetbrains.kotlin.fir.expressions.builder.buildEmptyExpressionBlock
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.impl.ConeClassLikeTypeImpl
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitStringTypeRef
@@ -56,7 +56,9 @@ fun FirRegularClassBuilder.generateValuesFunction(
         }
         symbol = FirNamedFunctionSymbol(CallableId(packageFqName, classFqName, ENUM_VALUES))
         resolvePhase = FirResolvePhase.BODY_RESOLVE
-        body = buildEmptyExpressionBlock()
+        body = buildEmptyExpressionBlock().also {
+            it.replaceTypeRef(returnTypeRef)
+        }
     }.apply {
         containingClassAttr = this@generateValuesFunction.symbol.toLookupTag()
     }
@@ -91,13 +93,16 @@ fun FirRegularClassBuilder.generateValueOfFunction(
             this.moduleData = moduleData
             returnTypeRef = FirImplicitStringTypeRef(source)
             name = VALUE
-            this@vp.symbol = FirVariableSymbol(VALUE)
+            this@vp.symbol = FirValueParameterSymbol(VALUE)
             isCrossinline = false
             isNoinline = false
             isVararg = false
+            resolvePhase = FirResolvePhase.BODY_RESOLVE
         }
         resolvePhase = FirResolvePhase.BODY_RESOLVE
-        body = buildEmptyExpressionBlock()
+        body = buildEmptyExpressionBlock().also {
+            it.replaceTypeRef(returnTypeRef)
+        }
     }.apply {
         containingClassAttr = this@generateValueOfFunction.symbol.toLookupTag()
     }

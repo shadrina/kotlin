@@ -28,17 +28,17 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.29")
+        classpath("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.31")
     }
 }
 
 plugins {
-    id "com.gradle.enterprise" version "3.5"
-    id "com.gradle.common-custom-user-data-gradle-plugin" version "1.2.1" apply false
+    id "com.gradle.enterprise" version "3.6.3"
+    id "com.gradle.enterprise.test-distribution" version "2.1"
+    id "com.gradle.common-custom-user-data-gradle-plugin" version "1.4" apply false
 }
 
 def buildProperties = BuildPropertiesKt.getKotlinBuildPropertiesForSettings(settings)
-def projectVersions = file("./gradle/versions.properties").text
 
 if (buildProperties.buildScanServer != null) {
     apply plugin: com.gradle.CommonCustomUserDataGradlePlugin
@@ -133,6 +133,7 @@ include ":benchmarks",
         ":compiler:tests-for-compiler-generator",
         ":dukat",
         ":js:js.ast",
+        ":js:js.sourcemap",
         ":js:js.serializer",
         ":js:js.parser",
         ":js:js.config",
@@ -283,6 +284,11 @@ include ":compiler:fir:cones",
         ":compiler:fir:analysis-tests",
         ":compiler:fir:analysis-tests:legacy-fir-tests"
 
+include ":kotlin-scripting-ide-services-unshaded",
+        ":kotlin-scripting-ide-services-test",
+        ":kotlin-scripting-ide-services",
+        ":kotlin-scripting-ide-common"
+
 include ":compiler:test-infrastructure",
         ":compiler:test-infrastructure-utils",
         ":compiler:tests-common-new"
@@ -294,42 +300,132 @@ include ":plugins:parcelize:parcelize-compiler",
 include ":plugins:lombok:lombok-compiler-plugin",
         ":kotlin-lombok"
 
-include ":prepare:ide-plugin-dependencies:android-extensions-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:allopen-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:allopen-compiler-plugin-tests-for-ide",
-        ":prepare:ide-plugin-dependencies:incremental-compilation-impl-tests-for-ide",
-        ":prepare:ide-plugin-dependencies:js-ir-runtime-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlin-build-common-tests-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlin-compiler-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlin-compiler-cli-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlin-dist-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlin-gradle-statistics-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlinx-serialization-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:noarg-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:sam-with-receiver-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:parcelize-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:lombok-compiler-plugin-for-ide",
-        ":prepare:ide-plugin-dependencies:tests-common-tests-for-ide",
-        ":prepare:ide-plugin-dependencies:compiler-components-for-jps",
-        ":prepare:ide-plugin-dependencies:kotlin-compiler-testdata-for-ide",
-        ":prepare:ide-plugin-dependencies:kotlin-compiler-tests-for-ide"
+if (!buildProperties.inJpsBuildIdeaSync) {
+    include ":prepare:ide-plugin-dependencies:android-extensions-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:allopen-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:allopen-compiler-plugin-tests-for-ide",
+            ":prepare:ide-plugin-dependencies:incremental-compilation-impl-tests-for-ide",
+            ":prepare:ide-plugin-dependencies:js-ir-runtime-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-build-common-tests-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-compiler-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-compiler-cli-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-dist-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-gradle-statistics-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlinx-serialization-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:noarg-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:sam-with-receiver-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:parcelize-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:lombok-compiler-plugin-for-ide",
+            ":prepare:ide-plugin-dependencies:tests-common-tests-for-ide",
+            ":prepare:ide-plugin-dependencies:compiler-components-for-jps",
+            ":prepare:ide-plugin-dependencies:kotlin-compiler-testdata-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-stdlib-minimal-for-test-for-ide",
+            ":prepare:ide-plugin-dependencies:kotlin-compiler-tests-for-ide",
+            ":prepare:ide-plugin-dependencies:low-level-api-fir-for-ide",
+            ":prepare:ide-plugin-dependencies:high-level-api-for-ide",
+            ":prepare:ide-plugin-dependencies:high-level-api-fir-for-ide",
+            ":prepare:ide-plugin-dependencies:high-level-api-fir-tests-for-ide"
+}
 
-if (buildProperties.getOrNull("attachedIntellijVersion") != null) {
+void kotlinIde(String imlPath) {
+    File imlFile = new File("${rootDir}/kotlin-ide/kotlin/${imlPath}")
+    imlFile = imlFile.exists() ? imlFile : new File("${rootDir}/kotlin-ide/${imlPath}")
+    imlFile = imlFile.exists() ? imlFile : new File("${rootDir}/kotlin-ide/intellij/community/${imlPath}")
+    imlFile = imlFile.exists() ? imlFile : new File("${rootDir}/kotlin-ide/intellij/${imlPath}")
+    assert imlFile.exists()
+    String fileName = imlFile.name
+    String projectName = ":kotlin-ide.${fileName.substring(0, fileName.length() - ".iml".length())}"
+    include(projectName)
+    project(projectName).projectDir = imlFile.parentFile
+}
+
+String attachedIntellijVersion = buildProperties.getOrNull("attachedIntellijVersion")
+if (attachedIntellijVersion != null) {
     logger.info("Including kotlin-ide modules in settings.gradle")
-    new File(rootDir, "kotlin-ide").eachFileRecurse {
-        String fileName = it.name
-        if (fileName.endsWith(".iml") && fileName.startsWith("kotlin.") && new File(it.parentFile, "build.gradle.kts").exists() ||
-                fileName == "intellij.platform.debugger.testFramework.iml" || fileName == "intellij.gradle.tests.iml" ||
-                fileName == "intellij.platform.externalSystem.tests.iml" || fileName == "intellij.platform.lang.tests.iml" ||
-                fileName == "intellij.platform.testExtensions.iml" || fileName == "intellij.java.compiler.tests.iml" ||
-                fileName == "intellij.gradle.toolingExtension.tests.iml"
-        ) {
-            String projectName = ":kotlin-ide.${fileName.substring(0, fileName.length() - ".iml".length())}"
-            include(projectName)
-            project(projectName).projectDir = it.parentFile
-        }
-    }
-} else {
+    kotlinIde "common/kotlin.common.iml"
+    kotlinIde "compiler-plugins/allopen/kotlin.compiler-plugins.allopen.iml"
+    kotlinIde "compiler-plugins/annotation-based-compiler-support/kotlin.compiler-plugins.annotation-based-compiler-support.iml"
+    kotlinIde "compiler-plugins/base-compiler-plugins-ide-support/kotlin.compiler-plugins.base-compiler-plugins-ide-support.iml"
+    kotlinIde "compiler-plugins/kapt/kotlin.compiler-plugins.kapt.iml"
+    kotlinIde "compiler-plugins/kotlinx-serialization/kotlin.compiler-plugins.kotlinx-serialization.iml"
+    kotlinIde "compiler-plugins/lombok/kotlin.compiler-plugins.lombok.iml"
+    kotlinIde "compiler-plugins/noarg/kotlin.compiler-plugins.noarg.iml"
+    kotlinIde "compiler-plugins/parcelize/kotlin.compiler-plugins.parcelize.iml"
+    kotlinIde "compiler-plugins/sam-with-receiver/kotlin.compiler-plugins.sam-with-receiver.iml"
+    kotlinIde "compiler-plugins/scripting-ide-services/kotlin.compiler-plugins.scripting-ide-services.iml"
+    kotlinIde "compiler-plugins/scripting/kotlin.compiler-plugins.scripting.iml"
+    kotlinIde "core/kotlin.core.iml"
+    kotlinIde "formatter/kotlin.formatter.iml"
+    kotlinIde "frontend-independent/kotlin.fir.frontend-independent.iml"
+    kotlinIde "frontend-independent/tests/kotlin.fir.frontend-independent.tests.iml"
+    kotlinIde "generators/kotlin.generators.iml"
+    kotlinIde "git/kotlin.git.iml"
+    kotlinIde "gradle/gradle-idea/kotlin.gradle.gradle-idea.iml"
+    kotlinIde "gradle/gradle-native/kotlin.gradle.gradle-native.iml"
+    kotlinIde "gradle/gradle-tooling/kotlin.gradle.gradle-tooling.iml"
+    kotlinIde "idea/kotlin.idea.iml"
+    kotlinIde "idea/tests/kotlin.idea.tests.iml"
+    kotlinIde "j2k/idea/kotlin.j2k.idea.iml"
+    kotlinIde "j2k/new/kotlin.j2k.new.iml"
+    kotlinIde "j2k/new/tests/kotlin.j2k.new.tests.iml"
+    kotlinIde "j2k/old/kotlin.j2k.old.iml"
+    kotlinIde "j2k/old/tests/kotlin.j2k.old.tests.iml"
+    kotlinIde "j2k/services/kotlin.j2k.services.iml"
+    kotlinIde "java/compiler/intellij.java.compiler.tests.iml"
+    kotlinIde "jps/jps-common/kotlin.jps-common.iml"
+    kotlinIde "jps/jps-plugin/kotlin.jps-plugin.iml"
+    kotlinIde "jvm-debugger/core/kotlin.jvm-debugger.core.iml"
+    kotlinIde "jvm-debugger/coroutines/kotlin.jvm-debugger.coroutines.iml"
+    kotlinIde "jvm-debugger/eval4j/kotlin.eval4j.iml"
+    kotlinIde "jvm-debugger/evaluation/kotlin.jvm-debugger.evaluation.iml"
+    kotlinIde "jvm-debugger/sequence/kotlin.jvm-debugger.sequence.iml"
+    kotlinIde "jvm-debugger/test/kotlin.jvm-debugger.test.iml"
+    kotlinIde "jvm-debugger/util/kotlin.jvm-debugger.util.iml"
+    kotlinIde "jvm/kotlin.jvm.iml"
+    kotlinIde "kotlin.all-tests/kotlin.all-tests.iml"
+    kotlinIde "kotlin-compiler-classpath/kotlin.util.compiler-classpath.iml"
+    kotlinIde "line-indent-provider/kotlin.line-indent-provider.iml"
+    kotlinIde "maven/kotlin.maven.iml"
+    kotlinIde "native/kotlin.native.iml"
+    kotlinIde "performance-tests/kotlin.performance-tests.iml"
+    kotlinIde "platform/external-system-impl/intellij.platform.externalSystem.tests.iml"
+    kotlinIde "platform/lang-impl/intellij.platform.lang.tests.iml"
+    kotlinIde "platform/testFramework/extensions/intellij.platform.testExtensions.iml"
+    kotlinIde "platform/xdebugger-testFramework/intellij.platform.debugger.testFramework.iml"
+    kotlinIde "plugins/gradle/intellij.gradle.tests.iml"
+    kotlinIde "plugins/gradle/tooling-extension-impl/intellij.gradle.toolingExtension.tests.iml"
+    kotlinIde "plugins/maven/intellij.maven.iml"
+    kotlinIde "project-wizard/cli/kotlin.project-wizard.cli.iml"
+    kotlinIde "project-wizard/core/kotlin.project-wizard.core.iml"
+    kotlinIde "project-wizard/idea/kotlin.project-wizard.idea.iml"
+    kotlinIde "repl/kotlin.repl.iml"
+    kotlinIde "scripting/kotlin.scripting.iml"
+    kotlinIde "scripting-support/kotlin.scripting-support.iml"
+    kotlinIde "test-framework/kotlin.test-framework.iml"
+    kotlinIde "tests-common/kotlin.tests-common.iml"
+    kotlinIde "uast/uast-kotlin-base/kotlin.uast.uast-kotlin-base.iml"
+    kotlinIde "uast/uast-kotlin-idea-base/kotlin.uast.uast-kotlin-idea-base.iml"
+    kotlinIde "uast/uast-kotlin-idea-fir/kotlin.uast.uast-kotlin-idea-fir.iml"
+    kotlinIde "uast/uast-kotlin-idea/kotlin.uast.uast-kotlin-idea.iml"
+    kotlinIde "uast/uast-kotlin/kotlin.uast.uast-kotlin.iml"
+}
+
+if (attachedIntellijVersion > "202") {
+    kotlinIde "resources-fe10/kotlin.resources-fe10.iml"
+}
+
+if (attachedIntellijVersion == "211") { // Latest available platform in scope of KT release cycle
+    kotlinIde "kotlin.fir-all-tests/kotlin.fir-all-tests.iml"
+    kotlinIde "resources-fir/kotlin.resources-fir.iml"
+    kotlinIde "fir-fe10-binding/kotlin.fir.fir-fe10-binding.iml"
+    kotlinIde "fir/kotlin.fir.iml"
+    kotlinIde "fir-low-level-api-ide-impl/kotlin.fir.fir-low-level-api-ide-impl.iml"
+    kotlinIde "uast/uast-kotlin-fir/kotlin.uast.uast-kotlin-fir.iml"
+
+}
+
+if (!buildProperties.getBoolean("disableKotlinPluginModules", false) && attachedIntellijVersion == null) {
+    logger.info("Old Kotlin plugin modules are enabled")
     include ":idea:idea-jvm",
             ":idea:idea-maven",
             ":idea:idea-gradle",
@@ -360,8 +456,6 @@ if (buildProperties.getOrNull("attachedIntellijVersion") != null) {
             ":idea:jvm-debugger:jvm-debugger-test",
             ":idea:scripting-support",
             ":idea:idea-frontend-independent",
-            ":idea:idea-frontend-fir",
-            ":idea:idea-frontend-api",
             ":libraries:tools:new-project-wizard",
             ":idea:idea-new-project-wizard",
             ":libraries:tools:new-project-wizard:new-project-wizard-cli",
@@ -372,9 +466,6 @@ if (buildProperties.getOrNull("attachedIntellijVersion") != null) {
             ":noarg-ide-plugin",
             ":allopen-ide-plugin",
             ":jps-plugin",
-            ":kotlin-scripting-ide-services-unshaded",
-            ":kotlin-scripting-ide-services-test",
-            ":kotlin-scripting-ide-services",
             ":kotlinx-serialization-ide-plugin",
             ":kotlin-jps-plugin",
             ":generators:idea-generator",
@@ -390,11 +481,9 @@ if (buildProperties.getOrNull("attachedIntellijVersion") != null) {
             ":prepare:formatter",
             ":plugins:annotation-based-compiler-plugins-ide-support",
             ":plugins:parcelize:parcelize-ide",
-            ":idea:idea-frontend-fir:idea-fir-low-level-api",
-            ":idea:idea-frontend-fir:idea-frontend-fir-generator",
+            ":idea:idea-frontend-fir:fir-low-level-api-ide-impl",
             ":idea:idea-fir-performance-tests",
             ":plugins:lint", // TODO will this module be removed with other IDE modules?
-            ":compiler:android-tests", // TODO will this module be removed with other IDE modules?
             ":plugins:android-extensions-ide", // TODO will this module be removed with other IDE modules?
             ":prepare:ide-lazy-resolver", // TODO will this module be removed with other IDE modules?
             ":prepare:idea-plugin", // TODO will this module be removed with other IDE modules?
@@ -405,52 +494,20 @@ if (buildProperties.getOrNull("attachedIntellijVersion") != null) {
     project(':plugins:kapt3-idea').projectDir = "$rootDir/plugins/kapt3/kapt3-idea" as File
     project(':allopen-ide-plugin').projectDir = "$rootDir/plugins/allopen/allopen-ide" as File
     project(':noarg-ide-plugin').projectDir = "$rootDir/plugins/noarg/noarg-ide" as File
-    project(':kotlin-scripting-ide-services-unshaded').projectDir = "$rootDir/plugins/scripting/scripting-ide-services" as File
-    project(':kotlin-scripting-ide-services-test').projectDir = "$rootDir/plugins/scripting/scripting-ide-services-test" as File
-    project(':kotlin-scripting-ide-services').projectDir = "$rootDir/plugins/scripting/scripting-ide-services-embeddable" as File
     project(':kotlinx-serialization-ide-plugin').projectDir = file("$rootDir/plugins/kotlin-serialization/kotlin-serialization-ide")
     project(':kotlin-jps-plugin').projectDir = "$rootDir/prepare/jps-plugin" as File
     project(':sam-with-receiver-ide-plugin').projectDir = "$rootDir/plugins/sam-with-receiver/sam-with-receiver-ide" as File
     project(':kotlin-scripting-idea').projectDir = "$rootDir/plugins/scripting/scripting-idea" as File
     project(':plugins:android-extensions-ide').projectDir = "$rootDir/plugins/android-extensions/android-extensions-idea" as File
-}
-
-if (buildProperties.includeCidrPlugins) {
-    logger.info("Including CIDR modules in settings.gradle")
-    include ":kotlin-ultimate:ide:cidr-gradle-tooling",
-            ":kotlin-ultimate:ide:common-native",
-            ":kotlin-ultimate:ide:common-cidr-mobile",
-            ":kotlin-ultimate:ide:common-cidr-native",
-            ":kotlin-ultimate:ide:common-cidr-swift-native",
-            ":kotlin-ultimate:ide:common-noncidr-native",
-            ":kotlin-ultimate:ide:appcode-native",
-            ":kotlin-ultimate:ide:mobile-native",
-            ":kotlin-ultimate:prepare:cidr-plugin",
-            ":kotlin-ultimate:prepare:appcode-plugin",
-            ":kotlin-ultimate:prepare:mobile-plugin",
-            ":kotlin-ultimate:libraries:tools:apple-gradle-plugin-api"
-
-    if (projectVersions.contains("versions.androidStudioRelease")) {
-        logger.info("Including KMM modules in settings.gradle")
-        include ":kotlin-ultimate:ide:android-studio-native",
-                ":kotlin-ultimate:prepare:kmm-plugin"
-    } else {
-        logger.info("NOT including KMM modules in settings.gradle")
-    }
 } else {
-    logger.info("NOT including CIDR modules in settings.gradle")
+    logger.info("Old Kotlin plugin modules are disabled")
 }
 
-if (buildProperties.includeUltimate) {
-    include ":kotlin-ultimate:ultimate",
-            ":kotlin-ultimate:ultimate:ultimate-runner",
-            ":kotlin-ultimate:ide:common-native",
-            ":kotlin-ultimate:ide:common-noncidr-native",
-            ":kotlin-ultimate:ide:ultimate-native"
-    logger.info("Including extension for IJ Ultimate in settings.gradle")
-} else {
-    logger.info("NOT including extension for IJ Ultimate in settings.gradle")
-}
+include ":generators:frontend-api-generator",
+        ":idea-frontend-fir:idea-fir-low-level-api",
+        ":idea-frontend-fir:idea-frontend-fir-generator",
+        ":idea-frontend-fir",
+        ":idea-frontend-api"
 
 if (buildProperties.inJpsBuildIdeaSync) {
     include ":kotlin-stdlib:jps-build"
@@ -468,7 +525,7 @@ if (buildProperties.inJpsBuildIdeaSync) {
             ":kotlin-stdlib-jdk7",
             ":kotlin-stdlib-jdk8",
             ":kotlin-stdlib:samples",
-            ":kotlin-stdlib:jvm-minimal-for-test",
+            ":kotlin-stdlib-jvm-minimal-for-test",
             ":tools:binary-compatibility-validator",
             ":tools:kotlin-stdlib-gen",
 
@@ -486,7 +543,7 @@ if (buildProperties.inJpsBuildIdeaSync) {
     project(':kotlin-stdlib-jdk7').projectDir = "$rootDir/libraries/stdlib/jdk7" as File
     project(':kotlin-stdlib-jdk8').projectDir = "$rootDir/libraries/stdlib/jdk8" as File
     project(':kotlin-stdlib:samples').projectDir = "$rootDir/libraries/stdlib/samples" as File
-    project(":kotlin-stdlib:jvm-minimal-for-test").projectDir = "$rootDir/libraries/stdlib/jvm-minimal-for-test" as File
+    project(":kotlin-stdlib-jvm-minimal-for-test").projectDir = "$rootDir/libraries/stdlib/jvm-minimal-for-test" as File
 
     project(':tools:binary-compatibility-validator').projectDir = "$rootDir/libraries/tools/binary-compatibility-validator" as File
     project(':tools:kotlin-stdlib-gen').projectDir = "$rootDir/libraries/tools/kotlin-stdlib-gen" as File
@@ -496,6 +553,7 @@ if (buildProperties.inJpsBuildIdeaSync) {
     project(':kotlin-test:kotlin-test-js-ir').projectDir = "$rootDir/libraries/kotlin.test/js-ir" as File
     project(':kotlin-test:kotlin-test-js:kotlin-test-js-it').projectDir = "$rootDir/libraries/kotlin.test/js/it" as File
 }
+include ":compiler:android-tests"
 
 rootProject.name = "kotlin"
 
@@ -625,6 +683,16 @@ project(':js:js.engines').projectDir = "$rootDir/js/js.engines" as File
 project(':kotlinx-serialization-compiler-plugin').projectDir = file("$rootDir/plugins/kotlin-serialization/kotlin-serialization-compiler")
 project(':kotlin-serialization').projectDir = file("$rootDir/libraries/tools/kotlin-serialization")
 project(':kotlin-serialization-unshaded').projectDir = file("$rootDir/libraries/tools/kotlin-serialization-unshaded")
+
+project(":idea-frontend-fir:idea-fir-low-level-api").projectDir = "$rootDir/idea/idea-frontend-fir/idea-fir-low-level-api" as File
+project(":idea-frontend-fir:idea-frontend-fir-generator").projectDir = "$rootDir/idea/idea-frontend-fir/idea-frontend-fir-generator" as File
+project(":idea-frontend-fir").projectDir = "$rootDir/idea/idea-frontend-fir" as File
+project(":idea-frontend-api").projectDir = "$rootDir/idea/idea-frontend-api" as File
+
+project(':kotlin-scripting-ide-services-unshaded').projectDir = "$rootDir/plugins/scripting/scripting-ide-services" as File
+project(':kotlin-scripting-ide-services-test').projectDir = "$rootDir/plugins/scripting/scripting-ide-services-test" as File
+project(':kotlin-scripting-ide-services').projectDir = "$rootDir/plugins/scripting/scripting-ide-services-embeddable" as File
+project(':kotlin-scripting-ide-common').projectDir = "$rootDir/plugins/scripting/scripting-ide-common" as File
 
 // Uncomment to use locally built protobuf-relocated
 // includeBuild("dependencies/protobuf")

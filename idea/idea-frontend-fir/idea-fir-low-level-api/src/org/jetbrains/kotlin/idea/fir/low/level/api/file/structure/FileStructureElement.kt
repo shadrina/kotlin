@@ -9,20 +9,24 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.psi
-import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.resolve.ScopeSession
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
-import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
-import org.jetbrains.kotlin.idea.fir.low.level.api.api.DeclarationCopyBuilder
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirModuleResolveState
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.LowLevelFirApiFacadeForResolveOnAir
+import org.jetbrains.kotlin.idea.fir.low.level.api.api.collectDesignation
 import org.jetbrains.kotlin.idea.fir.low.level.api.diagnostics.FileDiagnosticRetriever
 import org.jetbrains.kotlin.idea.fir.low.level.api.diagnostics.FileStructureElementDiagnostics
 import org.jetbrains.kotlin.idea.fir.low.level.api.diagnostics.SingleNonLocalDeclarationDiagnosticRetriever
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.LockProvider
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.ModuleFileCache
 import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.FirLazyDeclarationResolver
+import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.RawFirNonLocalDeclarationBuilder
+import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.declarationCanBeLazilyResolved
 import org.jetbrains.kotlin.idea.fir.low.level.api.providers.FirIdeProvider
+import org.jetbrains.kotlin.idea.fir.low.level.api.providers.firIdeProvider
+import org.jetbrains.kotlin.idea.fir.low.level.api.transformers.FirLazyTransformerForIDE.Companion.resolvePhaseForDeclarationAndChildren
 import org.jetbrains.kotlin.psi.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -67,7 +71,7 @@ internal class KtToFirMapping(firElement: FirElement, recorder: FirElementsRecor
     }
 }
 
-internal sealed class ReanalyzableStructureElement<KT : KtDeclaration, S : AbstractFirBasedSymbol<*>>(
+internal sealed class ReanalyzableStructureElement<KT : KtDeclaration, S : FirBasedSymbol<*>>(
     firFile: FirFile,
     val firSymbol: S,
     lockProvider: LockProvider<FirFile>,
@@ -115,25 +119,43 @@ internal class ReanalyzableFunctionStructureElement(
         firIdeProvider: FirIdeProvider,
     ): ReanalyzableFunctionStructureElement {
         val originalFunction = firSymbol.fir as FirSimpleFunction
-        val newFunction = DeclarationCopyBuilder.createCopy(newKtDeclaration, originalFunction)
+        val designation = originalFunction.collectDesignation()
 
-        return FileStructureUtil.withDeclarationReplaced(firFile, cache, originalFunction, newFunction) {
-            firLazyDeclarationResolver.lazyResolveDeclaration(
-                newFunction,
-                cache,
-                FirResolvePhase.BODY_RESOLVE,
-                checkPCE = true,
-                reresolveFile = true,
-            )
-            cache.firFileLockProvider.withReadLock(firFile) {
-                ReanalyzableFunctionStructureElement(
-                    firFile,
-                    newKtDeclaration,
-                    newFunction.symbol,
-                    newKtDeclaration.modificationStamp,
-                    lockProvider,
-                )
+        val temporaryFunction = RawFirNonLocalDeclarationBuilder.buildWithFunctionSymbolRebind(
+            session = originalFunction.moduleData.session,
+            scopeProvider = originalFunction.moduleData.session.firIdeProvider.kotlinScopeProvider,
+            designation = designation,
+            rootNonLocalDeclaration = newKtDeclaration,
+        ) as FirSimpleFunction
+
+        return cache.firFileLockProvider.withWriteLock(firFile) {
+
+            val upgradedPhase = minOf(originalFunction.resolvePhase, FirResolvePhase.DECLARATIONS)
+            with(originalFunction) {
+                replaceBody(temporaryFunction.body)
+                replaceContractDescription(temporaryFunction.contractDescription)
+                replaceResolvePhase(upgradedPhase)
             }
+            designation.toSequence(includeTarget = true).forEach {
+                it.resolvePhaseForDeclarationAndChildren = minOf(it.resolvePhaseForDeclarationAndChildren, upgradedPhase)
+            }
+
+            firLazyDeclarationResolver.lazyResolveDeclaration(
+                firDeclarationToResolve = originalFunction,
+                moduleFileCache = cache,
+                scopeSession = ScopeSession(),
+                toPhase = FirResolvePhase.BODY_RESOLVE,
+                checkPCE = true,
+                declarationPhaseDowngraded = true,
+            )
+
+            ReanalyzableFunctionStructureElement(
+                firFile,
+                newKtDeclaration,
+                originalFunction.symbol,
+                newKtDeclaration.modificationStamp,
+                lockProvider,
+            )
         }
     }
 }
@@ -154,25 +176,46 @@ internal class ReanalyzablePropertyStructureElement(
         firIdeProvider: FirIdeProvider,
     ): ReanalyzablePropertyStructureElement {
         val originalProperty = firSymbol.fir
-        val newProperty = DeclarationCopyBuilder.createCopy(newKtDeclaration, originalProperty)
+        val designation = originalProperty.collectDesignation()
 
-        return FileStructureUtil.withDeclarationReplaced(firFile, cache, originalProperty, newProperty) {
-            firLazyDeclarationResolver.lazyResolveDeclaration(
-                newProperty,
-                cache,
-                FirResolvePhase.BODY_RESOLVE,
-                checkPCE = true,
-                reresolveFile = true,
-            )
-            cache.firFileLockProvider.withReadLock(firFile) {
-                ReanalyzablePropertyStructureElement(
-                    firFile,
-                    newKtDeclaration,
-                    newProperty.symbol,
-                    newKtDeclaration.modificationStamp,
-                    lockProvider,
-                )
+        val temporaryProperty = RawFirNonLocalDeclarationBuilder.buildWithFunctionSymbolRebind(
+            session = originalProperty.moduleData.session,
+            scopeProvider = originalProperty.moduleData.session.firIdeProvider.kotlinScopeProvider,
+            designation = designation,
+            rootNonLocalDeclaration = newKtDeclaration,
+        ) as FirProperty
+
+        return cache.firFileLockProvider.withWriteLock(firFile) {
+
+            val getterPhase = originalProperty.getter?.resolvePhase ?: originalProperty.resolvePhase
+            val setterPhase = originalProperty.setter?.resolvePhase ?: originalProperty.resolvePhase
+            val upgradedPhase = minOf(originalProperty.resolvePhase, getterPhase, setterPhase, FirResolvePhase.DECLARATIONS)
+
+            with(originalProperty) {
+                getter?.replaceBody(temporaryProperty.getter?.body)
+                setter?.replaceBody(temporaryProperty.setter?.body)
+                replaceInitializer(temporaryProperty.initializer)
+                getter?.replaceResolvePhase(upgradedPhase)
+                setter?.replaceResolvePhase(upgradedPhase)
+                replaceResolvePhase(upgradedPhase)
             }
+
+            firLazyDeclarationResolver.lazyResolveDeclaration(
+                firDeclarationToResolve = originalProperty,
+                moduleFileCache = cache,
+                scopeSession = ScopeSession(),
+                toPhase = FirResolvePhase.BODY_RESOLVE,
+                checkPCE = true,
+                declarationPhaseDowngraded = true,
+            )
+
+            ReanalyzablePropertyStructureElement(
+                firFile,
+                newKtDeclaration,
+                originalProperty.symbol,
+                newKtDeclaration.modificationStamp,
+                lockProvider,
+            )
         }
     }
 }
@@ -192,14 +235,14 @@ internal class NonReanalyzableDeclarationStructureElement(
         private val recorder = object : FirElementsRecorder() {
             override fun visitProperty(property: FirProperty, data: MutableMap<KtElement, FirElement>) {
                 val psi = property.psi as? KtProperty ?: return super.visitProperty(property, data)
-                if (!FileElementFactory.isReanalyzableContainer(psi) || !FirLazyDeclarationResolver.declarationCanBeLazilyResolved(psi)) {
+                if (!isReanalyzableContainer(psi) || !declarationCanBeLazilyResolved(psi)) {
                     super.visitProperty(property, data)
                 }
             }
 
             override fun visitSimpleFunction(simpleFunction: FirSimpleFunction, data: MutableMap<KtElement, FirElement>) {
                 val psi = simpleFunction.psi as? KtNamedFunction ?: return super.visitSimpleFunction(simpleFunction, data)
-                if (!FileElementFactory.isReanalyzableContainer(psi) || !FirLazyDeclarationResolver.declarationCanBeLazilyResolved(psi)) {
+                if (!isReanalyzableContainer(psi) || !declarationCanBeLazilyResolved(psi)) {
                     super.visitSimpleFunction(simpleFunction, data)
                 }
             }

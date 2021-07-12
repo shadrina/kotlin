@@ -10,28 +10,25 @@ import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
-import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.FirClass
+import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.resolve.symbolProvider
 import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
-object FirSealedSupertypeChecker : FirMemberDeclarationChecker() {
-    override fun check(declaration: FirMemberDeclaration, context: CheckerContext, reporter: DiagnosticReporter) {
-        if (declaration is FirClass<*>) {
-            // only the file declaration is present
-            if (declaration.classId.isLocal) {
-                checkLocalDeclaration(declaration, context, reporter)
-            } else {
-                checkGlobalDeclaration(declaration, context, reporter)
-            }
-        } else if (declaration is FirProperty) {
-            val initializer = declaration.initializer.safeAs<FirClass<*>>() ?: return
-            checkLocalDeclaration(initializer, context, reporter)
+object FirSealedSupertypeChecker : FirClassChecker() {
+    override fun check(declaration: FirClass, context: CheckerContext, reporter: DiagnosticReporter) {
+        // only the file declaration is present
+        if (declaration.classId.isLocal) {
+            checkLocalDeclaration(declaration, context, reporter)
+        } else {
+            checkGlobalDeclaration(declaration, context, reporter)
         }
     }
 
-    private fun checkGlobalDeclaration(declaration: FirClass<*>, context: CheckerContext, reporter: DiagnosticReporter) {
+    private fun checkGlobalDeclaration(declaration: FirClass, context: CheckerContext, reporter: DiagnosticReporter) {
         for (it in declaration.superTypeRefs) {
             val classId = it.coneType.classId ?: continue
 
@@ -50,7 +47,7 @@ object FirSealedSupertypeChecker : FirMemberDeclarationChecker() {
         }
     }
 
-    private fun checkLocalDeclaration(declaration: FirClass<*>, context: CheckerContext, reporter: DiagnosticReporter) {
+    private fun checkLocalDeclaration(declaration: FirClass, context: CheckerContext, reporter: DiagnosticReporter) {
         for (it in declaration.superTypeRefs) {
             val classId = it.coneType.classId ?: continue
 

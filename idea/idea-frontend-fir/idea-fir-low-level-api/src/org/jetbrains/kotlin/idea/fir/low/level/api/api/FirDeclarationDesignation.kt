@@ -5,25 +5,24 @@
 
 package org.jetbrains.kotlin.idea.fir.low.level.api.api
 
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.containingClass
-import org.jetbrains.kotlin.fir.containingClassForLocal
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.classId
+import org.jetbrains.kotlin.fir.declarations.utils.isLocal
+import org.jetbrains.kotlin.fir.render
 import org.jetbrains.kotlin.fir.renderWithType
 import org.jetbrains.kotlin.fir.resolve.firProvider
 import org.jetbrains.kotlin.fir.resolve.toFirRegularClass
+import org.jetbrains.kotlin.idea.fir.low.level.api.util.getContainingFile
 
-typealias FirDeclarationUntypedDesignation = FirDeclarationDesignation<FirDeclaration>
-typealias FirDeclarationUntypedDesignationWithFile = FirDeclarationDesignationWithFile<FirDeclaration>
-
-class FirDeclarationDesignationWithFile<out T : FirDeclaration>(
+class FirDeclarationDesignationWithFile(
     path: List<FirDeclaration>,
-    declaration: T,
-    isLocalDesignation: Boolean,
+    declaration: FirDeclaration,
     val firFile: FirFile
-) : FirDeclarationDesignation<T>(
+) : FirDeclarationDesignation(
     path,
     declaration,
-    isLocalDesignation
 ) {
     fun toSequenceWithFile(includeTarget: Boolean): Sequence<FirDeclaration> = sequence {
         yield(firFile)
@@ -32,37 +31,14 @@ class FirDeclarationDesignationWithFile<out T : FirDeclaration>(
     }
 }
 
-open class FirDeclarationDesignation<out T : FirDeclaration>(
+open class FirDeclarationDesignation(
     val path: List<FirDeclaration>,
-    val declaration: T,
-    val isLocalDesignation: Boolean
+    val declaration: FirDeclaration,
 ) {
     fun toSequence(includeTarget: Boolean): Sequence<FirDeclaration> = sequence {
         yieldAll(path)
         if (includeTarget) yield(declaration)
     }
-}
-
-private fun FirClassLikeDeclaration<*>.containingClass(): FirClassLikeDeclaration<*>? =
-    if (isLocal) (this as? FirRegularClass)?.containingClassForLocal()?.toFirRegularClass(moduleData.session)
-    else symbol.classId.outerClassId?.let(moduleData.session.firProvider::getFirClassifierByFqName)
-
-private fun collectDesignationAndIsLocal(declaration: FirDeclaration): Pair<List<FirDeclaration>, Boolean> {
-    val containingClass = when (declaration) {
-        is FirCallableDeclaration<*> -> declaration.containingClass()?.toFirRegularClass(declaration.moduleData.session)
-        is FirClassLikeDeclaration<*> -> declaration.containingClass()
-        else -> error("Invalid declaration ${declaration.renderWithType()}")
-    } ?: return emptyList<FirDeclaration>() to false
-
-    require(containingClass is FirRegularClass) {
-        "FirRegularClass as containing declaration expected but found ${containingClass.renderWithType()}"
-    }
-
-    val path = when {
-        containingClass.isLocal -> containingClass.collectForLocal()
-        else -> containingClass.collectForNonLocal()
-    }
-    return path.reversed() to containingClass.isLocal
 }
 
 private fun FirRegularClass.collectForNonLocal(): List<FirDeclaration> {
@@ -78,25 +54,54 @@ private fun FirRegularClass.collectForNonLocal(): List<FirDeclaration> {
     return designation
 }
 
-private fun FirRegularClass.collectForLocal(): List<FirClassLikeDeclaration<*>> {
-    require(isLocal)
-    var containingClassLookUp = containingClassForLocal()
-    val designation = mutableListOf<FirClassLikeDeclaration<*>>(this)
-    while (containingClassLookUp != null && containingClassLookUp.classId.isLocal) {
-        val currentClass = containingClassLookUp.toFirRegularClass(moduleData.session) ?: break
-        designation.add(currentClass)
-        containingClassLookUp = currentClass.containingClassForLocal()
+private fun collectDesignationPath(declaration: FirDeclaration): List<FirDeclaration>? {
+    val containingClass = when (declaration) {
+        is FirCallableDeclaration -> {
+            if (declaration.symbol.callableId.isLocal) return null
+            if ((declaration as? FirCallableMemberDeclaration)?.status?.visibility == Visibilities.Local) return null
+            when (declaration) {
+                is FirSimpleFunction, is FirProperty, is FirField, is FirConstructor -> {
+                    val klass = declaration.containingClass() ?: return emptyList()
+                    if (klass.classId.isLocal) return null
+                    klass.toFirRegularClass(declaration.moduleData.session)
+                }
+                else -> return null
+            }
+        }
+        is FirClassLikeDeclaration -> {
+            if (declaration.isLocal) return null
+            declaration.symbol.classId.outerClassId?.let(declaration.moduleData.session.firProvider::getFirClassifierByFqName)
+        }
+        else -> return null
+    } ?: return emptyList()
+
+    require(containingClass is FirRegularClass) {
+        "FirRegularClass as containing declaration expected but found ${containingClass.renderWithType()}"
     }
-    return designation
+    return if (!containingClass.isLocal) containingClass.collectForNonLocal().asReversed() else null
 }
 
+fun FirDeclaration.collectDesignation(firFile: FirFile): FirDeclarationDesignationWithFile =
+    tryCollectDesignation(firFile) ?: error("No designation of local declaration ${this.render()}")
 
-fun FirDeclaration.collectDesignation(firFile: FirFile): FirDeclarationUntypedDesignationWithFile =
-    collectDesignationAndIsLocal(this).let {
-        FirDeclarationUntypedDesignationWithFile(it.first, this, it.second, firFile)
+fun FirDeclaration.collectDesignation(): FirDeclarationDesignation =
+    tryCollectDesignation() ?: error("No designation of local declaration ${this.render()}")
+
+fun FirDeclaration.collectDesignationWithFile(): FirDeclarationDesignationWithFile =
+    tryCollectDesignationWithFile() ?: error("No designation of local declaration ${this.render()}")
+
+fun FirDeclaration.tryCollectDesignation(firFile: FirFile): FirDeclarationDesignationWithFile? =
+    collectDesignationPath(this)?.let {
+        FirDeclarationDesignationWithFile(it, this, firFile)
     }
 
-fun FirDeclaration.collectDesignation(): FirDeclarationUntypedDesignation =
-    collectDesignationAndIsLocal(this).let {
-        FirDeclarationUntypedDesignation(it.first, this, it.second)
+fun FirDeclaration.tryCollectDesignation(): FirDeclarationDesignation? =
+    collectDesignationPath(this)?.let {
+        FirDeclarationDesignation(it, this)
     }
+
+fun FirDeclaration.tryCollectDesignationWithFile(): FirDeclarationDesignationWithFile? {
+    val path = collectDesignationPath(this) ?: return null
+    val firFile = getContainingFile() ?: return null
+    return FirDeclarationDesignationWithFile(path, this, firFile)
+}

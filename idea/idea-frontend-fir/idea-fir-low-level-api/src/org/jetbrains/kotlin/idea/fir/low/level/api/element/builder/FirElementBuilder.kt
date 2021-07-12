@@ -17,10 +17,10 @@ import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.FirFileBuilder
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.ModuleFileCache
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.structure.FileStructureCache
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.structure.FileStructureElement
-import org.jetbrains.kotlin.idea.fir.low.level.api.file.structure.KtToFirMapping
 import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.FirLazyDeclarationResolver
+import org.jetbrains.kotlin.idea.fir.low.level.api.util.getElementTextInContext
+import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.declarationCanBeLazilyResolved
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.isNonAnonymousClassOrObject
-import org.jetbrains.kotlin.idea.util.getElementTextInContext
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.isAncestor
@@ -53,20 +53,29 @@ internal class FirElementBuilder {
         firFileBuilder: FirFileBuilder,
         moduleFileCache: ModuleFileCache,
         fileStructureCache: FileStructureCache,
+        firLazyDeclarationResolver: FirLazyDeclarationResolver,
         state: FirModuleResolveState,
     ): FirElement = when (element) {
-        is KtFile -> getOrBuildFirForKtFile(element, firFileBuilder, moduleFileCache)
+        is KtFile -> getOrBuildFirForKtFile(element, firFileBuilder, moduleFileCache, firLazyDeclarationResolver)
         else -> getOrBuildFirForNonKtFileElement(element, fileStructureCache, moduleFileCache, state)
     }
 
-    private fun getOrBuildFirForKtFile(ktFile: KtFile, firFileBuilder: FirFileBuilder, moduleFileCache: ModuleFileCache): FirFile =
-        firFileBuilder.getFirFileResolvedToPhaseWithCaching(
-            ktFile,
-            moduleFileCache,
-            FirResolvePhase.BODY_RESOLVE,
+    private fun getOrBuildFirForKtFile(
+        ktFile: KtFile,
+        firFileBuilder: FirFileBuilder,
+        moduleFileCache: ModuleFileCache,
+        firLazyDeclarationResolver: FirLazyDeclarationResolver
+    ): FirFile {
+        val firFile = firFileBuilder.buildRawFirFileWithCaching(ktFile, moduleFileCache, preferLazyBodies = false)
+        firLazyDeclarationResolver.lazyResolveFileDeclaration(
+            firFile = firFile,
+            moduleFileCache = moduleFileCache,
+            toPhase = FirResolvePhase.BODY_RESOLVE,
             scopeSession = ScopeSession(),
             checkPCE = true
         )
+        return firFile
+    }
 
     private fun getOrBuildFirForNonKtFileElement(
         element: KtElement,
@@ -102,7 +111,7 @@ internal inline fun PsiElement.getNonLocalContainingOrThisDeclaration(predicate:
         if (container is KtNamedDeclaration
             && (container.isNonAnonymousClassOrObject() || container is KtDeclarationWithBody || container is KtProperty || container is KtTypeAlias)
             && container !is KtPrimaryConstructor
-            && FirLazyDeclarationResolver.declarationCanBeLazilyResolved(container)
+            && declarationCanBeLazilyResolved(container)
             && container !is KtEnumEntry
             && container !is KtFunctionLiteral
             && container.containingClassOrObject !is KtEnumEntry
@@ -115,7 +124,7 @@ internal inline fun PsiElement.getNonLocalContainingOrThisDeclaration(predicate:
     return null
 }
 
-internal fun PsiElement.getNonLocalContainingInBodyDeclarationWith(): KtNamedDeclaration? =
+fun PsiElement.getNonLocalContainingInBodyDeclarationWith(): KtNamedDeclaration? =
     getNonLocalContainingOrThisDeclaration { declaration ->
         when (declaration) {
             is KtNamedFunction -> declaration.bodyExpression?.isAncestor(this) == true

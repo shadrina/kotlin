@@ -22,9 +22,10 @@ dependencies {
     compileOnly(intellijPluginDep("java")) { includeJars("java-api", "java-impl") }
 
     implementation(project(":idea:idea-frontend-independent"))
-    implementation(project(":idea:idea-frontend-api"))
-    implementation(project(":idea:idea-frontend-fir"))
+    implementation(project(":idea-frontend-api"))
+    implementation(project(":idea-frontend-fir"))
 
+    testRuntime(project(":idea:idea-fir"))
     testImplementation(commonDep("junit:junit"))
     testCompileOnly(intellijPluginDep("java")) { includeJars("java-api", "java-impl") }
     testImplementation(projectTests(":compiler:tests-common"))
@@ -53,6 +54,7 @@ runtimeJar(tasks.register<ShadowJar>("shadowJar")) {
 testsJar ()
 
 projectTest(parallel = true) {
+    dependsOn(":dist")
     workingDir = rootDir
     val useFirIdeaPlugin = kotlinBuildProperties.useFirIdeaPlugin
     doFirst {

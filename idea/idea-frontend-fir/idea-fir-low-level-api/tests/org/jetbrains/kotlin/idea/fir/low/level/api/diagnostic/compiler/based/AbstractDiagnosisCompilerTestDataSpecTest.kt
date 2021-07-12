@@ -6,10 +6,9 @@
 package org.jetbrains.kotlin.idea.fir.low.level.api.diagnostic.compiler.based
 
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.AbstractCompilerBasedTest
+import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.addIdeTestIgnoreHandler
 import org.jetbrains.kotlin.test.builders.TestConfigurationBuilder
 import org.jetbrains.kotlin.test.runners.baseFirDiagnosticTestConfiguration
-import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.IdeTestIgnoreHandler
-import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.addIdeTestIgnoreHandler
 import org.jetbrains.kotlin.test.runners.baseFirSpecDiagnosticTestConfiguration
 
 abstract class AbstractDiagnosisCompilerTestDataSpecTest : AbstractCompilerBasedTest() {

@@ -12,18 +12,13 @@ import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirModuleData
 import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.contracts.impl.FirEmptyContractDescription
-import org.jetbrains.kotlin.fir.declarations.FirDeclarationAttributes
-import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
-import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
-import org.jetbrains.kotlin.fir.declarations.FirValueParameter
+import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.buildDefaultSetterValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertyAccessorSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitUnitTypeRef
-import org.jetbrains.kotlin.name.CallableId
-import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 @OptIn(FirImplementationDetail::class)
@@ -40,18 +35,19 @@ abstract class FirDefaultPropertyAccessor(
 ) : FirPropertyAccessorImpl(
     source,
     moduleData,
-    resolvePhase = FirResolvePhase.BODY_RESOLVE,
+    resolvePhase = if (effectiveVisibility != null) FirResolvePhase.BODY_RESOLVE else FirResolvePhase.TYPES,
     origin,
     FirDeclarationAttributes(),
     propertyTypeRef,
-    valueParameters,
-    body = null,
+    deprecation = null,
     status = if (effectiveVisibility == null)
         FirDeclarationStatusImpl(visibility, Modality.FINAL)
     else
         FirResolvedDeclarationStatusImpl(visibility, Modality.FINAL, effectiveVisibility),
     containerSource = null,
     dispatchReceiverType = null,
+    valueParameters,
+    body = null,
     contractDescription = FirEmptyContractDescription,
     symbol,
     isGetter,
@@ -59,7 +55,7 @@ abstract class FirDefaultPropertyAccessor(
     typeParameters = mutableListOf(),
 ) {
     override var resolvePhase
-        get() = FirResolvePhase.BODY_RESOLVE
+        get() = if (status is FirResolvedDeclarationStatus) FirResolvePhase.BODY_RESOLVE else FirResolvePhase.TYPES
         set(_) {}
 
     final override var body: FirBlock?
@@ -123,7 +119,7 @@ class FirDefaultPropertySetter(
             this@builder.moduleData = moduleData
             this@builder.origin = origin
             this@builder.returnTypeRef = propertyTypeRef
-            this@builder.symbol = FirVariableSymbol(CallableId(FqName.ROOT, Name.special("<default-setter-parameter>")))
+            this@builder.symbol = FirValueParameterSymbol(Name.special("<default-setter-parameter>"))
         }
     ),
     isGetter = false,

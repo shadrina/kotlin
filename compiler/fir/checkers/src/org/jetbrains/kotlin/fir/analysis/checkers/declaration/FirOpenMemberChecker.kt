@@ -17,14 +17,14 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.FirCallableMemberDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirClass
 import org.jetbrains.kotlin.fir.declarations.FirConstructor
-import org.jetbrains.kotlin.fir.declarations.isOpen
+import org.jetbrains.kotlin.fir.declarations.utils.isOpen
 import org.jetbrains.kotlin.lexer.KtTokens
 
 object FirOpenMemberChecker : FirClassChecker() {
-    override fun check(declaration: FirClass<*>, context: CheckerContext, reporter: DiagnosticReporter) {
+    override fun check(declaration: FirClass, context: CheckerContext, reporter: DiagnosticReporter) {
         if (declaration.canHaveOpenMembers) return
         for (memberDeclaration in declaration.declarations) {
-            if (memberDeclaration !is FirCallableMemberDeclaration<*> ||
+            if (memberDeclaration !is FirCallableMemberDeclaration ||
                 // Marking a constructor `open` is an error covered by diagnostic code WRONG_MODIFIER_TARGET
                 memberDeclaration is FirConstructor
             ) continue

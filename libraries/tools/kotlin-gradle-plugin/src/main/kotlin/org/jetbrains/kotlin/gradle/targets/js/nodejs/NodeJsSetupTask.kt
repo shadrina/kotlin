@@ -18,8 +18,10 @@ abstract class NodeJsSetupTask : DefaultTask() {
     @Transient
     private val settings = NodeJsRootPlugin.apply(project.rootProject)
     private val env by lazy { settings.requireConfigured() }
-    private val archiveOperations = ArchiveOperationsCompat(project)
+
     private val shouldDownload = settings.download
+
+    private val archiveOperations = ArchiveOperationsCompat(project)
 
     @get:Inject
     internal open val fs: FileSystemOperations
@@ -27,6 +29,9 @@ abstract class NodeJsSetupTask : DefaultTask() {
 
     val ivyDependency: String
         @Input get() = env.ivyDependency
+
+    val downloadBaseUrl: String
+        @Input get() = env.downloadBaseUrl
 
     val destination: File
         @OutputDirectory get() = env.nodeDir
@@ -39,46 +44,41 @@ abstract class NodeJsSetupTask : DefaultTask() {
         configuration.get().files.single()
     }
 
-    @Suppress("unused") // as it called by Gradle before task execution and used to resolve artifact
     @get:Classpath
-    val nodeJsDist: File
-        get() {
-            @Suppress("UnstableApiUsage", "DEPRECATION")
-            val repo = project.repositories.ivy { repo ->
-                repo.name = "Node Distributions at ${settings.nodeDownloadBaseUrl}"
-                repo.url = URI(settings.nodeDownloadBaseUrl)
+    val nodeJsDist: File by lazy {
+        val repo = project.repositories.ivy { repo ->
+            repo.name = "Node Distributions at ${downloadBaseUrl}"
+            repo.url = URI(downloadBaseUrl)
 
-                repo.patternLayout {
-                    it.artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]")
-                    it.ivy("v[revision]/ivy.xml")
-                }
-                repo.metadataSources { it.artifact() }
-                repo.content { it.includeModule("org.nodejs", "node") }
+            repo.patternLayout {
+                it.artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]")
             }
-            val startDownloadTime = System.currentTimeMillis()
-            val dist = _nodeJsDist
-            val downloadDuration = System.currentTimeMillis() - startDownloadTime
-            if (downloadDuration > 0) {
-                KotlinBuildStatsService.getInstance()
-                    ?.report(NumericalMetrics.ARTIFACTS_DOWNLOAD_SPEED, dist.length() * 1000 / downloadDuration)
-            }
-            project.repositories.remove(repo)
-            return dist
+            repo.metadataSources { it.artifact() }
+            repo.content { it.includeModule("org.nodejs", "node") }
         }
+        val startDownloadTime = System.currentTimeMillis()
+        val dist = _nodeJsDist
+        val downloadDuration = System.currentTimeMillis() - startDownloadTime
+        if (downloadDuration > 0) {
+            KotlinBuildStatsService.getInstance()
+                ?.report(NumericalMetrics.ARTIFACTS_DOWNLOAD_SPEED, dist.length() * 1000 / downloadDuration)
+        }
+        project.repositories.remove(repo)
+        dist
+    }
 
     init {
-        @Suppress("LeakingThis")
         onlyIf {
-            shouldDownload && !File(env.nodeExecutable).isFile
+            shouldDownload
         }
     }
 
     @Suppress("unused")
     @TaskAction
     fun exec() {
-        logger.kotlinInfo("Using node distribution from '$_nodeJsDist'")
+        logger.kotlinInfo("Using node distribution from '$nodeJsDist'")
 
-        unpackNodeArchive(_nodeJsDist, destination.parentFile) // parent because archive contains name already
+        unpackNodeArchive(nodeJsDist, destination.parentFile) // parent because archive contains name already
 
         if (!env.isWindows) {
             File(env.nodeExecutable).setExecutable(true)

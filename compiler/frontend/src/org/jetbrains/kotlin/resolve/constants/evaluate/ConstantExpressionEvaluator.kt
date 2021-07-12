@@ -12,7 +12,6 @@ import com.intellij.psi.util.TypeConversionUtil
 import org.jetbrains.kotlin.KtNodeTypes
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.builtins.StandardNames
-import org.jetbrains.kotlin.builtins.UnsignedType
 import org.jetbrains.kotlin.builtins.UnsignedTypes
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.config.LanguageVersionSettings
@@ -45,6 +44,7 @@ import org.jetbrains.kotlin.types.checker.KotlinTypeChecker
 import org.jetbrains.kotlin.types.expressions.DoubleColonLHS
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
 import org.jetbrains.kotlin.types.isError
+import org.jetbrains.kotlin.types.typeUtil.isBoolean
 import org.jetbrains.kotlin.types.typeUtil.isSubtypeOf
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import java.math.BigInteger
@@ -388,10 +388,37 @@ private class ConstantExpressionEvaluatorVisitor(
 
         val compileTimeConstant = expression.accept(this, expectedType ?: TypeUtils.NO_EXPECTED_TYPE)
         if (compileTimeConstant != null) {
+            if (shouldSkipComplexBooleanValue(expression, compileTimeConstant)) {
+                return null
+            }
             trace.record(BindingContext.COMPILE_TIME_VALUE, expression, compileTimeConstant)
             return compileTimeConstant
         }
         return null
+    }
+
+    @Suppress("warnings")
+    private fun shouldSkipComplexBooleanValue(
+        expression: KtExpression,
+        constant: CompileTimeConstant<*>
+    ): Boolean {
+        if (constant.isError) return false
+        val constantValue = constant.toConstantValue(builtIns.booleanType)
+        if (!constantValue.getType(constantExpressionEvaluator.module).isBoolean()) return false
+        if (expression is KtConstantExpression || constant.parameters.usesVariableAsConstant) return false
+
+        if (languageVersionSettings.supportsFeature(LanguageFeature.ProhibitSimplificationOfNonTrivialConstBooleanExpressions)) {
+            return true
+        } else {
+            val parent = expression.parent
+            if (
+                parent is KtWhenConditionWithExpression ||
+                parent is KtContainerNode && (parent.parent is KtWhileExpression || parent.parent is KtDoWhileExpression)
+            ) {
+                trace.report(Errors.NON_TRIVIAL_BOOLEAN_CONSTANT.on(expression, constantValue.value as Boolean))
+            }
+            return false
+        }
     }
 
     private val stringExpressionEvaluator = object : KtVisitor<TypedCompileTimeConstant<String>, Nothing?>() {
@@ -1138,11 +1165,6 @@ private fun getReceiverExpressionType(resolvedCall: ResolvedCall<*>): KotlinType
         ExplicitReceiverKind.BOTH_RECEIVERS -> null
         else -> null
     }
-}
-
-internal enum class CompileTimeType {
-    BYTE, SHORT, INT, LONG, DOUBLE, FLOAT, CHAR, BOOLEAN,
-    STRING, ANY
 }
 
 fun ConstantValue<*>.isStandaloneOnlyConstant(): Boolean {

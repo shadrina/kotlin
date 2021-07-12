@@ -8,16 +8,19 @@ package org.jetbrains.kotlin.idea.fir.low.level.api.diagnostics.fir
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.analysis.checkers.context.PersistentCheckerContext
 import org.jetbrains.kotlin.fir.analysis.collectors.AbstractDiagnosticCollectorVisitor
-import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.FirCallableDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.renderWithType
 import org.jetbrains.kotlin.fir.resolve.SessionHolder
 import org.jetbrains.kotlin.idea.fir.low.level.api.ContextByDesignationCollector
-import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationUntypedDesignationWithFile
+import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationDesignationWithFile
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.collectDesignation
 
 private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     sessionHolder: SessionHolder,
-    designation: FirDeclarationUntypedDesignationWithFile,
+    designation: FirDeclarationDesignationWithFile,
 ) : AbstractDiagnosticCollectorVisitor(
     PersistentCheckerContextFactory.createEmptyPersistenceCheckerContext(sessionHolder)
 ) {
@@ -40,7 +43,7 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     override fun checkElement(element: FirElement) {}
 
     companion object {
-        fun collect(sessionHolder: SessionHolder, designation: FirDeclarationUntypedDesignationWithFile): PersistentCheckerContext {
+        fun collect(sessionHolder: SessionHolder, designation: FirDeclarationDesignationWithFile): PersistentCheckerContext {
             val visitor = ContextCollectingDiagnosticCollectorVisitor(sessionHolder, designation)
             designation.firFile.accept(visitor, null)
             return visitor.contextCollector.getCollectedContext()
@@ -55,17 +58,14 @@ internal object PersistenceContextCollector {
         declaration: FirDeclaration,
     ): PersistentCheckerContext {
         val isLocal = when (declaration) {
-            is FirClassLikeDeclaration<*> -> declaration.symbol.classId.isLocal
-            is FirCallableDeclaration<*> -> declaration.symbol.callableId.isLocal
+            is FirClassLikeDeclaration -> declaration.symbol.classId.isLocal
+            is FirCallableDeclaration -> declaration.symbol.callableId.isLocal
             else -> error("Unsupported declaration ${declaration.renderWithType()}")
         }
         require(!isLocal) {
             "Cannot collect context for local declaration ${declaration.renderWithType()}"
         }
         val designation = declaration.collectDesignation(firFile)
-        check(!designation.isLocalDesignation) {
-            "Designation should not local for ${declaration.renderWithType()}"
-        }
         return ContextCollectingDiagnosticCollectorVisitor.collect(sessionHolder, designation)
     }
 }

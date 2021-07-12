@@ -29,7 +29,8 @@ class FirSyntheticProperty(
     override val status: FirDeclarationStatus,
     override var resolvePhase: FirResolvePhase,
     override val getter: FirSyntheticPropertyAccessor,
-    override val setter: FirSyntheticPropertyAccessor? = null
+    override val setter: FirSyntheticPropertyAccessor? = null,
+    override val deprecation: DeprecationsPerUseSite? = null
 ) : FirProperty() {
     init {
         symbol.bind(this)
@@ -53,7 +54,7 @@ class FirSyntheticProperty(
     override val delegate: FirExpression?
         get() = null
 
-    override val delegateFieldSymbol: FirDelegateFieldSymbol<FirProperty>?
+    override val delegateFieldSymbol: FirDelegateFieldSymbol?
         get() = null
 
     override val isLocal: Boolean
@@ -80,6 +81,9 @@ class FirSyntheticProperty(
 
     // ???
     override val backingFieldSymbol: FirBackingFieldSymbol = FirBackingFieldSymbol(symbol.callableId)
+
+    override val initializerAndAccessorsAreResolved: Boolean
+        get() = true
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
         returnTypeRef.accept(visitor, data)
@@ -142,11 +146,19 @@ class FirSyntheticProperty(
         throw AssertionError("Mutation of synthetic property isn't supported")
     }
 
+    override fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?) {
+        throw AssertionError("Mutation of synthetic property isn't supported")
+    }
+
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: FirControlFlowGraphReference?) {
         throw AssertionError("Mutation of synthetic property isn't supported")
     }
 
     override fun replaceInitializer(newInitializer: FirExpression?) {
+        throw AssertionError("Mutation of synthetic property isn't supported")
+    }
+
+    override fun replaceInitializerAndAccessorsAreResolved(newInitializerAndAccessorsAreResolved: Boolean) {
         throw AssertionError("Mutation of synthetic property isn't supported")
     }
 }

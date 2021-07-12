@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.fir.resolve.calls
 
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.isExpect
 import org.jetbrains.kotlin.fir.resolve.inference.InferenceComponents
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.name.StandardClassIds
@@ -99,19 +100,20 @@ abstract class AbstractConeCallConflictResolver(
         return when (val declaration = call.symbol.fir) {
             is FirSimpleFunction -> createFlatSignature(call, declaration)
             is FirConstructor -> createFlatSignature(call, declaration)
-            is FirVariable<*> -> createFlatSignature(call, declaration)
-            is FirClass<*> -> createFlatSignature(call, declaration)
+            is FirVariable -> createFlatSignature(call, declaration)
+            is FirClass -> createFlatSignature(call, declaration)
             is FirTypeAlias -> createFlatSignature(call, declaration)
             else -> error("Not supported: $declaration")
         }
     }
 
-    protected fun createFlatSignature(call: Candidate, variable: FirVariable<*>): FlatSignature<Candidate> {
+    protected fun createFlatSignature(call: Candidate, variable: FirVariable): FlatSignature<Candidate> {
         return FlatSignature(
             call,
             (variable as? FirProperty)?.typeParameters?.map { it.symbol.toLookupTag() }.orEmpty(),
             listOfNotNull(variable.receiverTypeRef?.coneType),
             variable.receiverTypeRef != null,
+            0, // TODO
             false,
             0,
             (variable as? FirProperty)?.isExpect == true,
@@ -126,6 +128,7 @@ abstract class AbstractConeCallConflictResolver(
             computeParameterTypes(call, constructor),
             //constructor.receiverTypeRef != null,
             false,
+            0, // TODO
             constructor.valueParameters.any { it.isVararg },
             call.numDefaults,
             constructor.isExpect,
@@ -139,6 +142,7 @@ abstract class AbstractConeCallConflictResolver(
             function.typeParameters.map { it.symbol.toLookupTag() },
             computeParameterTypes(call, function),
             function.receiverTypeRef != null,
+            0, // TODO
             function.valueParameters.any { it.isVararg },
             call.numDefaults,
             function.isExpect,
@@ -154,19 +158,20 @@ abstract class AbstractConeCallConflictResolver(
 
     private fun computeParameterTypes(
         call: Candidate,
-        function: FirFunction<*>
+        function: FirFunction
     ): List<ConeKotlinType> {
         return listOfNotNull(function.receiverTypeRef?.coneType) +
                 (call.resultingTypeForCallableReference?.typeArguments?.map { it as ConeKotlinType }
                     ?: call.argumentMapping?.map { it.value.argumentType() }.orEmpty())
     }
 
-    private fun createFlatSignature(call: Candidate, klass: FirClassLikeDeclaration<*>): FlatSignature<Candidate> {
+    private fun createFlatSignature(call: Candidate, klass: FirClassLikeDeclaration): FlatSignature<Candidate> {
         return FlatSignature(
             call,
             (klass as? FirTypeParameterRefsOwner)?.typeParameters?.map { it.symbol.toLookupTag() }.orEmpty(),
             valueParameterTypes = emptyList(),
             hasExtensionReceiver = false,
+            0, // TODO
             hasVarargs = false,
             numDefaults = 0,
             isExpect = (klass as? FirRegularClass)?.isExpect == true,

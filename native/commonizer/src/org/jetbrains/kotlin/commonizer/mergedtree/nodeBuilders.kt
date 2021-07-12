@@ -6,9 +6,9 @@
 package org.jetbrains.kotlin.commonizer.mergedtree
 
 import org.jetbrains.kotlin.commonizer.cir.CirClassRecursionMarker
-import org.jetbrains.kotlin.commonizer.cir.CirClassifierRecursionMarker
 import org.jetbrains.kotlin.commonizer.cir.CirDeclaration
 import org.jetbrains.kotlin.commonizer.cir.CirEntityId
+import org.jetbrains.kotlin.commonizer.cir.CirTypeAliasRecursionMarker
 import org.jetbrains.kotlin.commonizer.core.*
 import org.jetbrains.kotlin.commonizer.utils.CommonizedGroup
 import org.jetbrains.kotlin.storage.NullableLazyValue
@@ -115,8 +115,8 @@ internal fun buildTypeAliasNode(
     storageManager = storageManager,
     size = size,
     nodeRelationship = null,
-    commonizerProducer = { TypeAliasCommonizer(classifiers) },
-    recursionMarker = CirClassifierRecursionMarker,
+    commonizerProducer = { TypeAliasCommonizer(classifiers).asCommonizer() },
+    recursionMarker = CirTypeAliasRecursionMarker,
     nodeProducer = { targetDeclarations, commonDeclaration ->
         CirTypeAliasNode(typeAliasId, targetDeclarations, commonDeclaration).also {
             classifiers.commonizedNodes.addTypeAliasNode(typeAliasId, it)
@@ -148,12 +148,8 @@ internal fun <T : Any, R> commonize(
     targetDeclarations: CommonizedGroup<T>,
     commonizer: Commonizer<T, R>
 ): R? {
-    for (targetDeclaration in targetDeclarations) {
-        if (targetDeclaration == null || !commonizer.commonizeWith(targetDeclaration))
-            return null
-    }
-
-    return commonizer.result
+    if (targetDeclarations.any { it == null }) return null
+    return commonizer.commonize(targetDeclarations.filterNotNull())
 }
 
 @Suppress("NOTHING_TO_INLINE")

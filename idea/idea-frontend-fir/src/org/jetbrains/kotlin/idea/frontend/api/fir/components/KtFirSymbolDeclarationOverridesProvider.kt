@@ -5,11 +5,10 @@
 
 package org.jetbrains.kotlin.idea.frontend.api.fir.components
 
-import org.jetbrains.kotlin.fir.FirSymbolOwner
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.scopes.*
-import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirIntersectionOverrideFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirIntersectionOverridePropertySymbol
@@ -57,7 +56,7 @@ internal class KtFirSymbolDeclarationOverridesProvider(
 
     private fun FirTypeScope.processAllOverriddenDeclarations(
         declaration: FirDeclaration,
-        processor: (FirCallableDeclaration<*>) -> Unit
+        processor: (FirCallableDeclaration) -> Unit
     ) = when (declaration) {
         is FirSimpleFunction -> processOverriddenFunctions(declaration.symbol) { symbol ->
             processor.invoke(symbol.fir)
@@ -72,7 +71,7 @@ internal class KtFirSymbolDeclarationOverridesProvider(
 
     private fun FirTypeScope.processDirectOverriddenDeclarations(
         declaration: FirDeclaration,
-        processor: (FirCallableDeclaration<*>) -> Unit
+        processor: (FirCallableDeclaration) -> Unit
     ) = when (declaration) {
         is FirSimpleFunction -> processDirectOverriddenFunctionsWithBaseScope(declaration.symbol) { symbol, _ ->
             processor.invoke(symbol.fir)
@@ -134,12 +133,12 @@ internal class KtFirSymbolDeclarationOverridesProvider(
         require(symbol is KtFirSymbol<*>)
         if (symbol.origin != KtSymbolOrigin.INTERSECTION_OVERRIDE) return emptyList()
         return symbol.firRef.withFir { fir ->
-            val firSymbol = (fir as? FirSymbolOwner<*>)?.symbol ?: return@withFir emptyList()
+            val firSymbol = fir.symbol
             firSymbol.getIntersectionOverriddenSymbols().map { analysisSession.firSymbolBuilder.callableBuilder.buildCallableSymbol(it.fir) }
         }
     }
 
-    private fun AbstractFirBasedSymbol<*>.getIntersectionOverriddenSymbols(): Collection<FirCallableSymbol<*>> {
+    private fun FirBasedSymbol<*>.getIntersectionOverriddenSymbols(): Collection<FirCallableSymbol<*>> {
         require(this is FirCallableSymbol<*>) {
             "Required FirCallableSymbol but ${this::class} found"
         }

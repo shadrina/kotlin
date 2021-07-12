@@ -5,19 +5,24 @@
 
 package org.jetbrains.kotlin.fir.backend.generators
 
-import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.backend.*
 import org.jetbrains.kotlin.fir.declarations.*
-import org.jetbrains.kotlin.fir.scopes.*
-import org.jetbrains.kotlin.fir.scopes.impl.unwrapDelegateTarget
-import org.jetbrains.kotlin.fir.symbols.impl.*
+import org.jetbrains.kotlin.fir.isJavaDefault
+import org.jetbrains.kotlin.fir.scopes.impl.delegatedWrapperData
+import org.jetbrains.kotlin.fir.scopes.processAllFunctions
+import org.jetbrains.kotlin.fir.scopes.processAllProperties
+import org.jetbrains.kotlin.fir.scopes.unsubstitutedScope
+import org.jetbrains.kotlin.fir.symbols.ConeClassLikeLookupTag
+import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrReturnImpl
-import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.types.isNothing
+import org.jetbrains.kotlin.ir.types.isUnit
 
 /**
  * A generator for delegated members from implementation by delegation.
@@ -31,14 +36,14 @@ internal class DelegatedMemberGenerator(
 ) : Fir2IrComponents by components {
 
     // Generate delegated members for [subClass]. The synthetic field [irField] has the super interface type.
-    fun generate(irField: IrField, firField: FirField, firSubClass: FirClass<*>, subClass: IrClass) {
+    fun generate(irField: IrField, firField: FirField, firSubClass: FirClass, subClass: IrClass) {
         val subClassLookupTag = firSubClass.symbol.toLookupTag()
 
         val subClassScope = firSubClass.unsubstitutedScope(session, scopeSession, withForcedTypeCalculator = true)
         subClassScope.processAllFunctions { functionSymbol ->
             val unwrapped =
                 functionSymbol
-                    .unwrapDelegateTarget(subClassLookupTag, subClassScope::getDirectOverriddenFunctions, firField, firSubClass)
+                    .unwrapDelegateTarget(subClassLookupTag, firField)
                     ?: return@processAllFunctions
 
             val member =
@@ -62,7 +67,7 @@ internal class DelegatedMemberGenerator(
 
             val unwrapped =
                 propertySymbol
-                    .unwrapDelegateTarget(subClassLookupTag, subClassScope::getDirectOverriddenProperties, firField, firSubClass)
+                    .unwrapDelegateTarget(subClassLookupTag, firField)
                     ?: return@processAllProperties
 
             val member = declarationStorage.getIrPropertySymbol(unwrapped.symbol).owner as? IrProperty
@@ -79,7 +84,7 @@ internal class DelegatedMemberGenerator(
 
     private fun generateDelegatedFunction(
         subClass: IrClass,
-        firSubClass: FirClass<*>,
+        firSubClass: FirClass,
         irField: IrField,
         superFunction: IrSimpleFunction,
         delegateOverride: FirSimpleFunction
@@ -151,7 +156,7 @@ internal class DelegatedMemberGenerator(
 
     private fun generateDelegatedProperty(
         subClass: IrClass,
-        firSubClass: FirClass<*>,
+        firSubClass: FirClass,
         irField: IrField,
         superProperty: IrProperty,
         firDelegateProperty: FirProperty
@@ -194,4 +199,23 @@ internal class DelegatedMemberGenerator(
         return delegateProperty
     }
 
+}
+
+private fun <S : FirCallableSymbol<D>, D : FirCallableMemberDeclaration> S.unwrapDelegateTarget(
+    subClassLookupTag: ConeClassLikeLookupTag,
+    firField: FirField,
+): D? {
+    val callable = this.fir as? D ?: return null
+
+    val delegatedWrapperData = callable.delegatedWrapperData ?: return null
+    if (delegatedWrapperData.containingClass != subClassLookupTag) return null
+    if (delegatedWrapperData.delegateField != firField) return null
+
+    val wrapped = delegatedWrapperData.wrapped as? D ?: return null
+
+    @Suppress("UNCHECKED_CAST")
+    val wrappedSymbol = wrapped.symbol as? S ?: return null
+
+    @Suppress("UNCHECKED_CAST")
+    return wrappedSymbol.unwrapCallRepresentative().fir as D
 }

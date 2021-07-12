@@ -522,6 +522,13 @@ object LightTreePositioningStrategies {
             if (node.tokenType in nodeTypesWithOperation) {
                 return markElement(tree.operationReference(node) ?: node, startOffset, endOffset, tree, node)
             }
+            if (node.tokenType == KtNodeTypes.TYPE_REFERENCE) {
+                val nodeToMark =
+                    tree.findChildByType(node, KtNodeTypes.NULLABLE_TYPE)
+                        ?.let { tree.findChildByType(it, KtNodeTypes.USER_TYPE) }
+                        ?: node
+                return markElement(nodeToMark, startOffset, endOffset, tree, node)
+            }
             if (node.tokenType != KtNodeTypes.DOT_QUALIFIED_EXPRESSION &&
                 node.tokenType != KtNodeTypes.SAFE_ACCESS_EXPRESSION &&
                 node.tokenType != KtNodeTypes.CALLABLE_REFERENCE_EXPRESSION
@@ -947,11 +954,12 @@ fun FlyweightCapableTreeStructure<LighterASTNode>.selector(node: LighterASTNode)
     var dotOrDoubleColonFound = false
     for (child in children) {
         if (child == null) continue
-        if (child.tokenType == KtTokens.DOT || child.tokenType == KtTokens.COLONCOLON) {
+        val tokenType = child.tokenType
+        if (tokenType == KtTokens.DOT || tokenType == KtTokens.COLONCOLON || tokenType == KtTokens.SAFE_ACCESS) {
             dotOrDoubleColonFound = true
             continue
         }
-        if (dotOrDoubleColonFound && (child.tokenType == KtNodeTypes.CALL_EXPRESSION || child.tokenType == KtNodeTypes.REFERENCE_EXPRESSION)) {
+        if (dotOrDoubleColonFound && (tokenType == KtNodeTypes.CALL_EXPRESSION || tokenType == KtNodeTypes.REFERENCE_EXPRESSION)) {
             return child
         }
     }

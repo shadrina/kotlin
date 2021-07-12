@@ -8,7 +8,6 @@ package org.jetbrains.kotlin.fir.declarations
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirModuleData
 import org.jetbrains.kotlin.fir.FirSourceElement
-import org.jetbrains.kotlin.fir.FirSymbolOwner
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
@@ -19,16 +18,17 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-sealed interface FirCallableDeclaration<F : FirCallableDeclaration<F>> : FirTypedDeclaration, FirSymbolOwner<F> {
-    override val source: FirSourceElement?
-    override val moduleData: FirModuleData
-    override val resolvePhase: FirResolvePhase
-    override val origin: FirDeclarationOrigin
-    override val attributes: FirDeclarationAttributes
-    override val annotations: List<FirAnnotationCall>
-    override val returnTypeRef: FirTypeRef
-    val receiverTypeRef: FirTypeRef?
-    override val symbol: FirCallableSymbol<F>
+sealed class FirCallableDeclaration : FirTypedDeclaration() {
+    abstract override val source: FirSourceElement?
+    abstract override val moduleData: FirModuleData
+    abstract override val resolvePhase: FirResolvePhase
+    abstract override val origin: FirDeclarationOrigin
+    abstract override val attributes: FirDeclarationAttributes
+    abstract override val annotations: List<FirAnnotationCall>
+    abstract override val returnTypeRef: FirTypeRef
+    abstract val receiverTypeRef: FirTypeRef?
+    abstract val deprecation: DeprecationsPerUseSite?
+    abstract override val symbol: FirCallableSymbol<out FirCallableDeclaration>
 
     override fun <R, D> accept(visitor: FirVisitor<R, D>, data: D): R = visitor.visitCallableDeclaration(this, data)
 
@@ -36,15 +36,17 @@ sealed interface FirCallableDeclaration<F : FirCallableDeclaration<F>> : FirType
     override fun <E: FirElement, D> transform(transformer: FirTransformer<D>, data: D): E = 
         transformer.transformCallableDeclaration(this, data) as E
 
-    override fun replaceResolvePhase(newResolvePhase: FirResolvePhase)
+    abstract override fun replaceResolvePhase(newResolvePhase: FirResolvePhase)
 
-    override fun replaceReturnTypeRef(newReturnTypeRef: FirTypeRef)
+    abstract override fun replaceReturnTypeRef(newReturnTypeRef: FirTypeRef)
 
-    fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?)
+    abstract fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?)
 
-    override fun <D> transformAnnotations(transformer: FirTransformer<D>, data: D): FirCallableDeclaration<F>
+    abstract fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?)
 
-    override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirCallableDeclaration<F>
+    abstract override fun <D> transformAnnotations(transformer: FirTransformer<D>, data: D): FirCallableDeclaration
 
-    fun <D> transformReceiverTypeRef(transformer: FirTransformer<D>, data: D): FirCallableDeclaration<F>
+    abstract override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirCallableDeclaration
+
+    abstract fun <D> transformReceiverTypeRef(transformer: FirTransformer<D>, data: D): FirCallableDeclaration
 }

@@ -285,6 +285,7 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     fun SimpleTypeMarker.typeConstructor(): TypeConstructorMarker
     fun KotlinTypeMarker.withNullability(nullable: Boolean): KotlinTypeMarker
 
+    fun CapturedTypeMarker.isOldCapturedType(): Boolean
     fun CapturedTypeMarker.typeConstructor(): CapturedTypeConstructorMarker
     fun CapturedTypeMarker.captureStatus(): CaptureStatus
     fun CapturedTypeMarker.isProjectionNotNull(): Boolean
@@ -324,6 +325,7 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     fun TypeParameterMarker.getVariance(): TypeVariance
     fun TypeParameterMarker.upperBoundCount(): Int
     fun TypeParameterMarker.getUpperBound(index: Int): KotlinTypeMarker
+    fun TypeParameterMarker.getUpperBounds(): List<KotlinTypeMarker>
     fun TypeParameterMarker.getTypeConstructor(): TypeConstructorMarker
     fun TypeParameterMarker.hasRecursiveBounds(selfConstructor: TypeConstructorMarker): Boolean
 

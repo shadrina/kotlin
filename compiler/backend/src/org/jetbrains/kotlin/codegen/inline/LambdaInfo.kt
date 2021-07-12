@@ -8,18 +8,15 @@ package org.jetbrains.kotlin.codegen.inline
 import org.jetbrains.kotlin.codegen.AsmUtil
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes.*
 import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.org.objectweb.asm.ClassReader
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.commons.Method
 import org.jetbrains.org.objectweb.asm.tree.FieldInsnNode
-import kotlin.properties.Delegates
 
 interface FunctionalArgument
 
-abstract class LambdaInfo(@JvmField val isCrossInline: Boolean) : FunctionalArgument {
-
+abstract class LambdaInfo : FunctionalArgument {
     abstract val isBoundCallableReference: Boolean
 
     abstract val isSuspend: Boolean
@@ -40,8 +37,6 @@ abstract class LambdaInfo(@JvmField val isCrossInline: Boolean) : FunctionalArgu
     lateinit var node: SMAPAndMethodNode
 
     val reifiedTypeParametersUsages = ReifiedTypeParametersUsages()
-
-    abstract fun generateLambdaBody(sourceCompiler: SourceCompilerForInline, reifiedTypeInliner: ReifiedTypeInliner<*>)
 
     open val hasDispatchReceiver = true
 
@@ -70,51 +65,52 @@ abstract class LambdaInfo(@JvmField val isCrossInline: Boolean) : FunctionalArgu
 object NonInlineableArgumentForInlineableParameterCalledInSuspend : FunctionalArgument
 object NonInlineableArgumentForInlineableSuspendParameter : FunctionalArgument
 
-abstract class ExpressionLambda(isCrossInline: Boolean) : LambdaInfo(isCrossInline) {
-    override fun generateLambdaBody(sourceCompiler: SourceCompilerForInline, reifiedTypeInliner: ReifiedTypeInliner<*>) {
+abstract class ExpressionLambda : LambdaInfo() {
+    fun generateLambdaBody(sourceCompiler: SourceCompilerForInline) {
         node = sourceCompiler.generateLambdaBody(this, reifiedTypeParametersUsages)
         node.node.preprocessSuspendMarkers(forInline = true, keepFakeContinuation = false)
     }
 }
 
 abstract class DefaultLambda(
-    private val capturedArgs: Array<Type>,
-    isCrossinline: Boolean,
+    final override val lambdaClassType: Type,
+    capturedArgs: Array<Type>,
     val offset: Int,
-    val needReification: Boolean
-) : LambdaInfo(isCrossinline) {
+    val needReification: Boolean,
+    sourceCompiler: SourceCompilerForInline
+) : LambdaInfo() {
+    final override val isSuspend
+        get() = false // TODO: it should probably be true sometimes, but it never was
+    final override val isBoundCallableReference: Boolean
+    final override val capturedVars: List<CapturedParamDesc>
 
-    final override var isBoundCallableReference by Delegates.notNull<Boolean>()
-        private set
+    final override val invokeMethod: Method
+        get() = Method(node.node.name, node.node.desc)
 
-    val parameterOffsetsInDefault: MutableList<Int> = arrayListOf()
+    val originalBoundReceiverType: Type?
 
-    final override lateinit var invokeMethod: Method
-        private set
+    protected val isPropertyReference: Boolean
+    protected val isFunctionReference: Boolean
 
-    final override lateinit var capturedVars: List<CapturedParamDesc>
-        private set
-
-    var originalBoundReceiverType: Type? = null
-        private set
-
-    override val isSuspend = false // TODO: it should probably be true sometimes, but it never was
-
-    override fun generateLambdaBody(sourceCompiler: SourceCompilerForInline, reifiedTypeInliner: ReifiedTypeInliner<*>) {
-        val classBytes = loadClassBytesByInternalName(sourceCompiler.state, lambdaClassType.internalName)
+    init {
+        val classBytes = loadClass(sourceCompiler)
         val superName = ClassReader(classBytes).superName
-        val isPropertyReference = superName in PROPERTY_REFERENCE_SUPER_CLASSES
-        val isFunctionReference = superName == FUNCTION_REFERENCE.internalName || superName == FUNCTION_REFERENCE_IMPL.internalName
+        isPropertyReference = superName in PROPERTY_REFERENCE_SUPER_CLASSES
+        isFunctionReference = superName == FUNCTION_REFERENCE.internalName || superName == FUNCTION_REFERENCE_IMPL.internalName
 
         val constructorDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, *capturedArgs)
         val constructor = getMethodNode(classBytes, "<init>", constructorDescriptor, lambdaClassType)?.node
         assert(constructor != null || capturedArgs.isEmpty()) {
             "Can't find non-default constructor <init>$constructorDescriptor for default lambda $lambdaClassType"
         }
+        // This only works for primitives but not inline classes, since information about the Kotlin type of the bound
+        // receiver is not present anywhere. This is why with JVM_IR the constructor argument of bound references
+        // is already `Object`, and this field is never used.
+        originalBoundReceiverType =
+            capturedArgs.singleOrNull()?.takeIf { (isFunctionReference || isPropertyReference) && AsmUtil.isPrimitive(it) }
         capturedVars =
             if (isFunctionReference || isPropertyReference)
-                constructor?.desc?.let { Type.getArgumentTypes(it) }?.singleOrNull()?.let {
-                    originalBoundReceiverType = it
+                capturedArgs.singleOrNull()?.let {
                     listOf(capturedParamDesc(AsmUtil.RECEIVER_PARAMETER_NAME, AsmUtil.boxType(it), isSuspend = false))
                 } ?: emptyList()
             else
@@ -122,22 +118,22 @@ abstract class DefaultLambda(
                     capturedParamDesc(fieldNode.name, Type.getType(fieldNode.desc), isSuspend = false)
                 }?.toList() ?: emptyList()
         isBoundCallableReference = (isFunctionReference || isPropertyReference) && capturedVars.isNotEmpty()
-
-        val invokeNameFallback = (if (isPropertyReference) OperatorNameConventions.GET else OperatorNameConventions.INVOKE).asString()
-        val invokeMethod = mapAsmMethod(sourceCompiler, isPropertyReference)
-        // TODO: `signatureAmbiguity = true` ignores the argument types from `invokeDescriptor` and only looks at the count.
-        //   This effectively masks incorrect results from `mapAsmDescriptor`, which hopefully won't manifest in another way.
-        node = getMethodNode(classBytes, invokeMethod.name, invokeMethod.descriptor, lambdaClassType, signatureAmbiguity = true)
-            ?: getMethodNode(classBytes, invokeNameFallback, invokeMethod.descriptor, lambdaClassType, signatureAmbiguity = true)
-                    ?: error("Can't find method '$invokeMethod' in '${lambdaClassType.internalName}'")
-        this.invokeMethod = Method(node.node.name, node.node.desc)
-        if (needReification) {
-            //nested classes could also require reification
-            reifiedTypeParametersUsages.mergeAll(reifiedTypeInliner.reifyInstructions(node.node))
-        }
     }
 
-    protected abstract fun mapAsmMethod(sourceCompiler: SourceCompilerForInline, isPropertyReference: Boolean): Method
+    private fun loadClass(sourceCompiler: SourceCompilerForInline): ByteArray =
+        sourceCompiler.state.inlineCache.classBytes.getOrPut(lambdaClassType.internalName) {
+            loadClassBytesByInternalName(sourceCompiler.state, lambdaClassType.internalName)
+        }
+
+    // Returns whether the loaded invoke is erased, i.e. the name equals the fallback and all types are `Object`.
+    protected fun loadInvoke(sourceCompiler: SourceCompilerForInline, erasedName: String, actualMethod: Method): Boolean {
+        val classBytes = loadClass(sourceCompiler)
+        // TODO: `signatureAmbiguity = true` ignores the argument types from `invokeMethod` and only looks at the count.
+        node = getMethodNode(classBytes, actualMethod.name, actualMethod.descriptor, lambdaClassType, signatureAmbiguity = true)
+            ?: getMethodNode(classBytes, erasedName, actualMethod.descriptor, lambdaClassType, signatureAmbiguity = true)
+                    ?: error("Can't find method '$actualMethod' in '${lambdaClassType.internalName}'")
+        return invokeMethod.run { name == erasedName && returnType == OBJECT_TYPE && argumentTypes.all { it == OBJECT_TYPE } }
+    }
 
     private companion object {
         val PROPERTY_REFERENCE_SUPER_CLASSES =

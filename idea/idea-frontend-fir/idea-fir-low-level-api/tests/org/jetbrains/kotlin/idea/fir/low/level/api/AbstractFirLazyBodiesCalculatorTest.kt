@@ -9,31 +9,28 @@ import junit.framework.TestCase
 import org.jetbrains.kotlin.fir.FirRenderer
 import org.jetbrains.kotlin.fir.builder.RawFirBuilder
 import org.jetbrains.kotlin.fir.builder.RawFirBuilderMode
-import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
-import org.jetbrains.kotlin.idea.fir.low.level.api.api.getResolveState
 import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.FirLazyBodiesCalculator
 import org.jetbrains.kotlin.idea.fir.low.level.api.providers.firIdeProvider
-import org.jetbrains.kotlin.idea.test.KotlinLightCodeInsightFixtureTestCase
+import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.AbstractLowLevelApiSingleFileTest
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.test.services.TestModuleStructure
+import org.jetbrains.kotlin.test.services.TestServices
 
-abstract class AbstractFirLazyBodiesCalculatorTest : KotlinLightCodeInsightFixtureTestCase() {
+abstract class AbstractFirLazyBodiesCalculatorTest : AbstractLowLevelApiSingleFileTest() {
+    override fun doTestByFileStructure(ktFile: KtFile, moduleStructure: TestModuleStructure, testServices: TestServices) {
+        resolveWithClearCaches(ktFile) { resolveState ->
+            val session = resolveState.rootModuleSession
+            val provider = session.firIdeProvider.kotlinScopeProvider
 
-    override fun isFirPlugin(): Boolean = true
+            val laziedFirFile = RawFirBuilder(session, provider, RawFirBuilderMode.LAZY_BODIES).buildFirFile(ktFile)
+            FirLazyBodiesCalculator.calculateLazyBodies(laziedFirFile)
+            val fullFirFile = RawFirBuilder(session, provider, RawFirBuilderMode.NORMAL).buildFirFile(ktFile)
 
-    protected fun doTest(filePath: String) {
+            val laziedFirFileDump = StringBuilder().also { FirRenderer(it).visitFile(laziedFirFile) }.toString()
+            val fullFirFileDump = StringBuilder().also { FirRenderer(it).visitFile(fullFirFile) }.toString()
 
-        val file = myFixture.configureByFile(fileName()) as KtFile
-        val resolveState = file.getResolveState()
-        val session = resolveState.rootModuleSession
-        val provider = session.firIdeProvider.kotlinScopeProvider
-
-        val laziedFirFile = RawFirBuilder(session, provider, RawFirBuilderMode.LAZY_BODIES).buildFirFile(file)
-        FirLazyBodiesCalculator.calculateLazyBodiesIfPhaseRequires(laziedFirFile, FirResolvePhase.CONTRACTS)
-        val fullFirFile = RawFirBuilder(session, provider, RawFirBuilderMode.NORMAL).buildFirFile(file)
-
-        val laziedFirFileDump = StringBuilder().also { FirRenderer(it).visitFile(laziedFirFile) }.toString()
-        val fullFirFileDump = StringBuilder().also { FirRenderer(it).visitFile(fullFirFile) }.toString()
-
-        TestCase.assertEquals(laziedFirFileDump, fullFirFileDump)
+            TestCase.assertEquals(laziedFirFileDump, fullFirFileDump)
+        }
     }
+
 }

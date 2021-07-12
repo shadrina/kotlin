@@ -33,7 +33,8 @@ kotlin::test_support::TypeInfoHolder theObjCObjectWrapperTypeInfoHolder{
         kotlin::test_support::TypeInfoHolder::ObjectBuilder<EmptyPayload>()};
 kotlin::test_support::TypeInfoHolder theOpaqueFunctionTypeInfoHolder{kotlin::test_support::TypeInfoHolder::ObjectBuilder<EmptyPayload>()};
 kotlin::test_support::TypeInfoHolder theShortArrayTypeInfoHolder{kotlin::test_support::TypeInfoHolder::ArrayBuilder<KShort>()};
-kotlin::test_support::TypeInfoHolder theStringTypeInfoHolder{kotlin::test_support::TypeInfoHolder::ArrayBuilder<KChar>()};
+kotlin::test_support::TypeInfoHolder theStringTypeInfoHolder{
+        kotlin::test_support::TypeInfoHolder::ArrayBuilder<KChar>().addFlag(TF_IMMUTABLE)};
 kotlin::test_support::TypeInfoHolder theThrowableTypeInfoHolder{kotlin::test_support::TypeInfoHolder::ObjectBuilder<EmptyPayload>()};
 kotlin::test_support::TypeInfoHolder theUnitTypeInfoHolder{kotlin::test_support::TypeInfoHolder::ObjectBuilder<EmptyPayload>()};
 kotlin::test_support::TypeInfoHolder theWorkerBoundReferenceTypeInfoHolder{
@@ -112,7 +113,19 @@ RUNTIME_NORETURN OBJ_GETTER(WorkerLaunchpad, KRef) {
     throw std::runtime_error("Not implemented for tests");
 }
 
-void RUNTIME_NORETURN ThrowWorkerInvalidState() {
+void RUNTIME_NORETURN ThrowWorkerAlreadyTerminated() {
+    throw std::runtime_error("Not implemented for tests");
+}
+
+void RUNTIME_NORETURN ThrowWrongWorkerOrAlreadyTerminated() {
+    throw std::runtime_error("Not implemented for tests");
+}
+
+void RUNTIME_NORETURN ThrowCannotTransferOwnership() {
+    throw std::runtime_error("Not implemented for tests");
+}
+
+void RUNTIME_NORETURN ThrowFutureInvalidState() {
     throw std::runtime_error("Not implemented for tests");
 }
 

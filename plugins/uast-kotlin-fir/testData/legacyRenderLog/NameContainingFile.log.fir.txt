@@ -1,9 +1,9 @@
 UFile (package = )
     UClass (name = NameContainingFileKt)
         UField (name = xyzzy)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            ULiteralExpression (value = 0)
         UMethod (name = bar)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
         UMethod (name = getXyzzy)
     UClass (name = Foo)
         UMethod (name = Foo)

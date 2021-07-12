@@ -71,6 +71,7 @@ open class KotlinPackageJsonTask : DefaultTask() {
         nodeJs.taskRequirements
             .getCompilationNpmRequirements(projectPath, compilationDisambiguatedName)
             .map { it.toString() }
+            .sorted()
     }
 
     @get:Nested
@@ -80,7 +81,7 @@ open class KotlinPackageJsonTask : DefaultTask() {
 
     @get:OutputFile
     val packageJson: File by lazy {
-        compilationResolver.npmProject.prePackageJsonFile
+        compilationResolver.npmProject.packageJsonFile
     }
 
     @TaskAction

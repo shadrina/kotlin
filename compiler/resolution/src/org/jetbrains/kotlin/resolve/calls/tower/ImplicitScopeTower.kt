@@ -37,6 +37,8 @@ interface ImplicitScopeTower {
 
     fun getImplicitReceiver(scope: LexicalScope): ReceiverValueWithSmartCastInfo?
 
+    fun getContextReceivers(scope: LexicalScope): List<ReceiverValueWithSmartCastInfo>
+
     val dynamicScope: MemberScope
 
     val syntheticScopes: SyntheticScopes
@@ -86,7 +88,7 @@ interface ScopeTowerLevel {
 class CandidateWithBoundDispatchReceiver(
     val dispatchReceiver: ReceiverValueWithSmartCastInfo?,
     val descriptor: CallableDescriptor,
-    val diagnostics: List<ResolutionDiagnostic>
+    val diagnostics: MutableList<ResolutionDiagnostic>
 )
 
 @JvmName("getResultApplicabilityForConstraintErrors")
@@ -101,6 +103,12 @@ abstract class ResolutionDiagnostic(candidateApplicability: CandidateApplicabili
     KotlinCallDiagnostic(candidateApplicability) {
     override fun report(reporter: DiagnosticReporter) {
         // do nothing
+    }
+}
+
+class ContextReceiverAmbiguity : ResolutionDiagnostic(RESOLVED_WITH_ERROR) {
+    override fun report(reporter: DiagnosticReporter) {
+        reporter.onCall(this)
     }
 }
 
@@ -120,7 +128,7 @@ object ErrorDescriptorDiagnostic : ResolutionDiagnostic(RESOLVED) // todo discus
 object LowPriorityDescriptorDiagnostic : ResolutionDiagnostic(RESOLVED_LOW_PRIORITY)
 object DynamicDescriptorDiagnostic : ResolutionDiagnostic(RESOLVED_LOW_PRIORITY)
 object ResolvedUsingNewFeatures : ResolutionDiagnostic(RESOLVED_NEED_PRESERVE_COMPATIBILITY)
-object UnstableSmartCastDiagnostic : ResolutionDiagnostic(MAY_THROW_RUNTIME_ERROR)
+object UnstableSmartCastDiagnostic : ResolutionDiagnostic(UNSTABLE_SMARTCAST)
 object HiddenExtensionRelatedToDynamicTypes : ResolutionDiagnostic(HIDDEN)
 object HiddenDescriptor : ResolutionDiagnostic(HIDDEN)
 

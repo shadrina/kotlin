@@ -179,7 +179,7 @@ private fun IrDeclarationWithVisibility.specialCaseVisibility(kind: OwnerKind?):
         return Opcodes.ACC_PRIVATE
     }
 
-    if (isInlineOnlyPrivateInBytecode() || isInlineOnlyPropertyAccessor()) {
+    if (isInlineOnlyPrivateInBytecode()) {
         return Opcodes.ACC_PRIVATE
     }
 
@@ -223,26 +223,18 @@ private tailrec fun isInlineOrContainedInInline(declaration: IrDeclaration?): Bo
 
 /* Borrowed from inlineOnly.kt */
 
-fun IrDeclarationWithVisibility.isInlineOnlyOrReifiable(): Boolean =
-    this is IrFunction && (isReifiable() || isInlineOnly())
-
 fun IrDeclarationWithVisibility.isEffectivelyInlineOnly(): Boolean =
-    isInlineOnlyOrReifiable() || isInlineOnlyPrivateInBytecode() || isInlineOnlyPropertyAccessor()
+    this is IrFunction && (isReifiable() || isInlineOnly() || isPrivateInlineSuspend())
 
-fun IrDeclarationWithVisibility.isInlineOnlyPrivateInBytecode(): Boolean =
-    (this is IrFunction && isInlineOnly()) || isPrivateInlineSuspend()
+private fun IrDeclarationWithVisibility.isInlineOnlyPrivateInBytecode(): Boolean =
+    this is IrFunction && (isInlineOnly() || isPrivateInlineSuspend())
 
-private fun IrDeclarationWithVisibility.isPrivateInlineSuspend(): Boolean =
-    this is IrFunction && isSuspend && isInline && visibility == DescriptorVisibilities.PRIVATE
-
-private fun IrDeclarationWithVisibility.isInlineOnlyPropertyAccessor(): Boolean {
-    if (this !is IrSimpleFunction) return false
-    val propertySymbol = correspondingPropertySymbol ?: return false
-    return propertySymbol.owner.hasAnnotation(INLINE_ONLY_ANNOTATION_FQ_NAME)
-}
+private fun IrFunction.isPrivateInlineSuspend(): Boolean =
+    isSuspend && isInline && visibility == DescriptorVisibilities.PRIVATE
 
 fun IrFunction.isInlineOnly() =
-    isInline && hasAnnotation(INLINE_ONLY_ANNOTATION_FQ_NAME)
+    (isInline && hasAnnotation(INLINE_ONLY_ANNOTATION_FQ_NAME)) ||
+            (this is IrSimpleFunction && correspondingPropertySymbol?.owner?.hasAnnotation(INLINE_ONLY_ANNOTATION_FQ_NAME) == true)
 
 fun IrFunction.isReifiable() = typeParameters.any { it.isReified }
 
@@ -382,7 +374,7 @@ fun IrSimpleType.isRawType(): Boolean =
     hasAnnotation(JvmSymbols.RAW_TYPE_ANNOTATION_FQ_NAME)
 
 internal fun classFileContainsMethod(classId: ClassId, function: IrFunction, context: JvmBackendContext): Boolean? {
-    val originalSignature = context.methodSignatureMapper.mapSignatureWithGeneric(function).asmMethod
+    val originalSignature = context.methodSignatureMapper.mapAsmMethod(function)
     val originalDescriptor = originalSignature.descriptor
     val descriptor = if (function.isSuspend)
         listOf(*Type.getArgumentTypes(originalDescriptor), Type.getObjectType("kotlin/coroutines/Continuation"))
@@ -392,12 +384,16 @@ internal fun classFileContainsMethod(classId: ClassId, function: IrFunction, con
 }
 
 val IrMemberWithContainerSource.parentClassId: ClassId?
-    get() = (containerSource as? JvmPackagePartSource)?.classId ?: (parent as? IrClass)?.classId
+    get() = ((this as? IrSimpleFunction)?.correspondingPropertySymbol?.owner ?: this).let { directMember ->
+        (directMember.containerSource as? JvmPackagePartSource)?.classId ?: (directMember.parent as? IrClass)?.classId
+    }
 
 // Translated into IR-based terms from classifierDescriptor?.classId
-val IrClass.classId: ClassId?
+private val IrClass.classId: ClassId?
     get() = when (val parent = parent) {
         is IrExternalPackageFragment -> ClassId(parent.fqName, name)
+        // TODO: there's `context.classNameOverride`; theoretically it's only relevant for top-level members,
+        //       where `containerSource` is a `JvmPackagePartSource` anyway, but I'm not 100% sure.
         is IrClass -> parent.classId?.createNestedClassId(name)
         else -> null
     }

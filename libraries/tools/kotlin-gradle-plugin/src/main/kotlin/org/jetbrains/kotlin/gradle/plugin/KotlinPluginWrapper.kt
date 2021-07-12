@@ -25,6 +25,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.model.ObjectFactory
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import org.jetbrains.kotlin.compilerRunner.registerCommonizerClasspathConfigurationIfNecessary
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.logging.kotlinDebug
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
@@ -54,6 +55,15 @@ abstract class KotlinBasePluginWrapper : Plugin<Project> {
 
     private val log = Logging.getLogger(this.javaClass)
 
+    @Deprecated(
+        message = "Scheduled to be removed in 1.7 release",
+        replaceWith = ReplaceWith(
+            "project.getKotlinPluginVersion()",
+            "org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion"
+        )
+    )
+    val kotlinPluginVersion by lazy { loadKotlinVersionFromResource(log) }
+
     open val projectExtensionClass: KClass<out KotlinTopLevelExtension> get() = KotlinProjectExtension::class
 
     internal open fun kotlinSourceSetFactory(project: Project): NamedDomainObjectFactory<KotlinSourceSet> =
@@ -78,9 +88,7 @@ abstract class KotlinBasePluginWrapper : Plugin<Project> {
         project.configurations.maybeCreate(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME).apply {
             isTransitive = false
         }
-        project.configurations.maybeCreate(KLIB_COMMONIZER_CLASSPATH_CONFIGURATION_NAME).defaultDependencies {
-            it.add(project.dependencies.create("$KOTLIN_MODULE_GROUP:$KOTLIN_KLIB_COMMONIZER_EMBEDDABLE:$kotlinPluginVersion"))
-        }
+        project.registerCommonizerClasspathConfigurationIfNecessary()
 
         val kotlinGradleBuildServices = KotlinGradleBuildServices.getInstance(project, listenerRegistryHolder)
 
@@ -250,6 +258,20 @@ open class KotlinPm20PluginWrapper @Inject constructor(private val objectFactory
 
     override val projectExtensionClass: KClass<out KotlinPm20ProjectExtension>
         get() = KotlinPm20ProjectExtension::class
+}
+
+@Deprecated(
+    message = "Scheduled to be removed in 1.7 release",
+    replaceWith = ReplaceWith(
+        "project.getKotlinPluginVersion()",
+        "org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion"
+    )
+)
+fun Plugin<*>.loadKotlinVersionFromResource(log: Logger): String {
+    log.kotlinDebug("Loading version information")
+    val projectVersion = loadPropertyFromResources("project.properties", "project.version")
+    log.kotlinDebug("Found project version [$projectVersion]")
+    return projectVersion
 }
 
 fun Project.getKotlinPluginVersion(): String {

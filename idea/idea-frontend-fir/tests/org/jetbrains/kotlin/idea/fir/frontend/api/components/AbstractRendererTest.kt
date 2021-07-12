@@ -5,24 +5,20 @@
 
 package org.jetbrains.kotlin.idea.fir.frontend.api.components
 
-import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.kotlin.idea.fir.executeOnPooledThreadInReadAction
+import org.jetbrains.kotlin.idea.fir.frontend.api.test.framework.AbstractHLApiSingleFileTest
+import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.AbstractLowLevelApiSingleFileTest
 import org.jetbrains.kotlin.idea.frontend.api.analyse
 import org.jetbrains.kotlin.idea.frontend.api.components.KtDeclarationRendererOptions
 import org.jetbrains.kotlin.idea.frontend.api.components.KtTypeRendererOptions
-import org.jetbrains.kotlin.idea.test.KotlinLightCodeInsightFixtureTestCase
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.test.KotlinTestUtils
-import java.io.File
+import org.jetbrains.kotlin.test.model.TestModule
+import org.jetbrains.kotlin.test.services.TestModuleStructure
+import org.jetbrains.kotlin.test.services.TestServices
+import org.jetbrains.kotlin.test.services.assertions
 
-abstract class AbstractRendererTest : KotlinLightCodeInsightFixtureTestCase() {
-    override fun isFirPlugin() = true
-
-    protected fun doTest(path: String) {
-        val testDataFile = File(path)
-        val ktFile = myFixture.configureByText(testDataFile.name, FileUtil.loadFile(testDataFile)) as KtFile
-
-
+abstract class AbstractRendererTest : AbstractHLApiSingleFileTest() {
+    override fun doTestByFileStructure(ktFile: KtFile, module: TestModule, testServices: TestServices) {
         val options = KtDeclarationRendererOptions.DEFAULT.copy(
             approximateTypes = true,
             renderContainingDeclarations = true,
@@ -40,6 +36,6 @@ abstract class AbstractRendererTest : KotlinLightCodeInsightFixtureTestCase() {
             }
         }
 
-        KotlinTestUtils.assertEqualsToFile(File(path + ".rendered"), actual)
+        testServices.assertions.assertEqualsToFile(testDataFileSibling(".rendered"), actual)
     }
 }

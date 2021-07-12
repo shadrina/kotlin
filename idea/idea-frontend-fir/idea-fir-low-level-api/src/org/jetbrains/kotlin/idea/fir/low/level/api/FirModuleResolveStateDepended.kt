@@ -6,20 +6,20 @@
 package org.jetbrains.kotlin.idea.fir.low.level.api
 
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirPsiDiagnostic
 import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
-import org.jetbrains.kotlin.idea.caches.project.IdeaModuleInfo
 import org.jetbrains.kotlin.idea.fir.low.level.api.annotations.InternalForInline
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.DiagnosticCheckerFilter
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirModuleResolveState
 import org.jetbrains.kotlin.idea.fir.low.level.api.element.builder.FirTowerContextProvider
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.ModuleFileCache
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.structure.KtToFirMapping
+import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.ResolveType
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.containingKtFileIfAny
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.originalKtFile
 import org.jetbrains.kotlin.psi.KtDeclaration
@@ -34,11 +34,11 @@ internal class FirModuleResolveStateDepended(
 ) : FirModuleResolveState() {
 
     override val project: Project get() = originalState.project
-    override val moduleInfo: IdeaModuleInfo get() = originalState.moduleInfo
+    override val moduleInfo: ModuleInfo get() = originalState.moduleInfo
     override val rootModuleSession get() = originalState.rootModuleSession
     private val fileStructureCache get() = originalState.fileStructureCache
 
-    override fun getSessionFor(moduleInfo: IdeaModuleInfo): FirSession =
+    override fun getSessionFor(moduleInfo: ModuleInfo): FirSession =
         originalState.getSessionFor(moduleInfo)
 
     override fun getOrBuildFirFor(element: KtElement): FirElement {
@@ -51,6 +51,7 @@ internal class FirModuleResolveStateDepended(
             firFileBuilder = originalState.firFileBuilder,
             moduleFileCache = originalState.rootModuleSession.cache,
             fileStructureCache = fileStructureCache,
+            firLazyDeclarationResolver = originalState.firLazyDeclarationResolver,
             state = this,
         )
     }
@@ -61,6 +62,9 @@ internal class FirModuleResolveStateDepended(
     override fun <D : FirDeclaration> resolveFirToPhase(declaration: D, toPhase: FirResolvePhase): D =
         originalState.resolveFirToPhase(declaration, toPhase)
 
+    override fun <D : FirDeclaration> resolveFirToResolveType(declaration: D, type: ResolveType): D =
+        originalState.resolveFirToResolveType(declaration, type)
+
     override fun tryGetCachedFirFile(declaration: FirDeclaration, cache: ModuleFileCache): FirFile? {
         val ktFile = declaration.containingKtFileIfAny ?: return null
         cache.getCachedFirFile(ktFile)?.let { return it }
@@ -68,10 +72,10 @@ internal class FirModuleResolveStateDepended(
         return null
     }
 
-    override fun getDiagnostics(element: KtElement, filter: DiagnosticCheckerFilter): List<FirPsiDiagnostic<*>> =
+    override fun getDiagnostics(element: KtElement, filter: DiagnosticCheckerFilter): List<FirPsiDiagnostic> =
         TODO("Diagnostics are not implemented for depended state")
 
-    override fun collectDiagnosticsForFile(ktFile: KtFile, filter: DiagnosticCheckerFilter): Collection<FirPsiDiagnostic<*>> =
+    override fun collectDiagnosticsForFile(ktFile: KtFile, filter: DiagnosticCheckerFilter): Collection<FirPsiDiagnostic> =
         TODO("Diagnostics are not implemented for depended state")
 
     @OptIn(InternalForInline::class)
@@ -80,5 +84,9 @@ internal class FirModuleResolveStateDepended(
 
     @OptIn(InternalForInline::class)
     override fun findSourceFirDeclaration(ktDeclaration: KtDeclaration): FirDeclaration =
+        originalState.findSourceFirDeclaration(ktDeclaration)
+
+    @OptIn(InternalForInline::class)
+    override fun findSourceFirCompiledDeclaration(ktDeclaration: KtDeclaration) =
         originalState.findSourceFirDeclaration(ktDeclaration)
 }

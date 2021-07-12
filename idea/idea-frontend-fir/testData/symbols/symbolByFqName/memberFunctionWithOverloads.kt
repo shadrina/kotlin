@@ -10,9 +10,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/collections/List<E>
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: ABSTRACT
   name: listIterator
@@ -31,9 +33,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/collections/List<E>
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: ABSTRACT
   name: listIterator

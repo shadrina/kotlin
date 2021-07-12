@@ -15,8 +15,8 @@ import org.jetbrains.kotlin.gradle.targets.js.NpmVersions
 import org.jetbrains.kotlin.gradle.targets.js.npm.KotlinNpmResolutionManager
 import org.jetbrains.kotlin.gradle.targets.js.npm.NpmApi
 import org.jetbrains.kotlin.gradle.targets.js.npm.resolver.PACKAGE_JSON_UMBRELLA_TASK_NAME
-import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmCachesSetup
+import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.RootPackageJsonTask
 import org.jetbrains.kotlin.gradle.targets.js.yarn.Yarn
 import org.jetbrains.kotlin.gradle.tasks.internal.CleanableStore
@@ -77,9 +77,6 @@ open class NodeJsRootExtension(@Transient val rootProject: Project) : Configurat
         rootProject.buildDir.resolve("js")
     }
 
-    internal val rootNodeModulesStateFile: File
-        get() = rootPackageDir.resolve("node_modules.state")
-
     val projectPackagesDir: File
         get() = rootPackageDir.resolve("packages")
 
@@ -113,15 +110,16 @@ open class NodeJsRootExtension(@Transient val rootProject: Project) : Configurat
             nodeExecutable = getExecutable("node", nodeCommand, "exe"),
             platformName = platform,
             architectureName = architecture,
-            ivyDependency = getIvyDependency()
+            ivyDependency = getIvyDependency(),
+            downloadBaseUrl = nodeDownloadBaseUrl
         )
     }
 
     internal fun executeSetup() {
-        val nodeJsEnv = requireConfigured()
         if (download) {
-            if (!nodeJsEnv.nodeBinDir.isDirectory) {
-                nodeJsSetupTaskProvider.get().exec()
+            val nodeJsSetupTask = nodeJsSetupTaskProvider.get()
+            nodeJsSetupTask.actions.forEach {
+                it.execute(nodeJsSetupTask)
             }
         }
     }

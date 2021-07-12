@@ -14,15 +14,12 @@ import org.jetbrains.kotlin.fir.resolve.symbolProvider
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.*
 import org.jetbrains.kotlin.idea.frontend.api.InvalidWayOfUsingAnalysisSession
 import org.jetbrains.kotlin.idea.frontend.api.KtAnalysisSession
-import org.jetbrains.kotlin.idea.frontend.api.components.KtInheritorsProvider
-import org.jetbrains.kotlin.idea.frontend.api.components.KtVisibilityChecker
-import org.jetbrains.kotlin.idea.frontend.api.components.KtSymbolDeclarationRendererProvider
+import org.jetbrains.kotlin.idea.frontend.api.components.*
 import org.jetbrains.kotlin.idea.frontend.api.fir.components.*
 import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.KtFirOverrideInfoProvider
 import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.KtFirSymbolProvider
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.threadLocal
 import org.jetbrains.kotlin.idea.frontend.api.tokens.ValidityToken
-import org.jetbrains.kotlin.idea.stubindex.KotlinSourceFilterScope
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
@@ -69,9 +66,13 @@ private constructor(
 
     override val expressionInfoProviderImpl = KtFirExpressionInfoProvider(this, token)
 
+    override val compileTimeConstantProviderImpl: KtCompileTimeConstantProvider = KtFirCompileTimeConstantProvider(this, token)
+
     override val overrideInfoProviderImpl = KtFirOverrideInfoProvider(this, token)
 
     override val visibilityCheckerImpl: KtVisibilityChecker = KtFirVisibilityChecker(this, token)
+
+    override val psiTypeProviderImpl = KtFirPsiTypeProvider(this, token)
 
     override val typeProviderImpl = KtFirTypeProvider(this, token)
 
@@ -80,6 +81,8 @@ private constructor(
     override val subtypingComponentImpl = KtFirSubtypingComponent(this, token)
 
     override val inheritorsProviderImpl: KtInheritorsProvider = KtFirInheritorsProvider(this, token)
+
+    override val typesCreatorImpl: KtTypeCreator = KtFirTypeCreator(this, token)
 
     override fun createContextDependentCopy(originalKtFile: KtFile, elementToReanalyze: KtElement): KtAnalysisSession {
         check(mode == AnalysisSessionMode.REGULAR) {
@@ -106,7 +109,7 @@ private constructor(
     val rootModuleSession: FirSession get() = firResolveState.rootModuleSession
     val firSymbolProvider: FirSymbolProvider get() = rootModuleSession.symbolProvider
     val targetPlatform: TargetPlatform get() = rootModuleSession.moduleData.platform
-    val searchScope: GlobalSearchScope = KotlinSourceFilterScope.projectSourceAndClassFiles(element.resolveScope, project)
+    val searchScope: GlobalSearchScope = element.resolveScope//todo
 
     companion object {
         @InvalidWayOfUsingAnalysisSession

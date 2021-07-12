@@ -39,6 +39,7 @@ fun KGPBaseTest.project(
         projectPathAdditionalSuffix
     )
     projectPath.addDefaultBuildFiles()
+    projectPath.enableCacheRedirector()
     if (addHeapDumpOptions) projectPath.addHeapDumpOptions()
 
     val gradleRunner = GradleRunner
@@ -67,16 +68,19 @@ fun KGPBaseTest.project(
  */
 fun TestProject.build(
     vararg buildArguments: String,
+    forceOutput: Boolean = false,
+    enableGradleDebug: Boolean = false,
     assertions: BuildResult.() -> Unit = {}
 ) {
     val allBuildArguments = commonBuildSetup(buildArguments.toList())
-    withBuildSummary(allBuildArguments) {
-        val buildResult = gradleRunner
-            .withArguments(allBuildArguments)
-            .build()
-
-        assertions(buildResult)
+    val gradleRunnerForBuild = gradleRunner
+        .also { if (forceOutput) it.forwardOutput() }
+        .withDebug(enableGradleDebug)
+        .withArguments(allBuildArguments)
+    val buildResult = withBuildSummary(allBuildArguments) {
+        gradleRunnerForBuild.build()
     }
+    assertions(buildResult)
 }
 
 /**
@@ -84,16 +88,20 @@ fun TestProject.build(
  */
 fun TestProject.buildAndFail(
     vararg buildArguments: String,
+    forceOutput: Boolean = false,
+    enableGradleDebug: Boolean = false,
     assertions: BuildResult.() -> Unit = {}
 ) {
     val allBuildArguments = commonBuildSetup(buildArguments.toList())
-    withBuildSummary(allBuildArguments) {
-        val buildResult = gradleRunner
-            .withArguments(allBuildArguments)
-            .buildAndFail()
-
-        assertions(buildResult)
+    val gradleRunnerForBuild = gradleRunner
+        .also { if (forceOutput) it.forwardOutput() }
+        .withDebug(enableGradleDebug)
+        .withArguments(allBuildArguments)
+    val buildResult = withBuildSummary(allBuildArguments) {
+        gradleRunnerForBuild.buildAndFail()
     }
+
+    assertions(buildResult)
 }
 
 fun TestProject.enableLocalBuildCache(
@@ -136,16 +144,17 @@ private fun TestProject.commonBuildSetup(
     return buildOptionsArguments + buildArguments + "--full-stacktrace"
 }
 
-private fun TestProject.withBuildSummary(buildArguments: List<String>, run: () -> Unit) {
-    try {
-        run()
-    } catch (t: Throwable) {
-        println("<=== Test build: ${projectName} ===>")
-        println("<=== Using Gradle version: ${gradleVersion.version} ===>")
-        println("<=== Run arguments: ${buildArguments.joinToString()} ===>")
-        println("<=== Project path:  ${projectPath.toAbsolutePath()} ===>")
-        throw t
-    }
+private fun TestProject.withBuildSummary(
+    buildArguments: List<String>,
+    run: () -> BuildResult
+): BuildResult = try {
+    run()
+} catch (t: Throwable) {
+    println("<=== Test build: $projectName ===>")
+    println("<=== Using Gradle version: ${gradleVersion.version} ===>")
+    println("<=== Run arguments: ${buildArguments.joinToString()} ===>")
+    println("<=== Project path:  ${projectPath.toAbsolutePath()} ===>")
+    throw t
 }
 
 /**
@@ -192,6 +201,60 @@ private fun Path.addDefaultBuildFiles() {
                     """.trimIndent()
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalPathApi::class)
+internal fun Path.enableCacheRedirector() {
+    // Path relative to the current gradle module project dir
+    val redirectorScript = Paths.get("../../../gradle/cacheRedirector.gradle.kts")
+    assert(redirectorScript.exists()) {
+        "$redirectorScript does not exist! Please provide correct path to 'cacheRedirector.gradle.kts' file."
+    }
+    val gradleDir = resolve("gradle").also { it.createDirectories() }
+    redirectorScript.copyTo(gradleDir.resolve("cacheRedirector.gradle.kts"))
+
+    val projectCacheRedirectorStatus = Paths
+        .get("../../../gradle.properties")
+        .readText()
+        .lineSequence()
+        .first { it.startsWith("cacheRedirectorEnabled") }
+
+    resolve("gradle.properties")
+        .also { if (!it.exists()) it.createFile() }
+        .appendText(
+            """
+
+            $projectCacheRedirectorStatus
+
+            """.trimIndent()
+        )
+
+    when {
+        resolve("build.gradle").exists() -> {
+            //language=Groovy
+            resolve("build.gradle").appendText(
+                """
+                
+                allprojects {
+                    apply from: "${'$'}rootDir/gradle/cacheRedirector.gradle.kts"
+                }
+                
+                """.trimIndent()
+            )
+        }
+        resolve("build.gradle.kts").exists() -> {
+            //language=Groovy
+            resolve("build.gradle.kts").appendText(
+                """
+                
+                allprojects {
+                    apply(from = "${'$'}rootDir/gradle/cacheRedirector.gradle.kts")
+                }
+                
+                """.trimIndent()
+            )
         }
     }
 }

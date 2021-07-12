@@ -6,9 +6,11 @@
 package org.jetbrains.kotlin.fir.resolve
 
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.declarations.FirTypeAlias
-import org.jetbrains.kotlin.fir.declarations.expandedConeType
+import org.jetbrains.kotlin.fir.declarations.utils.expandedConeType
 import org.jetbrains.kotlin.fir.resolve.substitution.AbstractConeSubstitutor
+import org.jetbrains.kotlin.fir.resolve.transformers.ensureResolved
 import org.jetbrains.kotlin.fir.symbols.impl.FirTypeAliasSymbol
 import org.jetbrains.kotlin.fir.typeContext
 import org.jetbrains.kotlin.fir.types.*
@@ -20,7 +22,10 @@ import org.jetbrains.kotlin.fir.utils.component2
 
 fun ConeClassLikeType.fullyExpandedType(
     useSiteSession: FirSession,
-    expandedConeType: (FirTypeAlias) -> ConeClassLikeType? = FirTypeAlias::expandedConeType,
+    expandedConeType: (FirTypeAlias) -> ConeClassLikeType? = { alias ->
+        alias.ensureResolved(FirResolvePhase.SUPER_TYPES, useSiteSession)
+        alias.expandedConeType
+    },
 ): ConeClassLikeType {
     if (this is ConeClassLikeTypeImpl) {
         val (cachedSession, cachedExpandedType) = cachedExpandedType
@@ -55,7 +60,10 @@ private fun ConeClassLikeType.fullyExpandedTypeNoCache(
 
 fun ConeClassLikeType.directExpansionType(
     useSiteSession: FirSession,
-    expandedConeType: (FirTypeAlias) -> ConeClassLikeType? = FirTypeAlias::expandedConeType,
+    expandedConeType: (FirTypeAlias) -> ConeClassLikeType? = { alias ->
+        alias.ensureResolved(FirResolvePhase.SUPER_TYPES, useSiteSession)
+        alias.expandedConeType
+    },
 ): ConeClassLikeType? {
     val typeAliasSymbol = lookupTag.toSymbol(useSiteSession) as? FirTypeAliasSymbol ?: return null
     val typeAlias = typeAliasSymbol.fir

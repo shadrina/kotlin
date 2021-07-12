@@ -43,11 +43,12 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
     val debug: Boolean get() = configuration.getBoolean(KonanConfigKeys.DEBUG)
     val lightDebug: Boolean = configuration.get(KonanConfigKeys.LIGHT_DEBUG)
             ?: target.family.isAppleFamily // Default is true for Apple targets.
-    val generateInlinedBodyTrampoline = debug && configuration.get(KonanConfigKeys.GENERATE_INLINED_FUNCTION_BODY_MARKER) ?: false
+    val generateDebugTrampoline = debug && configuration.get(KonanConfigKeys.GENERATE_DEBUG_TRAMPOLINE) ?: false
 
     val memoryModel: MemoryModel get() = configuration.get(KonanConfigKeys.MEMORY_MODEL)!!
     val destroyRuntimeMode: DestroyRuntimeMode get() = configuration.get(KonanConfigKeys.DESTROY_RUNTIME_MODE)!!
     val gc: GC get() = configuration.get(KonanConfigKeys.GARBAGE_COLLECTOR)!!
+    val gcAggressive: Boolean get() = configuration.get(KonanConfigKeys.GARBAGE_COLLECTOR_AGRESSIVE)!!
 
     val needVerifyIr: Boolean
         get() = configuration.get(KonanConfigKeys.VERIFY_IR) == true
@@ -164,9 +165,9 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
             MemoryModel.EXPERIMENTAL -> {
                 add("common_gc.bc")
                 when (gc) {
-                    GC.SINGLE_THREAD_MARK_SWEEP -> {
+                    GC.SAME_THREAD_MARK_AND_SWEEP -> {
                         add("experimental_memory_manager_stms.bc")
-                        add("single_thread_ms_gc.bc")
+                        add("same_thread_ms_gc.bc")
                     }
                     GC.NOOP -> {
                         add("experimental_memory_manager_noop.bc")

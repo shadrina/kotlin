@@ -128,13 +128,22 @@ internal inline fun<R> generateFunction(codegen: CodeGenerator,
                                         code: FunctionGenerationContext.(FunctionGenerationContext) -> R) {
     val llvmFunction = codegen.llvmFunction(function)
 
+    val isCToKotlinBridge = function.origin == CBridgeOrigin.C_TO_KOTLIN_BRIDGE
+
     val functionGenerationContext = FunctionGenerationContext(
             llvmFunction,
             codegen,
             startLocation,
             endLocation,
-            switchToRunnable = function.origin == CBridgeOrigin.C_TO_KOTLIN_BRIDGE,
+            switchToRunnable = isCToKotlinBridge,
             function)
+
+    if (isCToKotlinBridge) {
+        // Enable initRuntimeIfNeeded for legacy MM too:
+        functionGenerationContext.needsRuntimeInit = true
+        // This fixes https://youtrack.jetbrains.com/issue/KT-44283.
+    }
+
     try {
         generateFunctionBody(functionGenerationContext, code)
     } finally {
@@ -402,9 +411,9 @@ internal class FunctionGenerationContext(val function: LLVMValueRef,
     //private var arenaSlot: LLVMValueRef? = null
     private val slotToVariableLocation = mutableMapOf<Int, VariableDebugLocation>()
 
-    private val prologueBb = basicBlockInFunction("prologue", startLocation)
-    private val localsInitBb = basicBlockInFunction("locals_init", startLocation)
-    private val stackLocalsInitBb = basicBlockInFunction("stack_locals_init", startLocation)
+    private val prologueBb = basicBlockInFunction("prologue", null)
+    private val localsInitBb = basicBlockInFunction("locals_init", null)
+    private val stackLocalsInitBb = basicBlockInFunction("stack_locals_init", null)
     private val entryBb = basicBlockInFunction("entry", startLocation)
     private val epilogueBb = basicBlockInFunction("epilogue", endLocation)
     private val cleanupLandingpad = basicBlockInFunction("cleanup_landingpad", endLocation)

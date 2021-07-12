@@ -33,6 +33,7 @@
 #include "ObjCInterop.h"
 #include "ObjCExportPrivate.h"
 #include "ObjCMMAPI.h"
+#include "StackTrace.hpp"
 #include "Types.h"
 #include "Mutex.hpp"
 
@@ -89,6 +90,8 @@ id allocWithZoneImp(Class self, SEL _cmd, void* zone) {
   id result = messenger(&s, _cmd, zone);
 
   auto* typeInfo = classData->typeInfo;
+
+  kotlin::CalledFromNativeGuard guard;
   ObjHolder holder;
   auto kotlinObj = AllocInstanceWithAssociatedObject(typeInfo, result, holder.slot());
 
@@ -117,7 +120,7 @@ BOOL _tryRetainImp(id self, SEL _cmd) {
     // TODO: Refactor to be more explicit. Instead of relying on an unhandled exception termination
     // (and effectively setting a global to alter its behavior), just call an appropriate termination
     // function by hand.
-    DisallowSourceInfo();
+    kotlin::DisallowSourceInfo();
     std::terminate();
   }
 }
@@ -253,7 +256,7 @@ static void AddMethods(Class clazz, const struct ObjCMethodDescription* methods,
 static kotlin::SpinLock classCreationMutex;
 static int anonymousClassNextId = 0;
 
-static Class allocateClass(const KotlinObjCClassInfo* info) {
+NO_EXTERNAL_CALLS_CHECK static Class allocateClass(const KotlinObjCClassInfo* info) {
   Class superclass = Kotlin_Interop_getObjCClass(info->superclassName);
 
   if (info->exported) {
@@ -372,6 +375,7 @@ void Kotlin_objc_autoreleasePoolPop(void* ptr) {
 }
 
 id Kotlin_objc_allocWithZone(Class clazz) {
+  kotlin::ThreadStateGuard guard(kotlin::ThreadState::kNative);
   return objc_allocWithZone(clazz);
 }
 
@@ -380,6 +384,7 @@ id Kotlin_objc_retain(id ptr) {
 }
 
 void Kotlin_objc_release(id ptr) {
+  kotlin::ThreadStateGuard guard(kotlin::ThreadState::kNative);
   objc_release(ptr);
 }
 

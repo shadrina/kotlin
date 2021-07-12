@@ -169,12 +169,12 @@ class K2Native : CLICompiler<K2NativeCompilerArguments>() {
                         null
                     }
                 })
-                putIfNotNull(GENERATE_INLINED_FUNCTION_BODY_MARKER, when (val it = arguments.generateInlinedFunctionMarkerString) {
+                putIfNotNull(GENERATE_DEBUG_TRAMPOLINE, when (val it = arguments.generateDebugTrampolineString) {
                     "enable" -> true
                     "disable" -> false
                     null -> null
                     else -> {
-                        configuration.report(ERROR, "Unsupported -Xg-generate-inline-function-body-marker= value: $it. Possible values are 'enable'/'disable'")
+                        configuration.report(ERROR, "Unsupported -Xg-generate-debug-tramboline= value: $it. Possible values are 'enable'/'disable'")
                         null
                     }
                 })
@@ -189,6 +189,7 @@ class K2Native : CLICompiler<K2NativeCompilerArguments>() {
                 put(PRINT_DESCRIPTORS, arguments.printDescriptors)
                 put(PRINT_LOCATIONS, arguments.printLocations)
                 put(PRINT_BITCODE, arguments.printBitCode)
+                put(CHECK_EXTERNAL_CALLS, arguments.checkExternalCalls)
                 put(PRINT_FILES, arguments.printFiles)
 
                 put(PURGE_USER_LIBS, arguments.purgeUserLibs)
@@ -279,18 +280,31 @@ class K2Native : CLICompiler<K2NativeCompilerArguments>() {
                     }
                 }
                 put(GARBAGE_COLLECTOR, when (arguments.gc) {
-                    null -> GC.SINGLE_THREAD_MARK_SWEEP
+                    null -> GC.SAME_THREAD_MARK_AND_SWEEP
                     "noop" -> {
                         assertGcSupported()
                         GC.NOOP
                     }
                     "stms" -> {
                         assertGcSupported()
-                        GC.SINGLE_THREAD_MARK_SWEEP
+                        GC.SAME_THREAD_MARK_AND_SWEEP
                     }
                     else -> {
                         configuration.report(ERROR, "Unsupported GC ${arguments.gc}")
-                        GC.SINGLE_THREAD_MARK_SWEEP
+                        GC.SAME_THREAD_MARK_AND_SWEEP
+                    }
+                })
+                if (memoryModel != MemoryModel.EXPERIMENTAL && arguments.gcAggressive) {
+                    configuration.report(ERROR, "-Xgc-aggressive is only supported for -memory-model experimental")
+                }
+                put(GARBAGE_COLLECTOR_AGRESSIVE, arguments.gcAggressive)
+                put(CHECK_LLD_COMPATIBILITY, when (val it = arguments.checkLldCompatibility) {
+                    "enable" -> true
+                    "disable" -> false
+                    null -> true
+                    else -> {
+                        configuration.report(ERROR, "Unsupported '-Xcheck-compatibility-with-lld' value: $it. Possible values are 'enable'/'disable'")
+                        true
                     }
                 })
             }

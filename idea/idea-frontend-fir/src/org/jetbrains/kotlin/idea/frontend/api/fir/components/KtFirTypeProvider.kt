@@ -39,7 +39,6 @@ internal class KtFirTypeProvider(
         return approximatedConeType?.asKtType()
     }
 
-
     override fun buildSelfClassType(symbol: KtNamedClassOrObjectSymbol): KtType {
         require(symbol is KtFirNamedClassOrObjectSymbol)
         val type = symbol.firRef.withFir(FirResolvePhase.SUPER_TYPES) { firClass ->

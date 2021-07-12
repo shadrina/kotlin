@@ -12,8 +12,8 @@ import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
-import org.jetbrains.kotlin.fir.declarations.isLateInit
-import org.jetbrains.kotlin.fir.declarations.referredPropertySymbol
+import org.jetbrains.kotlin.fir.declarations.utils.isLateInit
+import org.jetbrains.kotlin.fir.declarations.utils.referredPropertySymbol
 import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccess
 import org.jetbrains.kotlin.fir.expressions.FirVariableAssignment
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
@@ -80,17 +80,14 @@ object FirPropertyInitializationAnalyzer : AbstractFirPropertyInitializationChec
             }
             val kind = info[symbol] ?: EventOccurrencesRange.ZERO
             if (symbol.fir.isVal && kind.canBeRevisited()) {
-                node.fir.lValue.source?.let {
-                    reporter.report(FirErrors.VAL_REASSIGNMENT.on(it, symbol), context)
-                    return true
-                }
+                reporter.reportOn(node.fir.lValue.source, FirErrors.VAL_REASSIGNMENT, symbol, context)
+                return true
             }
             return false
         }
 
         override fun visitQualifiedAccessNode(node: QualifiedAccessNode) {
-            val reference = node.fir.calleeReference as? FirResolvedNamedReference ?: return
-            val symbol = reference.resolvedSymbol as? FirPropertySymbol ?: return
+            val symbol = getPropertySymbol(node) ?: return
             if (symbol !in localProperties) return
             if (symbol.fir.isLateInit) return
             val pathAwareInfo = data.getValue(node)
@@ -109,10 +106,8 @@ object FirPropertyInitializationAnalyzer : AbstractFirPropertyInitializationChec
         ): Boolean {
             val kind = info[symbol] ?: EventOccurrencesRange.ZERO
             if (!kind.isDefinitelyVisited()) {
-                node.fir.source?.let {
-                    reporter.report(FirErrors.UNINITIALIZED_VARIABLE.on(it, symbol), context)
-                    return true
-                }
+                reporter.reportOn(node.fir.source, FirErrors.UNINITIALIZED_VARIABLE, symbol, context)
+                return true
             }
             return false
         }

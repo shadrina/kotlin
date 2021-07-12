@@ -127,13 +127,11 @@ fun URI.maybeRedirect(): URI {
     }
 }
 
-fun RepositoryHandler.redirect() {
-    for (repository in this) {
-        when (repository) {
-            is MavenArtifactRepository -> repository.url = repository.url.maybeRedirect()
-            is IvyArtifactRepository -> if (repository.url != null) {
-                repository.url = repository.url.maybeRedirect()
-            }
+fun RepositoryHandler.redirect() = configureEach {
+    when (this) {
+        is MavenArtifactRepository -> url = url.maybeRedirect()
+        is IvyArtifactRepository -> if (url != null) {
+            url = url.maybeRedirect()
         }
     }
 }
@@ -221,13 +219,15 @@ val checkRepositories: TaskProvider<Task> = tasks.register("checkRepositories") 
     }
 }
 
-tasks.named("checkBuild").configure {
-    dependsOn(checkRepositories)
-}
-
-afterEvaluate {
-    if (cacheRedirectorEnabled()) {
-        logger.info("Redirecting repositories for $displayName")
-        repositories.redirect()
+tasks
+    .matching {
+        it.name == "checkBuild"
     }
+    .configureEach {
+        dependsOn(checkRepositories)
+    }
+
+if (cacheRedirectorEnabled()) {
+    logger.info("Redirecting repositories for $displayName")
+    repositories.redirect()
 }

@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.backend.jvm
 
 import org.jetbrains.kotlin.backend.common.ir.createImplicitParameterDeclarationWithWrappedDescriptor
 import org.jetbrains.kotlin.backend.common.ir.createParameterDeclarations
-import org.jetbrains.kotlin.codegen.JvmSamTypeFactory
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.FilteredAnnotations
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
@@ -45,6 +44,7 @@ import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmFieldAnnotation
 import org.jetbrains.kotlin.resolve.jvm.annotations.isJvmRecord
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
+import org.jetbrains.kotlin.synthetic.SyntheticJavaPropertyDescriptor
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.typeUtil.replaceAnnotations
 
@@ -58,9 +58,6 @@ open class JvmGeneratorExtensionsImpl(private val generateFacades: Boolean = tru
 
         override fun isPlatformSamType(type: KotlinType): Boolean =
             JavaSingleAbstractMethodUtils.isSamType(type)
-
-        override fun getSamTypeForValueParameter(valueParameter: ValueParameterDescriptor): KotlinType? =
-            JvmSamTypeFactory.createByValueParameter(valueParameter)?.type
 
         companion object Instance : JvmSamConversion()
     }
@@ -163,9 +160,6 @@ open class JvmGeneratorExtensionsImpl(private val generateFacades: Boolean = tru
     override val shouldPreventDeprecatedIntegerValueTypeLiteralConversion: Boolean
         get() = true
 
-    private val flexibleNullabilityAnnotationClass =
-        createSpecialAnnotationClass(JvmSymbols.FLEXIBLE_NULLABILITY_ANNOTATION_FQ_NAME, kotlinIrInternalPackage)
-
     private val rawTypeAnnotationClass =
         createSpecialAnnotationClass(JvmSymbols.RAW_TYPE_ANNOTATION_FQ_NAME, kotlinIrInternalPackage)
 
@@ -174,11 +168,21 @@ open class JvmGeneratorExtensionsImpl(private val generateFacades: Boolean = tru
         createSpecialAnnotationClass(JvmAnnotationNames.ENHANCED_NULLABILITY_ANNOTATION, kotlinJvmInternalPackage)
 
     override val flexibleNullabilityAnnotationConstructor: IrConstructor =
-        flexibleNullabilityAnnotationClass.constructors.single()
+        createSpecialAnnotationClass(JvmSymbols.FLEXIBLE_NULLABILITY_ANNOTATION_FQ_NAME, kotlinIrInternalPackage).constructors.single()
+
+    override val flexibleMutabilityAnnotationConstructor: IrConstructor =
+        createSpecialAnnotationClass(JvmSymbols.FLEXIBLE_MUTABILITY_ANNOTATION_FQ_NAME, kotlinIrInternalPackage).constructors.single()
 
     override val enhancedNullabilityAnnotationConstructor: IrConstructor =
         enhancedNullabilityAnnotationClass.constructors.single()
 
     override val rawTypeAnnotationConstructor: IrConstructor =
         rawTypeAnnotationClass.constructors.single()
+
+    override fun unwrapSyntheticJavaProperty(descriptor: PropertyDescriptor): Pair<FunctionDescriptor, FunctionDescriptor?>? {
+        if (descriptor is SyntheticJavaPropertyDescriptor) {
+            return descriptor.getMethod to descriptor.setMethod
+        }
+        return null
+    }
 }

@@ -6,7 +6,7 @@ import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.testbase.*
 import org.junit.jupiter.api.DisplayName
 
-@SimpleGradlePluginPTests
+@SimpleGradlePluginTests
 @DisplayName("KGP simple tests")
 class SimpleKotlinGradleIT : KGPBaseTest() {
 
@@ -100,7 +100,7 @@ class SimpleKotlinGradleIT : KGPBaseTest() {
         project("customJdk", gradleVersion) {
             buildAndFail("build") {
                 assertOutputContains("Unresolved reference: stream")
-                assertOutputDoesNotContain("AutoCloseable")
+                assertOutputDoesNotContain("Unresolved reference: AutoCloseable")
             }
         }
     }

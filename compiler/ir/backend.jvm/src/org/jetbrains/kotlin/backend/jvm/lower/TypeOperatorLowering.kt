@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.backend.jvm.lower
 
+import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.lower.IrBuildingTransformer
 import org.jetbrains.kotlin.backend.common.lower.at
@@ -29,7 +30,10 @@ import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.parentAsClass
+import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
@@ -359,7 +363,11 @@ private class TypeOperatorLowering(private val context: JvmBackendContext) : Fil
                 irComposite(resultType = expression.type) {
                     +expression.argument.transformVoid()
                     // TODO: Don't generate these casts in the first place
-                    if (!expression.argument.type.isSubtypeOf(expression.type.makeNullable(), context.irBuiltIns)) {
+                    if (!expression.argument.type.isSubtypeOf(
+                            expression.type.makeNullable(),
+                            this@TypeOperatorLowering.context.typeSystem
+                        )
+                    ) {
                         +IrCompositeImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, expression.type)
                     }
                 }
@@ -422,7 +430,7 @@ private class TypeOperatorLowering(private val context: JvmBackendContext) : Fil
                     irComposite(resultType = expression.type) {
                         +irCall(checkExpressionValueIsNotNull).apply {
                             putValueArgument(0, irGet(valueSymbol.owner))
-                            putValueArgument(1, irString(source))
+                            putValueArgument(1, irString(source.trimForRuntimeAssertion()))
                         }
                         +irGet(valueSymbol.owner)
                     }
@@ -435,6 +443,8 @@ private class TypeOperatorLowering(private val context: JvmBackendContext) : Fil
             }
         }
     }
+
+    private fun String.trimForRuntimeAssertion() = StringUtil.trimMiddle(this, 50)
 
     private fun IrFunction.isDelegated() =
         origin == IrDeclarationOrigin.DELEGATED_PROPERTY_ACCESSOR ||

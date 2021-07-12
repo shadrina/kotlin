@@ -18,8 +18,15 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.uast.*
+import org.jetbrains.uast.expressions.UInjectionHost
+import org.jetbrains.uast.kotlin.declarations.FirKotlinUAnnotation
 
-internal object FirKotlinConverter {
+internal object FirKotlinConverter : BaseKotlinConverter {
+    override fun convertAnnotation(annotationEntry: KtAnnotationEntry, givenParent: UElement?): UAnnotation {
+        // TODO: need to polish/implement annotations more
+        return FirKotlinUAnnotation(annotationEntry, givenParent)
+    }
+
     internal fun convertDeclarationOrElement(
         element: PsiElement,
         givenParent: UElement?,
@@ -33,7 +40,7 @@ internal object FirKotlinConverter {
             ?: convertPsiElement(element, givenParent, requiredTypes)
     }
 
-    internal fun convertDeclaration(
+    override fun convertDeclaration(
         element: PsiElement,
         givenParent: UElement?,
         requiredTypes: Array<out Class<out UElement>>
@@ -66,7 +73,7 @@ internal object FirKotlinConverter {
 
                 is KtLightClass -> {
                     // TODO: differentiate enum entry
-                    el<UClass> { AbstractFirKotlinUClass.create(original, givenParent) }
+                    el<UClass> { FirKotlinUClass.create(original, givenParent) }
                 }
                 is KtClassOrObject -> {
                     convertClassOrObject(original, givenParent, requiredTypes).firstOrNull()
@@ -103,6 +110,10 @@ internal object FirKotlinConverter {
                 // TODO: KtAnnotationEntry
                 // TODO: KtCallExpression (for nested annotation)
 
+                is KtDelegatedSuperTypeEntry -> el<KotlinSupertypeDelegationUExpression> {
+                    KotlinSupertypeDelegationUExpression(original, givenParent)
+                }
+
                 else -> null
             }
         }
@@ -117,7 +128,7 @@ internal object FirKotlinConverter {
             // File
             alternative { KotlinUFile(element, firKotlinUastPlugin) },
             // Facade
-            alternative { element.findFacadeClass()?.let { AbstractFirKotlinUClass.create(it, givenParent) } }
+            alternative { element.findFacadeClass()?.let { FirKotlinUClass.create(it, givenParent) } }
         )
     }
 
@@ -127,7 +138,7 @@ internal object FirKotlinConverter {
         requiredTypes: Array<out Class<out UElement>>
     ): Sequence<UElement> {
         val ktLightClass = element.toLightClass() ?: return emptySequence()
-        val uClass = AbstractFirKotlinUClass.create(ktLightClass, givenParent)
+        val uClass = FirKotlinUClass.create(ktLightClass, givenParent)
         return requiredTypes.accommodate(
             // Class
             alternative { uClass },
@@ -172,7 +183,7 @@ internal object FirKotlinConverter {
             },
             alternative catch@{
                 val uCatchClause = element.parent?.parent?.safeAs<KtCatchClause>()?.toUElementOfType<UCatchClause>() ?: return@catch null
-                uCatchClause.parameters.firstOrNull { it.sourcePsi == element}
+                uCatchClause.parameters.firstOrNull { it.sourcePsi == element }
             },
             *convertToPropertyAlternatives(LightClassUtil.getLightClassPropertyMethods(element), givenParent)
         )
@@ -189,9 +200,24 @@ internal object FirKotlinConverter {
 
         return with(requiredTypes) {
             when (element) {
+                is KtClassBody -> {
+                    el<UExpressionList>(build(KotlinUExpressionList.Companion::createClassBody))
+                }
                 is KtExpression -> {
                     convertExpression(element, givenParent, requiredTypes)
                 }
+                is KtLiteralStringTemplateEntry, is KtEscapeStringTemplateEntry -> {
+                    el<ULiteralExpression>(build(::KotlinStringULiteralExpression))
+                }
+                is KtStringTemplateEntry -> {
+                    element.expression?.let { convertExpression(it, givenParent, requiredTypes) }
+                        ?: expr<UExpression> { UastEmptyExpression(givenParent) }
+                }
+                is KtTypeReference ->
+                    requiredTypes.accommodate(
+                        alternative { KotlinUTypeReferenceExpression(element, givenParent) },
+                        alternative { convertReceiverParameter(element) }
+                    ).firstOrNull()
                 is KtImportDirective -> {
                     el<UImportStatement>(build(::KotlinUImportStatement))
                 }
@@ -208,8 +234,12 @@ internal object FirKotlinConverter {
                             el<UIdentifier>(build(::KotlinUIdentifier))
                         }
                         element.elementType == KtTokens.LBRACKET && element.parent is KtCollectionLiteralExpression -> {
-                            // TODO: need counterpart of UCollectionLiteralExpression
-                            null
+                            el<UIdentifier> {
+                                UIdentifier(
+                                    element,
+                                    KotlinUCollectionLiteralExpression(element.parent as KtCollectionLiteralExpression, null)
+                                )
+                            }
                         }
                         else -> null
                     }
@@ -219,7 +249,9 @@ internal object FirKotlinConverter {
         }
     }
 
-    internal fun convertExpression(
+    // TODO: forceUInjectionHost (for test)?
+
+    override fun convertExpression(
         expression: KtExpression,
         givenParent: UElement?,
         requiredTypes: Array<out Class<out UElement>>
@@ -234,6 +266,57 @@ internal object FirKotlinConverter {
 
         return with(requiredTypes) {
             when (expression) {
+                is KtStringTemplateExpression -> {
+                    when {
+                        requiredTypes.contains(UInjectionHost::class.java) -> {
+                            expr<UInjectionHost> { KotlinStringTemplateUPolyadicExpression(expression, givenParent) }
+                        }
+                        expression.entries.isEmpty() -> {
+                            expr<ULiteralExpression> { KotlinStringULiteralExpression(expression, givenParent, "") }
+                        }
+                        expression.entries.size == 1 -> {
+                            convertEntry(expression.entries[0], givenParent, requiredTypes)
+                        }
+                        else -> {
+                            expr<KotlinStringTemplateUPolyadicExpression> {
+                                KotlinStringTemplateUPolyadicExpression(expression, givenParent)
+                            }
+                        }
+                    }
+                }
+                is KtCollectionLiteralExpression -> expr<UCallExpression>(build(::KotlinUCollectionLiteralExpression))
+                is KtConstantExpression -> expr<ULiteralExpression>(build(::KotlinULiteralExpression))
+
+                is KtLabeledExpression -> expr<ULabeledExpression>(build(::KotlinULabeledExpression))
+                is KtParenthesizedExpression -> expr<UParenthesizedExpression>(build(::KotlinUParenthesizedExpression))
+
+                is KtBlockExpression -> expr<UBlockExpression> {
+                    // TODO: differentiate lambda
+                    FirKotlinUBlockExpression(expression, givenParent)
+                }
+                is KtReturnExpression -> expr<UReturnExpression>(build(::KotlinUReturnExpression))
+                is KtThrowExpression -> expr<UThrowExpression>(build(::KotlinUThrowExpression))
+
+                is KtBreakExpression -> expr<UBreakExpression>(build(::KotlinUBreakExpression))
+                is KtContinueExpression -> expr<UContinueExpression>(build(::KotlinUContinueExpression))
+                is KtDoWhileExpression -> expr<UDoWhileExpression>(build(::KotlinUDoWhileExpression))
+                is KtWhileExpression -> expr<UWhileExpression>(build(::KotlinUWhileExpression))
+
+                is KtIfExpression -> expr<UIfExpression>(build(::KotlinUIfExpression))
+
+                is KtBinaryExpressionWithTypeRHS -> expr<UBinaryExpressionWithType>(build(::KotlinUBinaryExpressionWithType))
+                is KtIsExpression -> expr<UBinaryExpressionWithType>(build(::KotlinUTypeCheckExpression))
+
+                is KtArrayAccessExpression -> expr<UArrayAccessExpression>(build(::FirKotlinUArrayAccessExpression))
+
+                is KtThisExpression -> expr<UThisExpression>(build(::KotlinUThisExpression))
+                is KtSuperExpression -> expr<USuperExpression>(build(::KotlinUSuperExpression))
+                is KtCallableReferenceExpression -> expr<UCallableReferenceExpression>(build(::KotlinUCallableReferenceExpression))
+                is KtClassLiteralExpression -> expr<UClassLiteralExpression>(build(::KotlinUClassLiteralExpression))
+                is KtDotQualifiedExpression -> expr<UQualifiedReferenceExpression>(build(::KotlinUQualifiedReferenceExpression))
+                is KtSafeQualifiedExpression -> expr<UQualifiedReferenceExpression>(build(::KotlinUSafeQualifiedExpression))
+                is KtSimpleNameExpression -> expr<USimpleNameReferenceExpression>(build(::FirKotlinUSimpleReferenceExpression))
+
                 else -> expr<UExpression>(build(::UnknownKotlinExpression))
             }
         }

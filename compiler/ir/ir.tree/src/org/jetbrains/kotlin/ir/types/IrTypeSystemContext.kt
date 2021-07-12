@@ -36,16 +36,7 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
 
     override fun KotlinTypeMarker.asSimpleType() = this as? SimpleTypeMarker
 
-    override fun KotlinTypeMarker.asFlexibleType(): FlexibleTypeMarker? {
-        if (this is FlexibleTypeMarker) return this
-
-        if (this is IrType) {
-            val jvmFlexibleType = this.asJvmFlexibleType()
-            if (jvmFlexibleType != null) return jvmFlexibleType
-        }
-
-        return null
-    }
+    override fun KotlinTypeMarker.asFlexibleType(): FlexibleTypeMarker? = this as? FlexibleTypeMarker
 
     override fun KotlinTypeMarker.isError() = this is IrErrorType
 
@@ -62,7 +53,6 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
     override fun FlexibleTypeMarker.upperBound(): SimpleTypeMarker {
         return when (this) {
             is IrDynamicType -> irBuiltIns.anyNType as IrSimpleType
-            is IrJvmFlexibleType -> this.upperBound
             else -> error("Unexpected flexible type ${this::class.java.simpleName}: $this")
         }
     }
@@ -70,7 +60,6 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
     override fun FlexibleTypeMarker.lowerBound(): SimpleTypeMarker {
         return when (this) {
             is IrDynamicType -> irBuiltIns.nothingType as IrSimpleType
-            is IrJvmFlexibleType -> this.lowerBound
             else -> error("Unexpected flexible type ${this::class.java.simpleName}: $this")
         }
     }
@@ -81,8 +70,7 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
 
     override fun SimpleTypeMarker.isMarkedNullable(): Boolean = (this as IrSimpleType).hasQuestionMark
 
-    override fun KotlinTypeMarker.isMarkedNullable(): Boolean =
-        this is IrSimpleType && !isWithFlexibleNullability() && hasQuestionMark
+    override fun KotlinTypeMarker.isMarkedNullable(): Boolean = this is IrSimpleType && hasQuestionMark
 
     override fun SimpleTypeMarker.withNullability(nullable: Boolean): SimpleTypeMarker {
         val simpleType = this as IrSimpleType
@@ -105,6 +93,8 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
 
     override fun CapturedTypeMarker.captureStatus(): CaptureStatus =
         (this as IrCapturedType).captureStatus
+
+    override fun CapturedTypeMarker.isOldCapturedType(): Boolean = false
 
     override fun CapturedTypeConstructorMarker.projection(): TypeArgumentMarker =
         (this as IrCapturedType.Constructor).argument
@@ -173,6 +163,8 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
     override fun TypeParameterMarker.upperBoundCount() = getSuperTypes(this).size
 
     override fun TypeParameterMarker.getUpperBound(index: Int) = getSuperTypes(this)[index] as KotlinTypeMarker
+
+    override fun TypeParameterMarker.getUpperBounds() = getSuperTypes(this) as List<KotlinTypeMarker>
 
     override fun TypeParameterMarker.getTypeConstructor() = this as IrTypeParameterSymbol
 

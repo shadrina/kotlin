@@ -57,12 +57,13 @@ abstract class KaptGenerateStubsTask : KotlinCompile(KotlinJvmOptionsImpl()) {
                 providerFactory.provider {
                     kotlinCompileTask.getSourceRoots().let { compileTaskSourceRoots ->
                         SourceRoots.ForJvm(
-                            compileTaskSourceRoots.kotlinSourceFiles.filterTo(mutableListOf()) { task.isSourceRootAllowed(it) },
-                            javaSourceRootsProvider = { compileTaskSourceRoots.javaSourceRoots.filterTo(mutableSetOf()) { task.isSourceRootAllowed(it) } }
+                            compileTaskSourceRoots.kotlinSourceFiles.filter { task.isSourceRootAllowed(it) },
+                            compileTaskSourceRoots.javaSourceRoots.filter { task.isSourceRootAllowed(it) }
                         )
                     }
                 }
             )
+            task.verbose.set(KaptTask.queryKaptVerboseProperty(task.project))
         }
     }
 
@@ -75,9 +76,12 @@ abstract class KaptGenerateStubsTask : KotlinCompile(KotlinJvmOptionsImpl()) {
     @get:Internal
     lateinit var generatedSourcesDirs: List<File>
 
-    @get:Classpath
-    @get:InputFiles
+    @get:Internal("Not an input, just passed as kapt args. ")
     abstract val kaptClasspath: ConfigurableFileCollection
+
+    /* Used as input as empty kapt classpath should not trigger stub generation, but a non-empty one should. */
+    @Input
+    fun getIfKaptClasspathIsPresent() = !kaptClasspath.isEmpty
 
     @get:Classpath
     @get:InputFiles
@@ -85,7 +89,7 @@ abstract class KaptGenerateStubsTask : KotlinCompile(KotlinJvmOptionsImpl()) {
     internal abstract val kotlinTaskPluginClasspath: ConfigurableFileCollection
 
     @get:Input
-    val verbose = (project.hasProperty("kapt.verbose") && project.property("kapt.verbose").toString().toBoolean() == true)
+    abstract val verbose: Property<Boolean>
 
     override fun source(vararg sources: Any): SourceTask {
         return super.source(sourceRootsContainer.add(sources))
@@ -112,7 +116,7 @@ abstract class KaptGenerateStubsTask : KotlinCompile(KotlinJvmOptionsImpl()) {
         val pluginOptionsWithKapt = pluginOptions.withWrappedKaptOptions(withApClasspath = kaptClasspath)
         args.pluginOptions = (pluginOptionsWithKapt.arguments + args.pluginOptions!!).toTypedArray()
 
-        args.verbose = verbose
+        args.verbose = verbose.get()
         args.classpathAsList = this.classpath.filter { it.exists() }.toList()
         args.destinationAsFile = this.destinationDir
     }

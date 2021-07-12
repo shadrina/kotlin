@@ -103,21 +103,21 @@ class TypeCommonizerTest : AbstractCommonizerTest<CirType, CirType>() {
     fun classTypesInUserPackageWithDifferentNames1() = doTestFailure(
         mockClassType("org/sample/Foo"),
         mockClassType("org/fictitiousPackageName/Foo"),
-        shouldFailOnFirstVariant = true
+        shouldFailOnFirstVariant = false
     )
 
     @Test(expected = IllegalCommonizerStateException::class)
     fun classTypesInUserPackageWithDifferentNames2() = doTestFailure(
         mockClassType("org/sample/Foo"),
         mockClassType("org/sample/Bar"),
-        shouldFailOnFirstVariant = true
+        shouldFailOnFirstVariant = false
     )
 
     @Test(expected = IllegalCommonizerStateException::class)
     fun classTypesInUserPackageWithDifferentNames3() = doTestFailure(
         mockClassType("org/sample/Foo"),
         mockClassType("kotlin/String"),
-        shouldFailOnFirstVariant = true
+        shouldFailOnFirstVariant = false
     )
 
     @Test
@@ -364,19 +364,17 @@ class TypeCommonizerTest : AbstractCommonizerTest<CirType, CirType>() {
         mockTAType("kotlin/sequences/SequenceBuilder", nullable = false) { mockClassType("kotlin/sequences/SequenceScope") }
     )
 
-    @Test
-    // why success: nullability of underlying type does not matter if typealias belongs to one of the standard Kotlin packages
-    fun taTypesInKotlinPackageWithDifferentNullability3() = doTestSuccess(
-        expected = mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = false) },
+    @Test(expected = IllegalCommonizerStateException::class)
+    // why failure: Different nullability in type-expansion can't be commonized by now
+    fun taTypesInKotlinPackageWithDifferentNullability3() = doTestFailure(
         mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = false) },
         mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = false) },
         mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = true) }
     )
 
-    @Test
-    // why success: nullability of underlying type does not matter if typealias belongs to one of the standard Kotlin packages
-    fun taTypesInKotlinPackageWithDifferentNullability4() = doTestSuccess(
-        expected = mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = true) },
+    @Test(expected = IllegalCommonizerStateException::class)
+    // why failure: Different nullability in type-expansion can't be commonized by now
+    fun taTypesInKotlinPackageWithDifferentNullability4() = doTestFailure(
         mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = true) },
         mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = true) },
         mockTAType("kotlin/sequences/SequenceBuilder") { mockClassType("kotlin/sequences/SequenceScope", nullable = false) }
@@ -482,13 +480,13 @@ class TypeCommonizerTest : AbstractCommonizerTest<CirType, CirType>() {
         super.doTestFailure(*variants, shouldFailOnFirstVariant = shouldFailOnFirstVariant)
     }
 
-    override fun createCommonizer() = TypeCommonizer(classifiers)
+    override fun createCommonizer() = TypeCommonizer(classifiers).asCommonizer()
 
     override fun areEqual(a: CirType?, b: CirType?) = (a === b) || (a != null && b != null && areEqual(classifiers, a, b))
 
     companion object {
         fun areEqual(classifiers: CirKnownClassifiers, a: CirType, b: CirType): Boolean =
-            TypeCommonizer(classifiers).run { commonizeWith(a) && commonizeWith(b) }
+            TypeCommonizer(classifiers).asCommonizer().run { commonizeWith(a) && commonizeWith(b) }
 
         private fun CirKnownClassifiers.classNode(classId: CirEntityId, computation: () -> CirClassNode) =
             commonizedNodes.classNode(classId) ?: computation()

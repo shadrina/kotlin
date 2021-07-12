@@ -1,6 +1,6 @@
 @file:Suppress("unused") // usages in build scripts are not tracked properly
 
-import org.gradle.api.GradleException
+import com.gradle.publish.PublishTask
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ConfigurablePublishArtifact
@@ -22,12 +22,12 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetContainer
 import plugins.KotlinBuildPublishingPlugin
+import plugins.mainPublicationName
 
 
 private const val MAGIC_DO_NOT_CHANGE_TEST_JAR_TASK_NAME = "testJar"
@@ -62,8 +62,6 @@ fun Project.removeArtifacts(configuration: Configuration, task: Task) {
 
 fun Project.noDefaultJar() {
     tasks.named("jar").configure {
-        enabled = false
-        actions = emptyList()
         configurations.forEach { cfg ->
             removeArtifacts(cfg, this)
         }
@@ -111,6 +109,8 @@ fun <T : Jar> Project.runtimeJar(task: TaskProvider<T>, body: T.() -> Unit = {})
         withVariantsFromConfiguration(configurations[RUNTIME_ELEMENTS_CONFIGURATION_NAME]) { skip() }
         addVariantsFromConfiguration(runtimeJar) { }
     }
+
+    (components.findByName("java") as AdhocComponentWithVariants?)?.addVariantsFromConfiguration(runtimeJar) { }
 
     return task
 }
@@ -225,8 +225,21 @@ fun Project.publish(moduleMetadata: Boolean = false, configure: MavenPublication
 
     val publication = extensions.findByType<PublishingExtension>()
         ?.publications
-        ?.findByName(KotlinBuildPublishingPlugin.PUBLICATION_NAME) as MavenPublication
+        ?.findByName(mainPublicationName) as MavenPublication
     publication.configure()
+}
+
+fun Project.publishGradlePlugin() {
+    mainPublicationName = "pluginMaven"
+    publish()
+
+    afterEvaluate {
+        tasks.withType<PublishTask> {
+            // Makes plugin publication task reuse poms and metadata from publication named "pluginMaven"
+            useAutomatedPublishing()
+            useGradleModuleMetadataIfAvailable()
+        }
+    }
 }
 
 fun Project.idePluginDependency(block: () -> Unit) {
@@ -239,6 +252,11 @@ fun Project.idePluginDependency(block: () -> Unit) {
 fun Project.publishJarsForIde(projects: List<String>, libraryDependencies: List<String> = emptyList()) {
     idePluginDependency {
         publishProjectJars(projects, libraryDependencies)
+    }
+    configurations.all {
+        // Don't allow `ideaIC` from compiler to leak into Kotlin plugin modules. Compiler and
+        // plugin may depend on different versions of IDEA and it will lead to version conflict
+        exclude(module = ideModuleName())
     }
     dependencies {
         projects.forEach {
@@ -253,6 +271,11 @@ fun Project.publishJarsForIde(projects: List<String>, libraryDependencies: List<
 fun Project.publishTestJarsForIde(projectNames: List<String>) {
     idePluginDependency {
         publishTestJar(projectNames)
+    }
+    configurations.all {
+        // Don't allow `ideaIC` from compiler to leak into Kotlin plugin modules. Compiler and
+        // plugin may depend on different versions of IDEA and it will lead to version conflict
+        exclude(module = ideModuleName())
     }
     dependencies {
         for (projectName in projectNames) {

@@ -14,11 +14,12 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.*
 import org.jetbrains.kotlin.lexer.KtTokens
 
 // See old FE's [DeclarationsChecker]
-object FirMemberFunctionsChecker : FirRegularClassChecker() {
-    override fun check(declaration: FirRegularClass, context: CheckerContext, reporter: DiagnosticReporter) {
+object FirMemberFunctionsChecker : FirClassChecker() {
+    override fun check(declaration: FirClass, context: CheckerContext, reporter: DiagnosticReporter) {
         for (member in declaration.declarations) {
             if (member is FirSimpleFunction) {
                 checkFunction(declaration, member, context, reporter)
@@ -27,7 +28,7 @@ object FirMemberFunctionsChecker : FirRegularClassChecker() {
     }
 
     private fun checkFunction(
-        containingDeclaration: FirRegularClass,
+        containingDeclaration: FirClass,
         function: FirSimpleFunction,
         context: CheckerContext,
         reporter: DiagnosticReporter
@@ -40,14 +41,17 @@ object FirMemberFunctionsChecker : FirRegularClassChecker() {
         val hasAbstractModifier = KtTokens.ABSTRACT_KEYWORD in modifierList
         val isAbstract = function.isAbstract || hasAbstractModifier
         if (isAbstract) {
-            if (!containingDeclaration.canHaveAbstractDeclaration) {
-                reporter.report(
-                    FirErrors.ABSTRACT_FUNCTION_IN_NON_ABSTRACT_CLASS.on(source, function, containingDeclaration),
+            if (containingDeclaration is FirRegularClass && !containingDeclaration.canHaveAbstractDeclaration) {
+                reporter.reportOn(
+                    source,
+                    FirErrors.ABSTRACT_FUNCTION_IN_NON_ABSTRACT_CLASS,
+                    function,
+                    containingDeclaration,
                     context
                 )
             }
             if (function.hasBody) {
-                reporter.report(FirErrors.ABSTRACT_FUNCTION_WITH_BODY.on(source, function), context)
+                reporter.reportOn(source, FirErrors.ABSTRACT_FUNCTION_WITH_BODY, function, context)
             }
         }
         val isInsideExpectClass = isInsideExpectClass(containingDeclaration, context)

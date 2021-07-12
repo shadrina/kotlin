@@ -1,7 +1,5 @@
 // "Add non-null asserted (!!) call" "true"
-fun test() {
-    val s: String? = null
-    val z: String = <caret>s
+fun test(s: String?) {
+    var z: String = ""
+    z = <caret>s
 }
-// TODO: Enable when FIR reports TYPE_MISMATCH for assignments
-/* IGNORE_FIR */

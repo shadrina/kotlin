@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.contracts.FirContractDescription
 import org.jetbrains.kotlin.fir.contracts.builder.buildLegacyRawContractDescription
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
-import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirVariable
 import org.jetbrains.kotlin.fir.declarations.builder.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
@@ -29,8 +28,10 @@ import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
 import org.jetbrains.kotlin.fir.references.builder.buildSimpleNamedReference
 import org.jetbrains.kotlin.fir.symbols.constructStarProjectedType
 import org.jetbrains.kotlin.fir.symbols.impl.*
-import org.jetbrains.kotlin.fir.types.*
-import org.jetbrains.kotlin.fir.types.builder.*
+import org.jetbrains.kotlin.fir.types.ConeStarProjection
+import org.jetbrains.kotlin.fir.types.FirTypeRef
+import org.jetbrains.kotlin.fir.types.builder.buildImplicitTypeRef
+import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.impl.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.Name
@@ -80,11 +81,10 @@ fun escapedStringToCharacter(text: String): CharacterWithDiagnostic {
         5 -> {
             // unicode escape
             if (escape[0] == 'u') {
-                try {
-                    val intValue = Integer.valueOf(escape.substring(1), 16)
-                    return CharacterWithDiagnostic(intValue.toInt().toChar())
-                } catch (e: NumberFormatException) {
-                    // Will be reported below
+                val intValue = escape.substring(1).toIntOrNull(16)
+                // If error occurs it will be reported below
+                if (intValue != null) {
+                    return CharacterWithDiagnostic(intValue.toChar())
                 }
             }
         }
@@ -260,7 +260,7 @@ fun generateAccessExpression(
         }
     }
 
-fun generateResolvedAccessExpression(source: FirSourceElement?, variable: FirVariable<*>): FirQualifiedAccessExpression =
+fun generateResolvedAccessExpression(source: FirSourceElement?, variable: FirVariable): FirQualifiedAccessExpression =
     buildQualifiedAccessExpression {
         this.source = source
         calleeReference = buildResolvedNamedReference {
@@ -272,7 +272,7 @@ fun generateResolvedAccessExpression(source: FirSourceElement?, variable: FirVar
 
 fun generateTemporaryVariable(
     moduleData: FirModuleData, source: FirSourceElement?, name: Name, initializer: FirExpression, typeRef: FirTypeRef? = null,
-): FirVariable<*> =
+): FirVariable =
     buildProperty {
         this.source = source
         this.moduleData = moduleData
@@ -290,7 +290,7 @@ fun generateTemporaryVariable(
 
 fun generateTemporaryVariable(
     moduleData: FirModuleData, source: FirSourceElement?, specialName: String, initializer: FirExpression,
-): FirVariable<*> = generateTemporaryVariable(moduleData, source, Name.special("<$specialName>"), initializer)
+): FirVariable = generateTemporaryVariable(moduleData, source, Name.special("<$specialName>"), initializer)
 
 val FirClassBuilder.ownerRegularOrAnonymousObjectSymbol
     get() = when (this) {
@@ -312,7 +312,7 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
     receiver: FirExpression?
 ) {
     if (delegateBuilder == null) return
-    val delegateFieldSymbol = FirDelegateFieldSymbol<FirProperty>(symbol.callableId).also {
+    val delegateFieldSymbol = FirDelegateFieldSymbol(symbol.callableId).also {
         this.delegateFieldSymbol = it
     }
 
@@ -451,7 +451,7 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
                 origin = FirDeclarationOrigin.Source
                 returnTypeRef = buildImplicitTypeRef()
                 name = DELEGATED_SETTER_PARAM
-                symbol = FirVariableSymbol(this@generateAccessorsByDelegate.name)
+                symbol = FirValueParameterSymbol(this@generateAccessorsByDelegate.name)
                 isCrossinline = false
                 isNoinline = false
                 isVararg = false

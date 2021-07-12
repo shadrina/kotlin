@@ -16,12 +16,12 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.FirCallableMemberDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
-import org.jetbrains.kotlin.fir.declarations.modality
+import org.jetbrains.kotlin.fir.declarations.utils.modality
 import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
 import org.jetbrains.kotlin.fir.references.FirSuperReference
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
-object FirAbstractSuperCallChecker : FirQualifiedAccessChecker() {
+object FirAbstractSuperCallChecker : FirQualifiedAccessExpressionChecker() {
     override fun check(expression: FirQualifiedAccessExpression, context: CheckerContext, reporter: DiagnosticReporter) {
         // require the receiver to be the super reference
         expression.explicitReceiver.safeAs<FirQualifiedAccessExpression>()
@@ -33,7 +33,7 @@ object FirAbstractSuperCallChecker : FirQualifiedAccessChecker() {
 
         if (closestClass.classKind == ClassKind.CLASS) {
             // handles all the FirSimpleFunction/FirProperty/etc.
-            val item = expression.getDeclaration<FirCallableMemberDeclaration<*>>()
+            val item = expression.getDeclaration<FirCallableMemberDeclaration>()
                 ?: return
 
             val declaration = item.getContainingClass(context).safeAs<FirRegularClass>()

@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.builtins.jvm.JvmBuiltInsSignatures
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirClass
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
-import org.jetbrains.kotlin.fir.declarations.classId
+import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutorByMap
@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.name.Name
 
 class JvmMappedScope(
     private val session: FirSession,
-    private val firKotlinClass: FirClass<*>,
+    private val firKotlinClass: FirClass,
     private val firJavaClass: FirRegularClass,
     private val declaredMemberScope: FirScope,
     private val javaMappedClassUseSiteScope: FirTypeScope,

@@ -154,12 +154,12 @@ fun IrExpression.isFalseConst() = this is IrConst<*> && this.kind == IrConstKind
 
 fun IrExpression.isIntegerConst(value: Int) = this is IrConst<*> && this.kind == IrConstKind.Int && this.value == value
 
-fun IrExpression.coerceToUnit(builtins: IrBuiltIns): IrExpression {
-    return coerceToUnitIfNeeded(type, builtins)
+fun IrExpression.coerceToUnit(builtins: IrBuiltIns, typeSystem: IrTypeSystemContext): IrExpression {
+    return coerceToUnitIfNeeded(type, builtins, typeSystem)
 }
 
-fun IrExpression.coerceToUnitIfNeeded(valueType: IrType, irBuiltIns: IrBuiltIns): IrExpression {
-    return if (valueType.isSubtypeOf(irBuiltIns.unitType, irBuiltIns))
+fun IrExpression.coerceToUnitIfNeeded(valueType: IrType, irBuiltIns: IrBuiltIns, typeSystem: IrTypeSystemContext): IrExpression {
+    return if (valueType.isSubtypeOf(irBuiltIns.unitType, typeSystem))
         this
     else
         IrTypeOperatorCallImpl(
@@ -247,8 +247,6 @@ fun IrSimpleFunction.findInterfaceImplementation(): IrSimpleFunction? {
 
     return resolveFakeOverride()?.run { if (parentAsClass.isInterface) this else null }
 }
-
-fun IrProperty.resolveFakeOverride(): IrProperty? = getter?.resolveFakeOverride()?.correspondingPropertySymbol?.owner
 
 val IrClass.isAnnotationClass get() = kind == ClassKind.ANNOTATION_CLASS
 val IrClass.isEnumClass get() = kind == ClassKind.ENUM_CLASS

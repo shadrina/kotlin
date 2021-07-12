@@ -317,10 +317,12 @@ func testExceptions() throws {
         try assertTrue(error.kotlinException is MyError)
     }
 
+#if !NOOP_GC
     try assertFalse(TestThrowingConstructorRelease.deinitialized)
     try testThrowing { try TestThrowingConstructorRelease(doThrow: true) }
     ValuesKt.gc()
     try assertTrue(TestThrowingConstructorRelease.deinitialized)
+#endif
 
     try testThrowing { try Throwing(doThrow: true) }
 
@@ -596,17 +598,10 @@ func testShared() throws {
         try assertFalse(ValuesKt.isFrozen(obj: obj), "isFrozen(\(obj))")
     }
 
-    if ValuesKt.isExperimentalMM {
-        try assertNotFrozen(NSObject())
-        try assertNotFrozen(TestSharedIImpl())
-        try assertNotFrozen(ValuesKt.kotlinLambda(block: { return $0 }) as AnyObject)
-        try assertNotFrozen(FinalClassExtOpen())
-    } else {
-        try assertFrozen(NSObject())
-        try assertFrozen(TestSharedIImpl())
-        try assertFrozen(ValuesKt.kotlinLambda(block: { return $0 }) as AnyObject)
-        try assertNotFrozen(FinalClassExtOpen())
-    }
+    try assertFrozen(NSObject())
+    try assertFrozen(TestSharedIImpl())
+    try assertFrozen(ValuesKt.kotlinLambda(block: { return $0 }) as AnyObject)
+    try assertNotFrozen(FinalClassExtOpen())
 }
 
 class PureSwiftClass {
@@ -788,8 +783,10 @@ func setAssociatedObject(object: AnyObject, value: AnyObject) {
 }
 
 func testWeakRefs() throws {
+#if !NOOP_GC
     try testWeakRefs0(frozen: false)
     try testWeakRefs0(frozen: true)
+#endif
 }
 
 func testWeakRefs0(frozen: Bool) throws {
@@ -1073,6 +1070,11 @@ class TestSharedRefs {
             }
         }
 
+        // This will free `object1` and release+dealloc its associated `Deinit` which nils `Deinit.object2`
+        ValuesKt.gc()
+        // This will free `object2`.
+        ValuesKt.gc()
+
         try assertTrue(Deinit.weakVar2 === nil)
     }
 
@@ -1125,6 +1127,7 @@ class TestSharedRefs {
         try testLambdaSimple()
         try testObjectPartialRelease()
 
+#if !NOOP_GC
         try testBackgroundRefCount(createObject: { $0.createLambda() })
         try testBackgroundRefCount(createObject: { $0.createRegularObject() })
         try testBackgroundRefCount(createObject: { $0.createCollection() })
@@ -1139,6 +1142,7 @@ class TestSharedRefs {
 
         try testRememberNewObject(createObject: { $0.createFrozenRegularObject() })
         try testRememberNewObject(createObject: { $0.createFrozenCollection() })
+#endif
 
         usleep(300 * 1000)
     }
@@ -1403,10 +1407,7 @@ class ValuesTests : SimpleTestProvider {
         test("TestInvalidIdentifiers", testInvalidIdentifiers)
         test("TestDeprecation", testDeprecation)
         test("TestWeakRefs", testWeakRefs)
-        if !ValuesKt.isExperimentalMM {
-            // Experimental MM doesn't support multiple mutators yet.
-            test("TestSharedRefs", TestSharedRefs().test)
-        }
+        test("TestSharedRefs", TestSharedRefs().test)
         test("TestClassTypeCheck", testClassTypeCheck)
         test("TestInterfaceTypeCheck", testInterfaceTypeCheck)
         test("TestGH3503_1", testGH3503_1)
@@ -1419,9 +1420,6 @@ class ValuesTests : SimpleTestProvider {
         test("TestFakeOverrideInInterface", testFakeOverrideInInterface)
 
         // Stress test, must remain the last one:
-        if !ValuesKt.isExperimentalMM {
-            // Experimental MM doesn't support multiple mutators yet.
-            test("TestGH2931", testGH2931)
-        }
+        test("TestGH2931", testGH2931)
     }
 }

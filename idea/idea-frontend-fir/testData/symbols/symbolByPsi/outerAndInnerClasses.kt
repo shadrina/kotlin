@@ -164,9 +164,11 @@ KtFirFunctionSymbol:
   dispatchType: X<T>
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: foo

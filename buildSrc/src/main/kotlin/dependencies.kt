@@ -9,15 +9,15 @@
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.ExternalModuleDependency
-import org.gradle.api.artifacts.ModuleDependency
-import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.*
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
+import org.gradle.internal.jvm.Jvm
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.accessors.runtime.addDependencyTo
 import org.gradle.kotlin.dsl.closureOf
+import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.project
 import java.io.File
@@ -36,7 +36,7 @@ val Project.internalBootstrapRepo: String? get() =
     when {
         bootstrapKotlinRepo?.startsWith("https://buildserver.labs.intellij.net") == true ->
             bootstrapKotlinRepo!!.replace("artifacts/content/maven", "artifacts/content/internal/repo")
-        else -> "https://teamcity.jetbrains.com/guestAuth/app/rest/builds/buildType:(id:Kotlin_KotlinPublic_Compiler),number:$bootstrapKotlinVersion," +
+        else -> "https://teamcity.jetbrains.com/guestAuth/app/rest/builds/buildType:(id:Kotlin_KotlinPublic_Aggregate),number:$bootstrapKotlinVersion," +
                 "branch:default:any/artifacts/content/internal/repo/"
     }
 
@@ -91,12 +91,6 @@ fun Project.preloadedDeps(
     return files(*matchingFiles.map { it.canonicalPath }.toTypedArray())
 }
 
-fun Project.ideaUltimatePreloadedDeps(vararg artifactBaseNames: String, subdir: String? = null): ConfigurableFileCollection {
-    val ultimateDepsDir = fileFrom(rootDir, "ultimate", "dependencies")
-    return if (ultimateDepsDir.isDirectory) preloadedDeps(*artifactBaseNames, baseDir = ultimateDepsDir, subdir = subdir)
-    else files()
-}
-
 fun Project.kotlinDep(artifactBaseName: String, version: String, classifier: String? = null): String =
     listOfNotNull("org.jetbrains.kotlin:kotlin-$artifactBaseName:$version", classifier).joinToString(":")
 
@@ -127,6 +121,14 @@ fun DependencyHandler.add(configurationName: String, dependencyNotation: Any, co
         add(configurationName, dependencyNotation, closureOf(configure))
     } else {
         add(configurationName, dependencyNotation)
+    }
+}
+
+fun Project.disableDependencyVerification() {
+    configurations.all {
+        resolutionStrategy {
+            disableDependencyVerification()
+        }
     }
 }
 
@@ -287,14 +289,16 @@ fun Project.firstFromJavaHomeThatExists(vararg paths: String, jdkHome: File = Fi
 
 fun Project.toolsJarApi(): Any =
     if (kotlinBuildProperties.isInJpsBuildIdeaSync)
-        files(toolsJarFile() ?: error("tools.jar is not found!"))
+        toolsJar()
     else
         dependencies.project(":dependencies:tools-jar-api")
 
-fun Project.toolsJar(): FileCollection = files(toolsJarFile() ?: error("tools.jar is not found!"))
-
-fun Project.toolsJarFile(jdkHome: File = File(this.property("JDK_18") as String)): File? =
-    firstFromJavaHomeThatExists("lib/tools.jar", jdkHome = jdkHome)
+fun Project.toolsJar(): FileCollection = files(
+    getToolchainLauncherFor(JdkMajorVersion.JDK_1_8)
+        .map {
+            Jvm.forHome(it.metadata.installationPath.asFile).toolsJar ?: throw GradleException("tools.jar not found!")
+        }
+)
 
 val compilerManifestClassPath
     get() = "annotations-13.0.jar kotlin-stdlib.jar kotlin-reflect.jar kotlin-script-runtime.jar trove4j.jar"

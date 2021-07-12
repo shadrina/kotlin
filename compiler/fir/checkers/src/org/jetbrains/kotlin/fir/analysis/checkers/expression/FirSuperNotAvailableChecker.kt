@@ -14,12 +14,12 @@ import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
 import org.jetbrains.kotlin.fir.references.FirSuperReference
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
-object FirSuperNotAvailableChecker : FirQualifiedAccessChecker() {
+object FirSuperNotAvailableChecker : FirQualifiedAccessExpressionChecker() {
     override fun check(expression: FirQualifiedAccessExpression, context: CheckerContext, reporter: DiagnosticReporter) {
         if (expression.calleeReference.safeAs<FirSuperReference>()?.hadExplicitTypeInSource() != true) return
 
         val isInsideClass = context.containingDeclarations.any {
-            it is FirClass<*>
+            it is FirClass
         }
 
         if (!isInsideClass) {

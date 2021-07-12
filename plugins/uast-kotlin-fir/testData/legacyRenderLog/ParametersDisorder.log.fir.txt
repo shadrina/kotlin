@@ -3,29 +3,68 @@ UFile (package = )
         UMethod (name = global)
             UParameter (name = a)
             UParameter (name = b)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
         UMethod (name = withDefault)
             UParameter (name = c)
-                [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+                ULiteralExpression (value = 1)
             UParameter (name = d)
-                [!] UnknownKotlinExpression (STRING_TEMPLATE)
-            [!] UnknownKotlinExpression (BLOCK)
+                ULiteralExpression (value = "aaa")
+            UBlockExpression
         UMethod (name = withReceiver)
             UParameter (name = $this$withReceiver)
             UParameter (name = a)
             UParameter (name = b)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
         UMethod (name = call)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
+                [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                UQualifiedReferenceExpression
+                    ULiteralExpression (value = "abc")
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                UQualifiedReferenceExpression
+                    USimpleNameReferenceExpression (identifier = Math)
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                UQualifiedReferenceExpression
+                    UQualifiedReferenceExpression
+                        UQualifiedReferenceExpression
+                            USimpleNameReferenceExpression (identifier = java)
+                            USimpleNameReferenceExpression (identifier = lang)
+                        USimpleNameReferenceExpression (identifier = String)
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                UQualifiedReferenceExpression
+                    UQualifiedReferenceExpression
+                        UQualifiedReferenceExpression
+                            USimpleNameReferenceExpression (identifier = java)
+                            USimpleNameReferenceExpression (identifier = lang)
+                        USimpleNameReferenceExpression (identifier = String)
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                UQualifiedReferenceExpression
+                    UQualifiedReferenceExpression
+                        UQualifiedReferenceExpression
+                            USimpleNameReferenceExpression (identifier = java)
+                            USimpleNameReferenceExpression (identifier = lang)
+                        USimpleNameReferenceExpression (identifier = String)
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                UQualifiedReferenceExpression
+                    UQualifiedReferenceExpression
+                        UQualifiedReferenceExpression
+                            USimpleNameReferenceExpression (identifier = java)
+                            USimpleNameReferenceExpression (identifier = lang)
+                        USimpleNameReferenceExpression (identifier = String)
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                [!] UnknownKotlinExpression (CALL_EXPRESSION)
         UMethod (name = objectLiteral)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
+                [!] UnknownKotlinExpression (OBJECT_LITERAL)
     UClass (name = A)
         UMethod (name = A)
         UMethod (name = with2Receivers)
             UParameter (name = $this$with2Receivers)
             UParameter (name = a)
             UParameter (name = b)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
     UClass (name = Parent)
         UMethod (name = Parent)
             UParameter (name = a)

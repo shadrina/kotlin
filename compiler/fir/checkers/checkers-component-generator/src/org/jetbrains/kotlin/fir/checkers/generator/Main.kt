@@ -27,7 +27,8 @@ fun main(args: Array<String>) {
     val expressionPackage = "$basePackage.checkers.expression"
     generateCheckersComponents(generationPath, expressionPackage, "FirExpressionChecker") {
         alias<FirStatement>("BasicExpressionChecker")
-        alias<FirQualifiedAccessExpression>("QualifiedAccessChecker")
+        alias<FirQualifiedAccess>("QualifiedAccessChecker")
+        alias<FirQualifiedAccessExpression>("QualifiedAccessExpressionChecker")
         alias<FirFunctionCall>("FunctionCallChecker")
         alias<FirVariableAssignment>("VariableAssignmentChecker")
         alias<FirTryExpression>("TryExpressionChecker")
@@ -42,25 +43,37 @@ fun main(args: Array<String>) {
         alias<FirGetClassCall>("GetClassCallChecker")
         alias<FirSafeCallExpression>("SafeCallExpressionChecker")
         alias<FirEqualityOperatorCall>("EqualityOperatorCallChecker")
-        alias<FirAnonymousFunction>("AnonymousFunctionAsExpressionChecker")
         alias<FirStringConcatenationCall>("StringConcatenationCallChecker")
         alias<FirTypeOperatorCall>("TypeOperatorCallChecker")
         alias<FirResolvedQualifier>("ResolvedQualifierChecker")
+        alias<FirConstExpression<*>>("ConstExpressionChecker")
+        alias<FirCallableReferenceAccess>("CallableReferenceAccessChecker")
+        alias<FirThisReceiverExpression>("ThisReceiverExpressionChecker")
+        alias<FirWhileLoop>("WhileLoopChecker")
+        alias<FirDoWhileLoop>("DoWhileLoopChecker")
+        alias<FirArrayOfCall>("ArrayOfCallChecker")
+        alias<FirClassReferenceExpression>("ClassReferenceExpressionChecker")
     }
 
     val declarationPackage = "$basePackage.checkers.declaration"
     generateCheckersComponents(generationPath, declarationPackage, "FirDeclarationChecker") {
         alias<FirDeclaration>("BasicDeclarationChecker")
-        alias<FirMemberDeclaration>("MemberDeclarationChecker")
-        alias<FirFunction<*>>("FunctionChecker")
+        alias<FirFunction>("FunctionChecker")
         alias<FirSimpleFunction>("SimpleFunctionChecker")
         alias<FirProperty>("PropertyChecker")
-        alias<FirClass<*>>("ClassChecker")
+        alias<FirClass>("ClassChecker")
         alias<FirRegularClass>("RegularClassChecker")
         alias<FirConstructor>("ConstructorChecker")
         alias<FirFile>("FileChecker")
         alias<FirTypeParameter>("FirTypeParameterChecker")
         alias<FirAnnotatedDeclaration>("FirAnnotatedDeclarationChecker")
+        alias<FirTypeAlias>("TypeAliasChecker")
+        alias<FirAnonymousFunction>("AnonymousFunctionChecker")
+        alias<FirPropertyAccessor>("PropertyAccessorChecker")
+        alias<FirValueParameter>("ValueParameterChecker")
+        alias<FirEnumEntry>("EnumEntryChecker")
+        alias<FirAnonymousObject>("AnonymousObjectChecker")
+        alias<FirAnonymousInitializer>("AnonymousInitializerChecker")
 
         additional(
             fieldName = "controlFlowAnalyserCheckers",

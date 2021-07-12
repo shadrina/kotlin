@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.diagnostics.rendering.Renderers
 import org.jetbrains.kotlin.fir.analysis.collectors.AbstractDiagnosticCollector
 import org.jetbrains.kotlin.fir.analysis.collectors.FirDiagnosticsCollector
 import org.jetbrains.kotlin.fir.analysis.diagnostics.*
-import org.jetbrains.kotlin.fir.declarations.FirCallableMemberDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirProperty
@@ -25,7 +24,7 @@ import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.dfa.cfg.FirControlFlowGraphRenderVisitor
 import org.jetbrains.kotlin.fir.resolve.transformers.createAllCompilerResolveProcessors
-import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
@@ -117,7 +116,7 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
         for (testFile in testFiles) {
             val firFile = firFiles.firstOrNull { it.psi == testFile.ktFile }
             if (firFile != null) {
-                val debugInfoDiagnostics: List<FirDiagnostic<*>> =
+                val debugInfoDiagnostics: List<FirDiagnostic> =
                     collectDebugInfoDiagnostics(firFile, testFile.diagnosedRangesToDiagnosticNames)
                 testFile.getActualText(
                     diagnostics.getValue(firFile) + debugInfoDiagnostics,
@@ -134,8 +133,8 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
     protected fun collectDebugInfoDiagnostics(
         firFile: FirFile,
         diagnosedRangesToDiagnosticNames: MutableMap<IntRange, MutableSet<String>>
-    ): List<FirDiagnostic<*>> {
-        val result = mutableListOf<FirDiagnostic<*>>()
+    ): List<FirDiagnostic> {
+        val result = mutableListOf<FirDiagnostic>()
 
 
         object : FirDefaultVisitorVoid() {
@@ -166,7 +165,7 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
     fun createExpressionTypeDiagnosticIfExpected(
         element: FirExpression,
         diagnosedRangesToDiagnosticNames: MutableMap<IntRange, MutableSet<String>>
-    ): FirDiagnosticWithParameters1<FirSourceElement, String>? =
+    ): FirDiagnosticWithParameters1<String>? =
         DebugInfoDiagnosticFactory1.EXPRESSION_TYPE.createDebugInfoDiagnostic(element, diagnosedRangesToDiagnosticNames) {
             element.typeRef.renderAsString((element as? FirExpressionWithSmartcast)?.originalType)
         }
@@ -183,7 +182,7 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
         element: FirElement,
         reference: FirNamedReference,
         diagnosedRangesToDiagnosticNames: MutableMap<IntRange, MutableSet<String>>
-    ): FirDiagnosticWithParameters1<FirSourceElement, String>? =
+    ): FirDiagnosticWithParameters1<String>? =
         DebugInfoDiagnosticFactory1.CALL.createDebugInfoDiagnostic(element, diagnosedRangesToDiagnosticNames) {
 
             val resolvedSymbol = (reference as? FirResolvedNamedReference)?.resolvedSymbol
@@ -195,7 +194,7 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
         element: FirElement,
         diagnosedRangesToDiagnosticNames: MutableMap<IntRange, MutableSet<String>>,
         argument: () -> String,
-    ): FirDiagnosticWithParameters1<FirSourceElement, String>? {
+    ): FirDiagnosticWithParameters1<String>? {
         val sourceElement = element.source ?: return null
         val sourceKind = sourceElement.kind
         if (sourceKind !in allowedKindsForDebugInfo) {
@@ -211,22 +210,24 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
 
         val argumentText = argument()
         return when (sourceElement) {
-            is FirPsiSourceElement<*> -> FirPsiDiagnosticWithParameters1(
+            is FirPsiSourceElement -> FirPsiDiagnosticWithParameters1(
                 sourceElement,
                 argumentText,
                 severity,
-                FirDiagnosticFactory1(name, severity)
+                FirDiagnosticFactory1(name, severity, SourceElementPositioningStrategy.DEFAULT, PsiElement::class),
+                SourceElementPositioningStrategy.DEFAULT
             )
             is FirLightSourceElement -> FirLightDiagnosticWithParameters1(
                 sourceElement,
                 argumentText,
                 severity,
-                FirDiagnosticFactory1<PsiElement, String>(name, severity)
+                FirDiagnosticFactory1(name, severity, SourceElementPositioningStrategy.DEFAULT, PsiElement::class),
+                SourceElementPositioningStrategy.DEFAULT
             )
         }
     }
 
-    private fun AbstractFirBasedSymbol<*>.fqNameUnsafe(): FqNameUnsafe? = when (this) {
+    private fun FirBasedSymbol<*>.fqNameUnsafe(): FqNameUnsafe? = when (this) {
         is FirClassLikeSymbol<*> -> classId.asSingleFqName().toUnsafe()
         is FirCallableSymbol<*> -> callableId.asFqNameForDebugInfo().toUnsafe()
         else -> null
@@ -234,7 +235,7 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
 
     private fun getTypeOfCall(
         reference: FirNamedReference,
-        resolvedSymbol: AbstractFirBasedSymbol<*>?
+        resolvedSymbol: FirBasedSymbol<*>?
     ): String {
         if (resolvedSymbol == null) return TypeOfCall.UNRESOLVED.nameToRender
 
@@ -248,13 +249,11 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
             is FirProperty -> {
                 TypeOfCall.PROPERTY_GETTER.nameToRender
             }
-            is FirFunction<*> -> buildString {
-                if (fir is FirCallableMemberDeclaration<*>) {
-                    if (fir.status.isInline) append("inline ")
-                    if (fir.status.isInfix) append("infix ")
-                    if (fir.status.isOperator) append("operator ")
-                    if (fir.receiverTypeRef != null) append("extension ")
-                }
+            is FirFunction -> buildString {
+                if (fir.status.isInline) append("inline ")
+                if (fir.status.isInfix) append("infix ")
+                if (fir.status.isOperator) append("operator ")
+                if (fir.receiverTypeRef != null) append("extension ")
                 append(TypeOfCall.FUNCTION.nameToRender)
             }
             else -> TypeOfCall.OTHER.nameToRender
@@ -262,9 +261,9 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
     }
 
 
-    protected fun collectDiagnostics(firFiles: List<FirFile>): Map<FirFile, List<FirDiagnostic<*>>> {
+    protected fun collectDiagnostics(firFiles: List<FirFile>): Map<FirFile, List<FirDiagnostic>> {
         val collectors = mutableMapOf<FirSession, AbstractDiagnosticCollector>()
-        val result = mutableMapOf<FirFile, List<FirDiagnostic<*>>>()
+        val result = mutableMapOf<FirFile, List<FirDiagnostic>>()
         for (firFile in firFiles) {
             val session = firFile.moduleData.session
             val collector = collectors.computeIfAbsent(session) { createCollector(session) }
@@ -276,7 +275,10 @@ abstract class AbstractFirDiagnosticsTest : AbstractFirBaseDiagnosticsTest() {
     }
 
     private fun createCollector(session: FirSession): AbstractDiagnosticCollector {
-        return FirDiagnosticsCollector.create(session, ScopeSession()) // seems this class is obsolete, so do not care about correctness of the scope session here
+        return FirDiagnosticsCollector.create(
+            session,
+            ScopeSession()
+        ) // seems this class is obsolete, so do not care about correctness of the scope session here
     }
 
     private fun checkCfgDump(testDataFile: File, firFiles: List<FirFile>) {

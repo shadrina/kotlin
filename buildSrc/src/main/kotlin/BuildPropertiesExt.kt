@@ -21,4 +21,6 @@ val KotlinBuildProperties.ignoreTestFailures: Boolean get() = getBoolean("ignore
 
 val KotlinBuildProperties.disableWerror: Boolean get() = getBoolean("kotlin.build.disable.werror", false)
 
-val KotlinBuildProperties.suppressJdkHomeWarning: Boolean get() = getBoolean("kotlin.suppress.jdkHome.warning", false)
+val KotlinBuildProperties.isObsoleteJdkOverrideEnabled: Boolean
+    get() = !isTeamcityBuild &&
+            getBoolean("kotlin.build.isObsoleteJdkOverrideEnabled", false)

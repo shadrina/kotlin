@@ -7,22 +7,24 @@ package org.jetbrains.kotlin.fir.analysis.jvm.checkers.declaration
 
 import org.jetbrains.kotlin.fir.FirFakeSourceElementKind
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
-import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirMemberDeclarationChecker
+import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirBasicDeclarationChecker
 import org.jetbrains.kotlin.fir.analysis.checkers.getModifier
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.isExternal
 import org.jetbrains.kotlin.lexer.KtTokens
 
-object FirJvmExternalDeclarationChecker : FirMemberDeclarationChecker() {
-    override fun check(declaration: FirMemberDeclaration, context: CheckerContext, reporter: DiagnosticReporter) {
+object FirJvmExternalDeclarationChecker : FirBasicDeclarationChecker() {
+    override fun check(declaration: FirDeclaration, context: CheckerContext, reporter: DiagnosticReporter) {
+        if (declaration !is FirMemberDeclaration) return
         if (!declaration.isExternal) return
         val source = declaration.source ?: return
         if (source.kind is FirFakeSourceElementKind) return
 
         // WRONG_MODIFIER_TARGET on external constructor is intentionally NOT covered in this checker.
-        if (declaration !is FirFunction<*>) {
+        if (declaration !is FirFunction) {
             val target = when (declaration) {
                 is FirProperty -> "property"
                 is FirRegularClass -> "class"

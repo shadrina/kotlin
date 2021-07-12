@@ -82,7 +82,8 @@ void ObjHeader::destroyMetaObject(ObjHeader* object) {
 }
 
 ALWAYS_INLINE bool isPermanentOrFrozen(const ObjHeader* obj) {
-    return mm::IsFrozen(obj);
+    // TODO: Freeze TF_IMMUTABLE objects upon creation.
+    return mm::IsFrozen(obj) || ((obj->type_info()->flags_ & TF_IMMUTABLE) != 0);
 }
 
 ALWAYS_INLINE bool isShareable(const ObjHeader* obj) {
@@ -95,12 +96,20 @@ extern "C" MemoryState* InitMemory(bool firstRuntime) {
 }
 
 extern "C" void DeinitMemory(MemoryState* state, bool destroyRuntime) {
+    // We need the native state to avoid a deadlock on unregistering the thread.
+    // The deadlock is possible if we are in the runnable state and the GC already locked
+    // the thread registery and waits for threads to suspend or go to the native state.
+    AssertThreadState(state, ThreadState::kNative);
     auto* node = mm::FromMemoryState(state);
     if (destroyRuntime) {
+        ThreadStateGuard guard(state, ThreadState::kRunnable);
         node->Get()->gc().PerformFullGC();
         // TODO: Also make sure that finalizers are run.
     }
     mm::ThreadRegistry::Instance().Unregister(node);
+    if (destroyRuntime) {
+        mm::ThreadRegistry::ClearCurrentThreadData();
+    }
 }
 
 extern "C" void RestoreMemory(MemoryState*) {
@@ -532,10 +541,10 @@ MemoryState* kotlin::mm::GetMemoryState() {
     return ToMemoryState(ThreadRegistry::Instance().CurrentThreadDataNode());
 }
 
-ALWAYS_INLINE kotlin::CalledFromNativeGuard::CalledFromNativeGuard() noexcept {
+ALWAYS_INLINE kotlin::CalledFromNativeGuard::CalledFromNativeGuard(bool reentrant) noexcept : reentrant_(reentrant) {
     Kotlin_initRuntimeIfNeeded();
     thread_ = mm::GetMemoryState();
-    SwitchThreadState(thread_, ThreadState::kRunnable);
+    oldState_ = SwitchThreadState(thread_, ThreadState::kRunnable, reentrant_);
 }
 
 const bool kotlin::kSupportsMultipleMutators = kotlin::gc::kSupportsMultipleMutators;

@@ -12,12 +12,12 @@ import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirModuleResolveState
+import org.jetbrains.kotlin.idea.fir.low.level.api.api.createProjectWideOutOfBlockModificationTracker
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.getResolveState
 import org.jetbrains.kotlin.idea.frontend.api.*
 import org.jetbrains.kotlin.idea.frontend.api.tokens.ValidityToken
 import org.jetbrains.kotlin.idea.frontend.api.tokens.ValidityTokenFactory
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.trackers.createProjectWideOutOfBlockModificationTracker
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -41,7 +41,7 @@ class KtFirAnalysisSessionProvider(private val project: Project) : KtAnalysisSes
     }
 
     @TestOnly
-    fun clearCaches() {
+    override fun clearCaches() {
         cache.clear()
     }
 }

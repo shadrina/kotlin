@@ -1621,9 +1621,19 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
                 KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("idea/testData/intentions/addPropertyAccessors/both"), Pattern.compile("^([\\w\\-_]+)\\.(kt|kts)$"), null, true);
             }
 
+            @TestMetadata("caretNotOnName.kt")
+            public void testCaretNotOnName() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/both/caretNotOnName.kt");
+            }
+
             @TestMetadata("delegate.kt")
             public void testDelegate() throws Exception {
                 runTest("idea/testData/intentions/addPropertyAccessors/both/delegate.kt");
+            }
+
+            @TestMetadata("expect.kt")
+            public void testExpect() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/both/expect.kt");
             }
 
             @TestMetadata("hasAccessor.kt")
@@ -1694,9 +1704,24 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
                 KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("idea/testData/intentions/addPropertyAccessors/getter"), Pattern.compile("^([\\w\\-_]+)\\.(kt|kts)$"), null, true);
             }
 
+            @TestMetadata("caretNotOnName.kt")
+            public void testCaretNotOnName() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/getter/caretNotOnName.kt");
+            }
+
+            @TestMetadata("const.kt")
+            public void testConst() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/getter/const.kt");
+            }
+
             @TestMetadata("delegate.kt")
             public void testDelegate() throws Exception {
                 runTest("idea/testData/intentions/addPropertyAccessors/getter/delegate.kt");
+            }
+
+            @TestMetadata("expect.kt")
+            public void testExpect() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/getter/expect.kt");
             }
 
             @TestMetadata("hasAccessor.kt")
@@ -1712,11 +1737,6 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
             @TestMetadata("hasSetter.kt")
             public void testHasSetter() throws Exception {
                 runTest("idea/testData/intentions/addPropertyAccessors/getter/hasSetter.kt");
-            }
-
-            @TestMetadata("header.kt")
-            public void testHeader() throws Exception {
-                runTest("idea/testData/intentions/addPropertyAccessors/getter/header.kt");
             }
 
             @TestMetadata("jvmField.kt")
@@ -1772,9 +1792,19 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
                 KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("idea/testData/intentions/addPropertyAccessors/setter"), Pattern.compile("^([\\w\\-_]+)\\.(kt|kts)$"), null, true);
             }
 
+            @TestMetadata("caretNotOnName.kt")
+            public void testCaretNotOnName() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/setter/caretNotOnName.kt");
+            }
+
             @TestMetadata("delegate.kt")
             public void testDelegate() throws Exception {
                 runTest("idea/testData/intentions/addPropertyAccessors/setter/delegate.kt");
+            }
+
+            @TestMetadata("expect.kt")
+            public void testExpect() throws Exception {
+                runTest("idea/testData/intentions/addPropertyAccessors/setter/expect.kt");
             }
 
             @TestMetadata("hasAccessor.kt")
@@ -7089,6 +7119,11 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
             runTest("idea/testData/intentions/convertToBlockBody/annotatedExpr2.kt");
         }
 
+        @TestMetadata("annotatedExprInParentheses.kt")
+        public void testAnnotatedExprInParentheses() throws Exception {
+            runTest("idea/testData/intentions/convertToBlockBody/annotatedExprInParentheses.kt");
+        }
+
         @TestMetadata("explicitlyNonUnitFun.kt")
         public void testExplicitlyNonUnitFun() throws Exception {
             runTest("idea/testData/intentions/convertToBlockBody/explicitlyNonUnitFun.kt");
@@ -7154,6 +7189,11 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
             runTest("idea/testData/intentions/convertToBlockBody/implicitlyNonUnitFun.kt");
         }
 
+        @TestMetadata("implicitlyNonUnitFun2.kt")
+        public void testImplicitlyNonUnitFun2() throws Exception {
+            runTest("idea/testData/intentions/convertToBlockBody/implicitlyNonUnitFun2.kt");
+        }
+
         @TestMetadata("implicitlyTypedFunWithUnresolvedType.kt")
         public void testImplicitlyTypedFunWithUnresolvedType() throws Exception {
             runTest("idea/testData/intentions/convertToBlockBody/implicitlyTypedFunWithUnresolvedType.kt");
@@ -7167,6 +7207,11 @@ public class IntentionTestGenerated extends AbstractIntentionTest {
         @TestMetadata("labeledExpr.kt")
         public void testLabeledExpr() throws Exception {
             runTest("idea/testData/intentions/convertToBlockBody/labeledExpr.kt");
+        }
+
+        @TestMetadata("labeledExprInParentheses.kt")
+        public void testLabeledExprInParentheses() throws Exception {
+            runTest("idea/testData/intentions/convertToBlockBody/labeledExprInParentheses.kt");
         }
 
         @TestMetadata("nothingFun.kt")

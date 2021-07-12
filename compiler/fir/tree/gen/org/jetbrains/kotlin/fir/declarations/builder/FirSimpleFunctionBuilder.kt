@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.fir.builder.FirAnnotationContainerBuilder
 import org.jetbrains.kotlin.fir.builder.FirBuilderDsl
 import org.jetbrains.kotlin.fir.contracts.FirContractDescription
 import org.jetbrains.kotlin.fir.contracts.impl.FirEmptyContractDescription
+import org.jetbrains.kotlin.fir.declarations.DeprecationsPerUseSite
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationAttributes
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationStatus
@@ -46,11 +47,12 @@ open class FirSimpleFunctionBuilder : FirFunctionBuilder, FirTypeParametersOwner
     override var attributes: FirDeclarationAttributes = FirDeclarationAttributes()
     override lateinit var returnTypeRef: FirTypeRef
     open var receiverTypeRef: FirTypeRef? = null
+    override var deprecation: DeprecationsPerUseSite? = null
+    override lateinit var status: FirDeclarationStatus
+    override var containerSource: DeserializedContainerSource? = null
+    override var dispatchReceiverType: ConeKotlinType? = null
     override val valueParameters: MutableList<FirValueParameter> = mutableListOf()
     override var body: FirBlock? = null
-    open lateinit var status: FirDeclarationStatus
-    open var containerSource: DeserializedContainerSource? = null
-    open var dispatchReceiverType: ConeKotlinType? = null
     open var contractDescription: FirContractDescription = FirEmptyContractDescription
     open lateinit var name: Name
     open lateinit var symbol: FirNamedFunctionSymbol
@@ -66,11 +68,12 @@ open class FirSimpleFunctionBuilder : FirFunctionBuilder, FirTypeParametersOwner
             attributes,
             returnTypeRef,
             receiverTypeRef,
-            valueParameters,
-            body,
+            deprecation,
             status,
             containerSource,
             dispatchReceiverType,
+            valueParameters,
+            body,
             contractDescription,
             name,
             symbol,
@@ -102,11 +105,12 @@ inline fun buildSimpleFunctionCopy(original: FirSimpleFunction, init: FirSimpleF
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.receiverTypeRef = original.receiverTypeRef
-    copyBuilder.valueParameters.addAll(original.valueParameters)
-    copyBuilder.body = original.body
+    copyBuilder.deprecation = original.deprecation
     copyBuilder.status = original.status
     copyBuilder.containerSource = original.containerSource
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
+    copyBuilder.valueParameters.addAll(original.valueParameters)
+    copyBuilder.body = original.body
     copyBuilder.contractDescription = original.contractDescription
     copyBuilder.name = original.name
     copyBuilder.symbol = original.symbol

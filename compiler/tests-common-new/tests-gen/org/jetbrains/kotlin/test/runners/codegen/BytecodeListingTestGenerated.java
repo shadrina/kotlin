@@ -218,6 +218,12 @@ public class BytecodeListingTestGenerated extends AbstractBytecodeListingTest {
     }
 
     @Test
+    @TestMetadata("kt47328.kt")
+    public void testKt47328() throws Exception {
+        runTest("compiler/testData/codegen/bytecodeListing/kt47328.kt");
+    }
+
+    @Test
     @TestMetadata("noCollectionStubMethodsInInterface.kt")
     public void testNoCollectionStubMethodsInInterface() throws Exception {
         runTest("compiler/testData/codegen/bytecodeListing/noCollectionStubMethodsInInterface.kt");
@@ -2010,6 +2016,18 @@ public class BytecodeListingTestGenerated extends AbstractBytecodeListingTest {
         @TestMetadata("lambdaSpecializedSamInterface.kt")
         public void testLambdaSpecializedSamInterface() throws Exception {
             runTest("compiler/testData/codegen/bytecodeListing/sam/lambdaSpecializedSamInterface.kt");
+        }
+
+        @Test
+        @TestMetadata("nonApproxToValidSupertype.kt")
+        public void testNonApproxToValidSupertype() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeListing/sam/nonApproxToValidSupertype.kt");
+        }
+
+        @Test
+        @TestMetadata("nonApproxToValidSupertype2.kt")
+        public void testNonApproxToValidSupertype2() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeListing/sam/nonApproxToValidSupertype2.kt");
         }
 
         @Test

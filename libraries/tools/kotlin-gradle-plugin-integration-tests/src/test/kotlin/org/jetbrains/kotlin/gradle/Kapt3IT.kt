@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.gradle
 
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.configuration.WarningMode
 import org.jetbrains.kotlin.gradle.tasks.USING_JVM_INCREMENTAL_COMPILATION_MESSAGE
 import org.jetbrains.kotlin.gradle.util.*
@@ -26,6 +27,7 @@ import org.junit.Test
 import java.io.File
 import java.util.regex.Pattern
 import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -683,7 +685,7 @@ open class Kapt3IT : Kapt3BaseIT() {
     fun testDependencyOnKaptModule() = with(Project("simpleProject")) {
         setupWorkingDir()
 
-        val kaptProject = Project("simple", directoryPrefix = "kapt2").apply { setupWorkingDir() }
+        val kaptProject = Project("simple", directoryPrefix = "kapt2").apply { setupWorkingDir(false) }
         kaptProject.projectDir.copyRecursively(projectDir.resolve("simple"))
         projectDir.resolve("settings.gradle").appendText("include 'simple'")
         gradleBuildScript().appendText("\ndependencies { implementation project(':simple') }")
@@ -781,6 +783,65 @@ open class Kapt3IT : Kapt3BaseIT() {
             assertKaptSuccessful()
             assertTasksExecuted(":compileKotlin", ":compileJava")
 
+        }
+    }
+
+    // https://youtrack.jetbrains.com/issue/KT-46651
+    @Test
+    fun kaptGenerateStubsShouldNotCaptureSourcesStateInConfigurationCache() {
+        with(
+            Project(
+                "incrementalRebuild",
+                directoryPrefix = "kapt2",
+                gradleVersionRequirement = GradleVersionRequired.AtLeast("6.7.1"),
+                minLogLevel = LogLevel.INFO
+            )
+        ) {
+            setupWorkingDir()
+            val buildOptions = defaultBuildOptions().copy(
+                configurationCache = true
+            )
+
+            build("assemble", options = buildOptions) {
+                assertSuccessful()
+            }
+
+            projectDir.resolve("src/main/java/bar/UseBar.kt").apply {
+                modify {
+                    it.replace("UseBar", "UseBar1")
+                }
+                renameTo(parentFile.resolve("UseBar1.kt"))
+            }
+
+            build("assemble", options = buildOptions) {
+                assertSuccessful()
+            }
+        }
+    }
+
+    /* Regression test for https://youtrack.jetbrains.com/issue/KT-47347. */
+    @Test
+    fun testChangesToKaptConfigurationDoNotTriggerStubGeneration() {
+        val project = Project("localAnnotationProcessor", directoryPrefix = "kapt2")
+
+        project.build("build") {
+            assertSuccessful()
+        }
+
+        ZipOutputStream(project.projectDir.resolve("fake_processor.jar").outputStream()).close()
+        project.projectDir.resolve("example/build.gradle").appendText(
+            """
+            
+            dependencies {
+                kapt files("../fake_processor.jar")
+            }
+        """.trimIndent()
+        )
+
+        project.build("build") {
+            assertSuccessful()
+            assertTasksExecuted(":example:kaptKotlin")
+            assertTasksUpToDate(":example:kaptGenerateStubsKotlin")
         }
     }
 }

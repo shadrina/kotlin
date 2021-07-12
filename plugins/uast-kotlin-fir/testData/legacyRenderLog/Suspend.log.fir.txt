@@ -1,10 +1,18 @@
 UFile (package = test.pkg)
     UClass (name = SuspendKt)
         UMethod (name = top)
-            [!] UnknownKotlinExpression (DOT_QUALIFIED_EXPRESSION)
+            UBlockExpression
+                UReturnExpression
+                    UQualifiedReferenceExpression
+                        [!] UnknownKotlinExpression (CALL_EXPRESSION)
+                        [!] UnknownKotlinExpression (CALL_EXPRESSION)
     UClass (name = Context)
         UMethod (name = Context)
         UMethod (name = inner)
-            [!] UnknownKotlinExpression (CALL_EXPRESSION)
+            UBlockExpression
+                UReturnExpression
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
         UMethod (name = suspendPrivate)
-            [!] UnknownKotlinExpression (CALL_EXPRESSION)
+            UBlockExpression
+                UReturnExpression
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)

@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.idea.quickfix.fixes
 
-import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPsiElementPointer
@@ -140,12 +139,12 @@ object WrapWithSafeLetCallFixFactories {
         }
     }
 
-    val forUnsafeCall = diagnosticFixFactory<KtFirDiagnostic.UnsafeCall> { diagnostic ->
+    val forUnsafeCall = diagnosticFixFactory(KtFirDiagnostic.UnsafeCall::class) { diagnostic ->
         val nullableExpression = diagnostic.receiverExpression
         createWrapWithSafeLetCallInputForNullableExpressionIfMoreThanImmediateParentIsWrapped(nullableExpression)
     }
 
-    val forUnsafeImplicitInvokeCall = diagnosticFixFactory<KtFirDiagnostic.UnsafeImplicitInvokeCall> { diagnostic ->
+    val forUnsafeImplicitInvokeCall = diagnosticFixFactory(KtFirDiagnostic.UnsafeImplicitInvokeCall::class) { diagnostic ->
         val callExpression = diagnostic.psi.parentOfType<KtCallExpression>(withSelf = true) ?: return@diagnosticFixFactory emptyList()
         val callingFunctionalVariableInLocalScope =
             isCallingFunctionalTypeVariableInLocalScope(callExpression) ?: return@diagnosticFixFactory emptyList()
@@ -164,15 +163,15 @@ object WrapWithSafeLetCallFixFactories {
         return localScope.scopes.getCallableSymbols { it.identifierOrNullIfSpecial == calleeName }.any { it == functionalVariableSymbol }
     }
 
-    val forUnsafeInfixCall = diagnosticFixFactory<KtFirDiagnostic.UnsafeInfixCall> { diagnostic ->
+    val forUnsafeInfixCall = diagnosticFixFactory(KtFirDiagnostic.UnsafeInfixCall::class) { diagnostic ->
         createWrapWithSafeLetCallInputForNullableExpressionIfMoreThanImmediateParentIsWrapped(diagnostic.receiverExpression)
     }
 
-    val forUnsafeOperatorCall = diagnosticFixFactory<KtFirDiagnostic.UnsafeOperatorCall> { diagnostic ->
+    val forUnsafeOperatorCall = diagnosticFixFactory(KtFirDiagnostic.UnsafeOperatorCall::class) { diagnostic ->
         createWrapWithSafeLetCallInputForNullableExpressionIfMoreThanImmediateParentIsWrapped(diagnostic.receiverExpression)
     }
 
-    val forArgumentTypeMismatch = diagnosticFixFactory<KtFirDiagnostic.ArgumentTypeMismatch> { diagnostic ->
+    val forArgumentTypeMismatch = diagnosticFixFactory(KtFirDiagnostic.ArgumentTypeMismatch::class) { diagnostic ->
         if (diagnostic.isMismatchDueToNullability) createWrapWithSafeLetCallInputForNullableExpression(diagnostic.psi.wrappingExpressionOrSelf)
         else emptyList()
     }
@@ -180,7 +179,7 @@ object WrapWithSafeLetCallFixFactories {
     private fun KtAnalysisSession.createWrapWithSafeLetCallInputForNullableExpressionIfMoreThanImmediateParentIsWrapped(
         nullableExpression: KtExpression?,
         isImplicitInvokeCallToMemberProperty: Boolean = false,
-    ): List<IntentionAction> {
+    ): List<HLQuickFix<KtExpression, Input>> {
         val surroundingExpression = nullableExpression?.surroundingExpression
         if (
             surroundingExpression == null ||
@@ -205,7 +204,7 @@ object WrapWithSafeLetCallFixFactories {
         isImplicitInvokeCallToMemberProperty: Boolean = false,
         surroundingExpression: KtExpression? = findParentExpressionAtNullablePosition(nullableExpression)
             ?: nullableExpression?.surroundingExpression
-    ): List<IntentionAction> {
+    ): List<HLQuickFix<KtExpression, Input>> {
         if (nullableExpression == null || surroundingExpression == null) return emptyList()
         val existingNames =
             nullableExpression.containingKtFile.getScopeContextForPosition(nullableExpression).scopes.getPossibleCallableNames()

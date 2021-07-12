@@ -11,18 +11,17 @@ import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.analysis.checkers.ConstantArgumentKind
 import org.jetbrains.kotlin.fir.analysis.checkers.checkConstantArguments
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
-import org.jetbrains.kotlin.fir.analysis.checkers.findSingleArgumentByName
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirDiagnosticFactory0
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
+import org.jetbrains.kotlin.fir.declarations.findArgumentByName
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.languageVersionSettings
 import org.jetbrains.kotlin.fir.resolve.fqName
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.resolve.RequireKotlinConstants
 
 object FirAnnotationArgumentChecker : FirAnnotationCallChecker() {
@@ -60,9 +59,9 @@ object FirAnnotationArgumentChecker : FirAnnotationCallChecker() {
         session: FirSession,
         reporter: DiagnosticReporter,
         context: CheckerContext
-    ): FirDiagnosticFactory0<KtExpression>? {
+    ): FirDiagnosticFactory0? {
 
-        fun checkArgumentList(args: FirArgumentList): FirDiagnosticFactory0<KtExpression>? {
+        fun checkArgumentList(args: FirArgumentList): FirDiagnosticFactory0? {
             var usedNonConst = false
 
             for (arg in args.arguments) {
@@ -87,7 +86,7 @@ object FirAnnotationArgumentChecker : FirAnnotationCallChecker() {
             is FirArrayOfCall -> return checkArgumentList(expression.argumentList)
             is FirVarargArgumentsExpression -> {
                 for (arg in expression.arguments) {
-                    val unwrappedArg = if (arg is FirSpreadArgumentExpression) arg.expression else arg
+                    val unwrappedArg = arg.unwrapArgument()
                     checkAnnotationArgumentWithSubElements(unwrappedArg, session, reporter, context)
                         ?.let { reporter.reportOn(unwrappedArg.source, it, context) }
                 }
@@ -136,7 +135,7 @@ object FirAnnotationArgumentChecker : FirAnnotationCallChecker() {
         reporter: DiagnosticReporter
     ) {
         if (!annotationFqNamesWithVersion.contains(fqName)) return
-        val versionExpression = annotationCall.findSingleArgumentByName(versionArgumentName) ?: return
+        val versionExpression = annotationCall.findArgumentByName(versionArgumentName) ?: return
         val version = parseVersionExpressionOrReport(versionExpression, context, reporter) ?: return
         if (fqName == sinceKotlinFqName) {
             val specified = context.session.languageVersionSettings.apiVersion

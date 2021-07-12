@@ -13,7 +13,10 @@ import org.jetbrains.kotlin.fir.diagnostics.DiagnosticKind
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.firProvider
-import org.jetbrains.kotlin.fir.resolve.transformers.*
+import org.jetbrains.kotlin.fir.resolve.transformers.AdapterForResolveProcessor
+import org.jetbrains.kotlin.fir.resolve.transformers.FirTransformerBasedResolveProcessor
+import org.jetbrains.kotlin.fir.resolve.transformers.ReturnTypeCalculator
+import org.jetbrains.kotlin.fir.resolve.transformers.TransformImplicitType
 import org.jetbrains.kotlin.fir.resolve.transformers.contracts.runContractResolveForLocalClass
 import org.jetbrains.kotlin.fir.scopes.FakeOverrideTypeCalculator
 import org.jetbrains.kotlin.fir.symbols.impl.FirAccessorSymbol
@@ -54,7 +57,7 @@ class FirImplicitTypeBodyResolveTransformerAdapter(session: FirSession, scopeSes
     }
 }
 
-fun <F : FirClassLikeDeclaration<F>> F.runContractAndBodiesResolutionForLocalClass(
+fun <F : FirClassLikeDeclaration> F.runContractAndBodiesResolutionForLocalClass(
     components: FirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     resolutionMode: ResolutionMode,
     localClassesNavigationInfo: LocalClassesNavigationInfo,
@@ -152,7 +155,7 @@ open class FirImplicitAwareBodyResolveTransformer(
         }
     }
 
-    private fun <D : FirCallableMemberDeclaration<D>> computeCachedTransformationResult(
+    private fun <D : FirCallableMemberDeclaration> computeCachedTransformationResult(
         member: D,
         transform: () -> D
     ): D {
@@ -185,7 +188,7 @@ private class ReturnTypeCalculatorWithJump(
     private val session: FirSession,
     private val scopeSession: ScopeSession,
     val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession,
-    val designationMapForLocalClasses: Map<FirCallableMemberDeclaration<*>, List<FirClassLikeDeclaration<*>>> = mapOf(),
+    val designationMapForLocalClasses: Map<FirCallableMemberDeclaration, List<FirClassLikeDeclaration>> = mapOf(),
     val createTransformer: (
         designation: Iterator<FirElement>,
         session: FirSession,
@@ -212,7 +215,7 @@ private class ReturnTypeCalculatorWithJump(
         val returnTypeRef = declaration.returnTypeRef
         if (returnTypeRef is FirResolvedTypeRef) return returnTypeRef
 
-        require(declaration is FirCallableMemberDeclaration<*>) { "${declaration::class}: ${declaration.render()}" }
+        require(declaration is FirCallableMemberDeclaration) { "${declaration::class}: ${declaration.render()}" }
 
         if (declaration is FirSyntheticProperty) {
             return tryCalculateReturnType(declaration.getter.delegate)
@@ -243,7 +246,7 @@ private class ReturnTypeCalculatorWithJump(
         }
     }
 
-    private fun computeReturnTypeRef(declaration: FirCallableMemberDeclaration<*>): FirResolvedTypeRef {
+    private fun computeReturnTypeRef(declaration: FirCallableMemberDeclaration): FirResolvedTypeRef {
         val symbol = declaration.symbol
         val provider = session.firProvider
 
@@ -278,7 +281,7 @@ private class ReturnTypeCalculatorWithJump(
 
         designation.first().transform<FirElement, ResolutionMode>(transformer, ResolutionMode.ContextDependent)
 
-        val transformedDeclaration = transformer.lastResult as? FirCallableMemberDeclaration<*>
+        val transformedDeclaration = transformer.lastResult as? FirCallableMemberDeclaration
             ?: error("Unexpected lastResult: ${transformer.lastResult?.render()}")
 
         val newReturnTypeRef = transformedDeclaration.returnTypeRef
@@ -341,7 +344,7 @@ class ImplicitBodyResolveComputationSession {
 
     fun storeResult(
         symbol: FirCallableSymbol<*>,
-        transformedDeclaration: FirCallableMemberDeclaration<*>
+        transformedDeclaration: FirCallableMemberDeclaration
     ) {
         require(implicitBodyResolveStatusMap[symbol] == ImplicitBodyResolveComputationStatus.Computing) {
             "Unexpected static in storeResult for $symbol: ${implicitBodyResolveStatusMap[symbol]}"
@@ -362,6 +365,6 @@ internal sealed class ImplicitBodyResolveComputationStatus {
 
     class Computed(
         val resolvedTypeRef: FirResolvedTypeRef,
-        val transformedDeclaration: FirCallableMemberDeclaration<*>
+        val transformedDeclaration: FirCallableMemberDeclaration
     ) : ImplicitBodyResolveComputationStatus()
 }

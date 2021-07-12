@@ -21,6 +21,8 @@ import org.jetbrains.kotlin.gradle.logging.GradleKotlinLogger
 import org.jetbrains.kotlin.gradle.logging.GradlePrintingMessageCollector
 import org.jetbrains.kotlin.gradle.report.ReportingSettings
 import org.jetbrains.kotlin.gradle.tasks.*
+import org.jetbrains.kotlin.gradle.utils.newInstance
+import org.jetbrains.kotlin.gradle.utils.property
 import org.jetbrains.kotlin.gradle.utils.toSortedPathsArray
 import java.io.File
 import javax.inject.Inject
@@ -50,7 +52,9 @@ abstract class KaptWithKotlincTask @Inject constructor(
     abstract val pluginClasspath: ConfigurableFileCollection
 
     @get:Internal
-    val taskProvider by lazy { GradleCompileTaskProvider(this) }
+    val taskProvider: Provider<GradleCompileTaskProvider> = objectFactory.property(
+        objectFactory.newInstance<GradleCompileTaskProvider>(project.gradle, this, project)
+    )
 
     override fun createCompilerArgs(): K2JVMCompilerArguments = K2JVMCompilerArguments()
 
@@ -75,8 +79,7 @@ abstract class KaptWithKotlincTask @Inject constructor(
         )
 
         args.pluginOptions = (pluginOptionsWithKapt.arguments + args.pluginOptions!!).toTypedArray()
-
-        args.verbose = project.hasProperty("kapt.verbose") && project.property("kapt.verbose").toString().toBoolean() == true
+        args.verbose = verbose.get()
     }
 
     /**
@@ -113,9 +116,8 @@ abstract class KaptWithKotlincTask @Inject constructor(
         )
 
         val compilerRunner = GradleCompilerRunner(
-            taskProvider,
-            kotlinJavaToolchainProvider.get().jdkProvider.javaExecutable.get().asFile,
-            kotlinJavaToolchainProvider.get().jdkProvider.jdkToolsJar.orNull
+            taskProvider.get(),
+            defaultKotlinJavaToolchain.get().currentJvmJdkToolsJar.orNull
         )
         compilerRunner.runJvmCompilerAsync(
             sourcesToCompile = emptyList(),
@@ -123,7 +125,8 @@ abstract class KaptWithKotlincTask @Inject constructor(
             javaSourceRoots = source.files,
             javaPackagePrefix = javaPackagePrefix.orNull,
             args = args,
-            environment = environment
+            environment = environment,
+            jdkHome = defaultKotlinJavaToolchain.get().providedJvm.get().javaHome
         )
     }
 }

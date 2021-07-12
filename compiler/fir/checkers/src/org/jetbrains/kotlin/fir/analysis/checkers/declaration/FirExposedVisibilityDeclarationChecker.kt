@@ -13,6 +13,9 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.effectiveVisibility
+import org.jetbrains.kotlin.fir.declarations.utils.expandedConeType
+import org.jetbrains.kotlin.fir.declarations.utils.fromPrimaryConstructor
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.transformers.ensureResolved
@@ -21,12 +24,13 @@ import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 // TODO: check why coneTypeSafe is necessary at some points inside
-object FirExposedVisibilityDeclarationChecker : FirMemberDeclarationChecker() {
-    override fun check(declaration: FirMemberDeclaration, context: CheckerContext, reporter: DiagnosticReporter) {
+object FirExposedVisibilityDeclarationChecker : FirBasicDeclarationChecker() {
+    override fun check(declaration: FirDeclaration, context: CheckerContext, reporter: DiagnosticReporter) {
         when (declaration) {
+            is FirAnonymousFunction -> return
             is FirTypeAlias -> checkTypeAlias(declaration, reporter, context)
             is FirProperty -> checkProperty(declaration, reporter, context)
-            is FirFunction<*> -> checkFunction(declaration, reporter, context)
+            is FirFunction -> checkFunction(declaration, reporter, context)
             is FirRegularClass -> checkClass(declaration, reporter, context)
         }
     }
@@ -102,11 +106,11 @@ object FirExposedVisibilityDeclarationChecker : FirMemberDeclarationChecker() {
         }
     }
 
-    private fun checkFunction(declaration: FirFunction<*>, reporter: DiagnosticReporter, context: CheckerContext) {
+    private fun checkFunction(declaration: FirFunction, reporter: DiagnosticReporter, context: CheckerContext) {
         val functionVisibility = (declaration as FirMemberDeclaration).effectiveVisibility
 
         if (functionVisibility == EffectiveVisibility.Local) return
-        if (declaration !is FirConstructor) {
+        if (declaration !is FirConstructor && declaration !is FirPropertyAccessor) {
             val restricting = declaration.returnTypeRef.coneTypeSafe<ConeKotlinType>()
                 ?.findVisibilityExposure(context, functionVisibility)
             if (restricting != null) {
@@ -137,7 +141,7 @@ object FirExposedVisibilityDeclarationChecker : FirMemberDeclarationChecker() {
                 }
             }
         }
-        checkMemberReceiver(declaration.receiverTypeRef, declaration as? FirCallableMemberDeclaration<*>, reporter, context)
+        checkMemberReceiver(declaration.receiverTypeRef, declaration as? FirCallableMemberDeclaration, reporter, context)
     }
 
     private fun checkProperty(declaration: FirProperty, reporter: DiagnosticReporter, context: CheckerContext) {
@@ -168,7 +172,7 @@ object FirExposedVisibilityDeclarationChecker : FirMemberDeclarationChecker() {
 
     private fun checkMemberReceiver(
         typeRef: FirTypeRef?,
-        memberDeclaration: FirCallableMemberDeclaration<*>?,
+        memberDeclaration: FirCallableMemberDeclaration?,
         reporter: DiagnosticReporter,
         context: CheckerContext
     ) {

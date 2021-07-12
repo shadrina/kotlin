@@ -20,12 +20,18 @@ import kotlin.reflect.KClass
 
 abstract class AbstractHLIntention<PSI : KtElement, INPUT : HLApplicatorInput>(
     elementType: KClass<PSI>,
-) : SelfTargetingIntention<PSI>(elementType.java, { "" }, { "" }) {
+    val applicator: HLApplicator<PSI, INPUT>
+) : SelfTargetingIntention<PSI>(elementType.java, applicator::getFamilyName) {
     final override fun isApplicableTo(element: PSI, caretOffset: Int): Boolean {
         val project = element.project// TODO expensive operation, may require traversing the tree up to containing PsiFile
         if (!applicator.isApplicableByPsi(element, project)) return false
         val ranges = applicabilityRange.getApplicabilityRanges(element)
         if (ranges.isEmpty()) return false
+
+        // An HLApplicabilityRange should be relative to the element, while `caretOffset` is absolute
+        val relativeCaretOffset = caretOffset - element.textRange.startOffset
+        if (ranges.none { it.containsOffset(relativeCaretOffset) }) return false
+
         val input = getInput(element)
         if (input != null && input.isValidFor(element)) {
             setFamilyNameGetter(applicator::getFamilyName)
@@ -56,6 +62,5 @@ abstract class AbstractHLIntention<PSI : KtElement, INPUT : HLApplicatorInput>(
     }
 
     abstract val applicabilityRange: HLApplicabilityRange<PSI>
-    abstract val applicator: HLApplicator<PSI, INPUT>
     abstract val inputProvider: HLApplicatorInputProvider<PSI, INPUT>
 }

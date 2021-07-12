@@ -423,6 +423,10 @@ public class KotlinParsing extends AbstractKotlinParsing {
         }
         PsiBuilder.Marker decl = mark();
 
+        if (at(CONTEXT_KEYWORD)) {
+            parseContextReceiverList();
+        }
+
         ModifierDetector detector = new ModifierDetector();
         parseModifierList(detector, DEFAULT, TokenSet.EMPTY);
 
@@ -610,6 +614,54 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         marker.rollbackTo();
         return false;
+    }
+
+    /*
+     * contextReceiverList
+     *   : "context" "(" (label? typeReference{","})+ ")"
+     */
+    public void parseContextReceiverList() {
+        assert _at(CONTEXT_KEYWORD);
+        PsiBuilder.Marker contextReceiverList = mark();
+        advance(); // CONTEXT_KEYWORD
+        if (at(LPAR)) {
+            advance(); // LPAR
+            while (true) {
+                if (at(COMMA)) {
+                    errorAndAdvance("Expecting a type reference");
+                }
+                parseContextReceiver();
+                if (at(RPAR)) {
+                    advance();
+                    break;
+                }
+                if (at(COMMA)) {
+                    advance();
+                } else {
+                    if (!at(RPAR)) {
+                        error("Expecting comma or ')'");
+                        break;
+                    }
+                }
+            }
+            contextReceiverList.done(CONTEXT_RECEIVER_LIST);
+        } else {
+            errorWithRecovery("Expecting context receivers", TokenSet.EMPTY);
+            contextReceiverList.drop();
+        }
+    }
+
+    /*
+     * contextReceiver
+     *   : label? typeReference
+     */
+    private void parseContextReceiver() {
+        PsiBuilder.Marker contextReceiver = mark();
+        if (myExpressionParsing.isAtLabelDefinitionOrMissingIdentifier()) {
+            myExpressionParsing.parseLabelDefinition();
+        }
+        parseTypeRef();
+        contextReceiver.done(CONTEXT_RECEIVER);
     }
 
     /*
@@ -833,7 +885,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         PsiBuilder.Marker reference = mark();
         PsiBuilder.Marker typeReference = mark();
-        parseUserType(/* forAnnotation */ true);
+        parseUserType(/* allowNotNullTypeParameter */ false);
         typeReference.done(TYPE_REFERENCE);
         reference.done(CONSTRUCTOR_CALLEE);
 
@@ -1177,6 +1229,10 @@ public class KotlinParsing extends AbstractKotlinParsing {
             return;
         }
         PsiBuilder.Marker decl = mark();
+
+        if (at(CONTEXT_KEYWORD)) {
+            parseContextReceiverList();
+        }
 
         ModifierDetector detector = new ModifierDetector();
         parseModifierList(detector, DEFAULT, TokenSet.EMPTY);
@@ -2055,14 +2111,22 @@ public class KotlinParsing extends AbstractKotlinParsing {
         parseTypeRef(TokenSet.EMPTY);
     }
 
+    void parseTypeRefWithoutDefinitelyNotNull() {
+        parseTypeRef(TokenSet.EMPTY, /* allowNotNullTypeParameters */ false);
+    }
+
     void parseTypeRef(TokenSet extraRecoverySet) {
-        PsiBuilder.Marker typeRefMarker = parseTypeRefContents(extraRecoverySet);
+        parseTypeRef(extraRecoverySet, /* allowNotNullTypeParameters */ true);
+    }
+
+    private void parseTypeRef(TokenSet extraRecoverySet, boolean allowNotNullTypeParameters) {
+        PsiBuilder.Marker typeRefMarker = parseTypeRefContents(extraRecoverySet, allowNotNullTypeParameters);
         typeRefMarker.done(TYPE_REFERENCE);
     }
 
     // The extraRecoverySet is needed for the foo(bar<x, 1, y>(z)) case, to tell whether we should stop
     // on expression-indicating symbols or not
-    private PsiBuilder.Marker parseTypeRefContents(TokenSet extraRecoverySet) {
+    private PsiBuilder.Marker parseTypeRefContents(TokenSet extraRecoverySet, boolean allowNotNullTypeParameters) {
         PsiBuilder.Marker typeRefMarker = mark();
 
         parseTypeModifierList();
@@ -2078,14 +2142,14 @@ public class KotlinParsing extends AbstractKotlinParsing {
             dynamicType.done(DYNAMIC_TYPE);
         }
         else if (at(IDENTIFIER) || at(PACKAGE_KEYWORD) || atParenthesizedMutableForPlatformTypes(0)) {
-            parseUserType(/* forAnnotation */ false);
+            parseUserType(allowNotNullTypeParameters);
         }
         else if (at(LPAR)) {
             PsiBuilder.Marker functionOrParenthesizedType = mark();
 
             // This may be a function parameter list or just a parenthesized type
             advance(); // LPAR
-            parseTypeRefContents(TokenSet.EMPTY).drop(); // parenthesized types, no reference element around it is needed
+            parseTypeRefContents(TokenSet.EMPTY, allowNotNullTypeParameters).drop(); // parenthesized types, no reference element around it is needed
 
             if (at(RPAR)) {
                 advance(); // RPAR
@@ -2175,7 +2239,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
      *    - (Mutable)List<Foo>!
      *    - Array<(out) Foo>!
      */
-    private void parseUserType(boolean forAnnotation) {
+    private void parseUserType(boolean allowNotNullTypeParameter) {
         PsiBuilder.Marker userType = mark();
 
         if (at(PACKAGE_KEYWORD)) {
@@ -2221,7 +2285,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         userType.done(USER_TYPE);
 
-        if (!forAnnotation && at(EXCLEXCL)) {
+        if (allowNotNullTypeParameter && at(EXCLEXCL)) {
             PsiBuilder.Marker definitelyNotNull = userType.precede();
             advance(); // !!
             definitelyNotNull.done(DEFINITELY_NOT_NULL_TYPE);

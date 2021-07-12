@@ -64,7 +64,7 @@ abstract class AbstractDiagnosticCollectorVisitor(
         visitJump(continueExpression)
     }
 
-    private fun visitClassAndChildren(klass: FirClass<*>, type: ConeKotlinType) {
+    private fun visitClassAndChildren(klass: FirClass, type: ConeKotlinType) {
         val typeRef = buildResolvedTypeRef {
             this.type = type
         }
@@ -75,6 +75,10 @@ abstract class AbstractDiagnosticCollectorVisitor(
         withSuppressedDiagnostics(regularClass) {
             visitClassAndChildren(regularClass, regularClass.defaultType())
         }
+    }
+
+    override fun visitAnonymousObjectExpression(anonymousObjectExpression: FirAnonymousObjectExpression, data: Nothing?) {
+        anonymousObjectExpression.anonymousObject.accept(this, data)
     }
 
     override fun visitAnonymousObject(anonymousObject: FirAnonymousObject, data: Nothing?) {
@@ -93,6 +97,10 @@ abstract class AbstractDiagnosticCollectorVisitor(
         withSuppressedDiagnostics(constructor) {
             visitWithDeclaration(constructor)
         }
+    }
+
+    override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: FirAnonymousFunctionExpression, data: Nothing?) {
+        visitAnonymousFunction(anonymousFunctionExpression.anonymousFunction, data)
     }
 
     override fun visitAnonymousFunction(anonymousFunction: FirAnonymousFunction, data: Nothing?) {
@@ -172,6 +180,15 @@ abstract class AbstractDiagnosticCollectorVisitor(
             super.visitResolvedTypeRef(resolvedTypeRef, data)
         }
         if (resolvedTypeRef.source?.kind is FirFakeSourceElementKind) return
+
+        //the note about is just wrong
+        //if we don't visit resolved type we can't make any diagnostics on them
+        //so here we check resolvedTypeRef
+        if (resolvedTypeRef.type !is ConeClassErrorType) {
+            withSuppressedDiagnostics(resolvedTypeRef) {
+                checkElement(resolvedTypeRef)
+            }
+        }
         resolvedTypeRef.delegatedTypeRef?.accept(this, data)
     }
 

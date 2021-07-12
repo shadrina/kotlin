@@ -158,7 +158,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         AS(AS_KEYWORD, AS_SAFE) {
             @Override
             public IElementType parseRightHandSide(IElementType operation, KotlinExpressionParsing parser) {
-                parser.myKotlinParsing.parseTypeRef();
+                parser.myKotlinParsing.parseTypeRefWithoutDefinitelyNotNull();
                 return BINARY_WITH_TYPE;
             }
 
@@ -177,7 +177,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             @Override
             public IElementType parseRightHandSide(IElementType operation, KotlinExpressionParsing parser) {
                 if (operation == IS_KEYWORD || operation == NOT_IS) {
-                    parser.myKotlinParsing.parseTypeRef();
+                    parser.myKotlinParsing.parseTypeRefWithoutDefinitelyNotNull();
                     return IS_EXPRESSION;
                 }
 
@@ -597,7 +597,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         }
     }
 
-    private boolean isAtLabelDefinitionOrMissingIdentifier() {
+    boolean isAtLabelDefinitionOrMissingIdentifier() {
         return (at(IDENTIFIER) && myBuilder.rawLookup(1) == AT) || at(AT);
     }
 
@@ -1094,6 +1094,9 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
      */
     private boolean parseLocalDeclaration(boolean rollbackIfDefinitelyNotExpression, boolean isScriptTopLevel) {
         PsiBuilder.Marker decl = mark();
+        if (atSet(CONTEXT_KEYWORD)) {
+            myKotlinParsing.parseContextReceiverList();
+        }
         KotlinParsing.ModifierDetector detector = new KotlinParsing.ModifierDetector();
         myKotlinParsing.parseModifierList(detector, DEFAULT, TokenSet.EMPTY);
 
@@ -1690,7 +1693,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     /*
      * IDENTIFIER "@"
      */
-    private void parseLabelDefinition() {
+    void parseLabelDefinition() {
         PsiBuilder.Marker labelWrap = mark();
         PsiBuilder.Marker mark = mark();
 

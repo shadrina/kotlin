@@ -1,13 +1,18 @@
 UFile (package = )
     UClass (name = PropertyWithAnnotationKt)
         UField (name = prop1)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            ULiteralExpression (value = 0)
         UMethod (name = getProp1)
         UMethod (name = getProp2)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = 0)
         UMethod (name = getProp3)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = 0)
         UMethod (name = setProp3)
             UParameter (name = value)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
+                [!] UnknownKotlinExpression (BINARY_EXPRESSION)
     UClass (name = TestAnnotation)

@@ -57,47 +57,25 @@ dependencies {
     testCompileOnly(project(":kotlin-reflect-api"))
     testCompileOnly(toolsJar())
     testCompileOnly(intellijCoreDep()) { includeJars("intellij-core") }
-    Platform[193].orLower {
-        testCompile(intellijDep()) { includeJars("openapi", "picocontainer", rootProject = rootProject) }
-    }
-    Platform[201].orHigher {
-        testCompile(intellijDep()) {
-            includeJars(
-                "testFramework",
-                "testFramework.core",
-                rootProject = rootProject
-            )
-        }
-    }
     Platform[202] {
         testCompile(intellijDep()) { includeJars("intellij-deps-fastutil-8.3.1-1") }
     }
     Platform[203].orHigher {
-        testCompile(intellijDep()) { includeJars("intellij-deps-fastutil-8.3.1-3") }
+        testCompile(intellijDep()) { includeJars("intellij-deps-fastutil-8.4.1-4") }
     }
     testCompile(intellijDep()) {
         includeJars(
-            "jps-model",
-            "extensions",
-            "util",
-            "platform-api",
-            "platform-impl",
-            "idea",
-            "idea_rt",
             "guava",
             "trove4j",
             "asm-all",
             "log4j",
             "jdom",
-            "streamex",
-            "bootstrap",
+            "jna",
             rootProject = rootProject
         )
         isTransitive = false
     }
 
-    testCompile(intellijDep()) { includeJars("platform-util-ui", "platform-concurrency", "platform-objectSerializer") }
-    testCompile(intellijDep()) { includeJars("platform-ide-util-io") }
     testApiJUnit5()
 }
 

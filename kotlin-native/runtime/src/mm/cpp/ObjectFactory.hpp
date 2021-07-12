@@ -324,7 +324,7 @@ public:
     }
 
     // Lock `ObjectFactoryStorage` for safe iteration.
-    Iterable Iter() noexcept { return Iterable(*this); }
+    Iterable LockForIter() noexcept { return Iterable(*this); }
 
     void ClearForTests() {
         root_.reset();
@@ -515,6 +515,7 @@ public:
             auto* heapObject = new (node.Data()) HeapObjHeader();
             auto* object = &heapObject->object;
             object->typeInfoOrMeta_ = const_cast<TypeInfo*>(typeInfo);
+            // TODO: Consider supporting TF_IMMUTABLE: mark instance as frozen upon creation.
             return object;
         }
 
@@ -528,6 +529,7 @@ public:
             auto* array = &heapArray->array;
             array->typeInfoOrMeta_ = const_cast<TypeInfo*>(typeInfo);
             array->count_ = count;
+            // TODO: Consider supporting TF_IMMUTABLE: mark instance as frozen upon creation.
             return array;
         }
 
@@ -617,7 +619,7 @@ public:
 
     class Iterable {
     public:
-        Iterable(ObjectFactory& owner) noexcept : iter_(owner.storage_.Iter()) {}
+        Iterable(ObjectFactory& owner) noexcept : iter_(owner.storage_.LockForIter()) {}
 
         Iterator begin() noexcept { return Iterator(iter_.begin()); }
         Iterator end() noexcept { return Iterator(iter_.end()); }
@@ -635,7 +637,8 @@ public:
     ObjectFactory() noexcept = default;
     ~ObjectFactory() = default;
 
-    Iterable Iter() noexcept { return Iterable(*this); }
+    // Lock ObjectFactory for safe iteration.
+    Iterable LockForIter() noexcept { return Iterable(*this); }
 
     void ClearForTests() { storage_.ClearForTests(); }
 

@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.fir.resolve.calls
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.expressions.FirExpressionWithSmartcast
 import org.jetbrains.kotlin.fir.expressions.FirNamedArgumentExpression
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
@@ -25,12 +26,12 @@ class MixingNamedAndPositionArguments(override val argument: FirExpression) : In
 
 class TooManyArguments(
     val argument: FirExpression,
-    val function: FirFunction<*>
+    val function: FirFunction
 ) : ResolutionDiagnostic(INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
 class NamedArgumentNotAllowed(
     override val argument: FirExpression,
-    val function: FirFunction<*>,
+    val function: FirFunction,
     val forbiddenNamedArgumentsTarget: ForbiddenNamedArgumentsTarget
 ) : InapplicableArgumentDiagnostic()
 
@@ -49,12 +50,12 @@ class NonVarargSpread(override val argument: FirExpression) : InapplicableArgume
 
 class NoValueForParameter(
     val valueParameter: FirValueParameter,
-    val function: FirFunction<*>
+    val function: FirFunction
 ) : ResolutionDiagnostic(INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
 class NameNotFound(
     val argument: FirNamedArgumentExpression,
-    val function: FirFunction<*>
+    val function: FirFunction
 ) : ResolutionDiagnostic(INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
 object InapplicableCandidate : ResolutionDiagnostic(INAPPLICABLE)
@@ -74,21 +75,7 @@ object LowerPriorityToPreserveCompatibilityDiagnostic : ResolutionDiagnostic(RES
 
 object CandidateChosenUsingOverloadResolutionByLambdaAnnotation : ResolutionDiagnostic(RESOLVED)
 
-sealed class UnstableSmartCast(
-    val argument: FirExpression,
-    val targetType: ConeKotlinType,
-    applicability: CandidateApplicability
-) : ResolutionDiagnostic(applicability) {
-    class ResolutionError(
-        argument: FirExpression,
-        targetType: ConeKotlinType,
-    ) : UnstableSmartCast(argument, targetType, MAY_THROW_RUNTIME_ERROR)
-
-    class DiagnosticError(
-        argument: FirExpression,
-        targetType: ConeKotlinType,
-    ) : UnstableSmartCast(argument, targetType, RESOLVED_WITH_ERROR)
-}
+class UnstableSmartCast(val argument: FirExpressionWithSmartcast, val targetType: ConeKotlinType) : ResolutionDiagnostic(UNSTABLE_SMARTCAST)
 
 class ArgumentTypeMismatch(
     val expectedType: ConeKotlinType,

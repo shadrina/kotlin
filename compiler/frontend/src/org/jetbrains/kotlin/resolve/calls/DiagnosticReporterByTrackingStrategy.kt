@@ -90,6 +90,28 @@ class DiagnosticReporterByTrackingStrategy(
                     )
                 )
             }
+            NoContextReceiver::class.java -> {
+                val callElement = psiKotlinCall.psiCall.callElement
+                trace.report(
+                    NO_CONTEXT_RECEIVER.on(
+                        callElement,
+                        (diagnostic as NoContextReceiver).receiverDescriptor.value.toString()
+                    )
+                )
+            }
+            MultipleArgumentsApplicableForContextReceiver::class.java -> {
+                val callElement = psiKotlinCall.psiCall.callElement
+                trace.report(
+                    MULTIPLE_ARGUMENTS_APPLICABLE_FOR_CONTEXT_RECEIVER.on(
+                        callElement,
+                        (diagnostic as MultipleArgumentsApplicableForContextReceiver).receiverDescriptor.value.toString()
+                    )
+                )
+            }
+            ContextReceiverAmbiguity::class.java -> {
+                val callElement = psiKotlinCall.psiCall.callElement
+                trace.report(AMBIGUOUS_CALL_WITH_IMPLICIT_CONTEXT_RECEIVER.on(callElement))
+            }
         }
     }
 
@@ -180,8 +202,8 @@ class DiagnosticReporterByTrackingStrategy(
                 }
             }
 
-            ArgumentTypeMismatchDiagnostic::class.java -> {
-                require(diagnostic is ArgumentTypeMismatchDiagnostic)
+            ArgumentNullabilityMismatchDiagnostic::class.java -> {
+                require(diagnostic is ArgumentNullabilityMismatchDiagnostic)
                 val expression = callArgument.safeAs<PSIKotlinCallArgument>()?.valueArgument?.getArgumentExpression()?.let {
                     KtPsiUtil.deparenthesize(it) ?: it
                 }

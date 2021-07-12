@@ -21,8 +21,9 @@ import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.backend.jvm.jvmTypeMapper
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.modality
+import org.jetbrains.kotlin.fir.declarations.utils.superConeTypes
 import org.jetbrains.kotlin.fir.isPrimitiveType
-import org.jetbrains.kotlin.fir.resolve.inference.inferenceComponents
 import org.jetbrains.kotlin.fir.resolve.substitution.AbstractConeSubstitutor
 import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
@@ -36,7 +37,10 @@ import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.KtFirSymbol
 import org.jetbrains.kotlin.idea.frontend.api.fir.types.KtFirType
 import org.jetbrains.kotlin.idea.frontend.api.symbols.*
 import org.jetbrains.kotlin.idea.frontend.api.symbols.markers.*
-import org.jetbrains.kotlin.idea.frontend.api.types.*
+import org.jetbrains.kotlin.idea.frontend.api.types.KtNonErrorClassType
+import org.jetbrains.kotlin.idea.frontend.api.types.KtType
+import org.jetbrains.kotlin.idea.frontend.api.types.KtTypeNullability
+import org.jetbrains.kotlin.idea.frontend.api.types.KtTypeWithNullability
 import org.jetbrains.kotlin.load.kotlin.TypeMappingMode
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.SpecialNames
@@ -110,8 +114,7 @@ private class AnonymousTypesSubstitutor(
     }
 }
 
-
-private fun ConeKotlinType.asPsiType(
+internal fun ConeKotlinType.asPsiType(
     session: FirSession,
     state: FirModuleResolveState,
     mode: TypeMappingMode,
@@ -166,7 +169,7 @@ internal fun KtType.mapSupertype(
     kotlinCollectionAsIs: Boolean = false,
     annotations: List<KtAnnotationCall>
 ): PsiClassType? {
-    if (this !is KtClassType) return null
+    if (this !is KtNonErrorClassType) return null
     require(this is KtFirType)
     val contextSymbol = classSymbol
     require(contextSymbol is KtFirSymbol<*>)
@@ -314,7 +317,7 @@ internal fun KtType.getTypeNullability(context: KtSymbol, phase: FirResolvePhase
 internal val KtType.isUnit get() = isClassTypeWithClassId(DefaultTypeClassIds.UNIT)
 
 internal fun KtType.isClassTypeWithClassId(classId: ClassId): Boolean {
-    if (this !is KtClassType) return false
+    if (this !is KtNonErrorClassType) return false
     return this.classId == classId
 }
 

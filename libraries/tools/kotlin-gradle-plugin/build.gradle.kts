@@ -103,6 +103,7 @@ if (kotlinBuildProperties.isInJpsBuildIdeaSync) {
     configurations.compile.get().exclude("com.android.tools.external.com-intellij", "intellij-core")
 }
 
+noDefaultJar()
 runtimeJar(rewriteDefaultJarDepsToShadedCompiler()).configure {
     dependsOn(jarContents)
 
@@ -144,7 +145,6 @@ tasks {
 }
 
 projectTest {
-    executable = "${rootProject.extra["JDK_18"]!!}/bin/java"
     dependsOn(tasks.named("validatePlugins"))
 
     workingDir = rootDir

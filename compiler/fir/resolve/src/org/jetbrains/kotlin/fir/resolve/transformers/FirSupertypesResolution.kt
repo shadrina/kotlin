@@ -10,6 +10,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.expandedConeType
+import org.jetbrains.kotlin.fir.declarations.utils.isCompanion
+import org.jetbrains.kotlin.fir.declarations.utils.superConeTypes
 import org.jetbrains.kotlin.fir.diagnostics.ConeSimpleDiagnostic
 import org.jetbrains.kotlin.fir.diagnostics.DiagnosticKind
 import org.jetbrains.kotlin.fir.expressions.FirStatement
@@ -49,7 +52,7 @@ class FirSupertypeResolverProcessor(session: FirSession, scopeSession: ScopeSess
  */
 interface FirProviderInterceptor {
     fun getFirClassifierContainerFileIfAny(symbol: FirClassLikeSymbol<*>): FirFile?
-    fun getFirClassifierByFqName(classId: ClassId): FirClassLikeDeclaration<*>?
+    fun getFirClassifierByFqName(classId: ClassId): FirClassLikeDeclaration?
 }
 
 open class FirSupertypeResolverTransformer(
@@ -73,7 +76,7 @@ open class FirSupertypeResolverTransformer(
     }
 }
 
-fun <F : FirClassLikeDeclaration<F>> F.runSupertypeResolvePhaseForLocalClass(
+fun <F : FirClassLikeDeclaration> F.runSupertypeResolvePhaseForLocalClass(
     session: FirSession,
     scopeSession: ScopeSession,
     currentScopeList: List<FirScope>,
@@ -95,42 +98,52 @@ fun <F : FirClassLikeDeclaration<F>> F.runSupertypeResolvePhaseForLocalClass(
     return this.transform<F, Nothing?>(applySupertypesTransformer, null)
 }
 
-class FirApplySupertypesTransformer(
+open class FirApplySupertypesTransformer(
     private val supertypeComputationSession: SupertypeComputationSession
 ) : FirDefaultTransformer<Any?>() {
     override fun <E : FirElement> transformElement(element: E, data: Any?): E {
         return element
     }
 
-    override fun transformFile(file: FirFile, data: Any?): FirDeclaration {
-        file.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
+    protected open fun needReplacePhase(firDeclaration: FirDeclaration): Boolean = FirResolvePhase.SUPER_TYPES > firDeclaration.resolvePhase
 
-        return (file.transformChildren(this, null) as FirFile)
+    protected open fun transformDeclarationContent(declaration: FirDeclaration, data: Any?): FirDeclaration {
+        return declaration.transformChildren(this, null) as FirDeclaration
+    }
+
+    override fun transformFile(file: FirFile, data: Any?): FirFile {
+        if (needReplacePhase(file)) {
+            file.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
+        }
+
+        return transformDeclarationContent(file, null) as FirFile
     }
 
     override fun transformRegularClass(regularClass: FirRegularClass, data: Any?): FirStatement {
         applyResolvedSupertypesToClass(regularClass)
 
-        return (regularClass.transformChildren(this, null) as FirRegularClass)
+        return transformDeclarationContent(regularClass, null) as FirRegularClass
     }
 
-    private fun applyResolvedSupertypesToClass(firClass: FirClass<*>) {
+    private fun applyResolvedSupertypesToClass(firClass: FirClass) {
         if (firClass.superTypeRefs.any { it !is FirResolvedTypeRef }) {
             val supertypeRefs = getResolvedSupertypeRefs(firClass)
 
             // TODO: Replace with an immutable version or transformer
             firClass.replaceSuperTypeRefs(supertypeRefs)
         }
-        firClass.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
+        if (needReplacePhase(firClass)) {
+            firClass.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
+        }
     }
 
     override fun transformAnonymousObject(anonymousObject: FirAnonymousObject, data: Any?): FirStatement {
         applyResolvedSupertypesToClass(anonymousObject)
 
-        return super.transformAnonymousObject(anonymousObject, data)
+        return anonymousObject.transformChildren(this, data) as FirAnonymousObject
     }
 
-    private fun getResolvedSupertypeRefs(classLikeDeclaration: FirClassLikeDeclaration<*>): List<FirResolvedTypeRef> {
+    private fun getResolvedSupertypeRefs(classLikeDeclaration: FirClassLikeDeclaration): List<FirResolvedTypeRef> {
         val status = supertypeComputationSession.getSupertypesComputationStatus(classLikeDeclaration)
         require(status is SupertypeComputationStatus.Computed) {
             "Unexpected status at FirApplySupertypesTransformer: $status for ${classLikeDeclaration.symbol.classId}"
@@ -138,8 +151,13 @@ class FirApplySupertypesTransformer(
         return status.supertypeRefs
     }
 
-    override fun transformTypeAlias(typeAlias: FirTypeAlias, data: Any?): FirDeclaration {
-        if (typeAlias.expandedTypeRef is FirResolvedTypeRef) return typeAlias
+    override fun transformTypeAlias(typeAlias: FirTypeAlias, data: Any?): FirStatement {
+        if (typeAlias.expandedTypeRef is FirResolvedTypeRef) {
+            if (needReplacePhase(typeAlias)) {
+                typeAlias.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
+            }
+            return typeAlias
+        }
         val supertypeRefs = getResolvedSupertypeRefs(typeAlias)
 
         assert(supertypeRefs.size == 1) {
@@ -148,19 +166,20 @@ class FirApplySupertypesTransformer(
 
         // TODO: Replace with an immutable version or transformer
         typeAlias.replaceExpandedTypeRef(supertypeRefs[0])
-        typeAlias.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
-
+        if (needReplacePhase(typeAlias)) {
+            typeAlias.replaceResolvePhase(FirResolvePhase.SUPER_TYPES)
+        }
         return typeAlias
     }
 }
 
-private fun FirClassLikeDeclaration<*>.typeParametersScope(): FirScope? {
+private fun FirClassLikeDeclaration.typeParametersScope(): FirScope? {
     if (this !is FirMemberDeclaration || typeParameters.isEmpty()) return null
     return FirMemberTypeParameterScope(this)
 }
 
 private fun createScopesForNestedClasses(
-    klass: FirClass<*>,
+    klass: FirClass,
     session: FirSession,
     scopeSession: ScopeSession,
     supertypeComputationSession: SupertypeComputationSession
@@ -187,7 +206,7 @@ fun FirRegularClass.resolveSupertypesInTheAir(session: FirSession): List<FirType
         .resolveSpecificClassLikeSupertypes(this, superTypeRefs)
 }
 
-class FirSupertypeResolverVisitor(
+open class FirSupertypeResolverVisitor(
     private val session: FirSession,
     private val supertypeComputationSession: SupertypeComputationSession,
     private val scopeSession: ScopeSession,
@@ -201,7 +220,7 @@ class FirSupertypeResolverVisitor(
         if (firProviderInterceptor != null) firProviderInterceptor.getFirClassifierContainerFileIfAny(symbol)
         else session.firProvider.getFirClassifierContainerFileIfAny(symbol.classId)
 
-    private fun getFirClassifierByFqName(classId: ClassId): FirClassLikeDeclaration<*>? =
+    private fun getFirClassifierByFqName(classId: ClassId): FirClassLikeDeclaration? =
         if (firProviderInterceptor != null) firProviderInterceptor.getFirClassifierByFqName(classId)
         else session.firProvider.getFirClassifierByFqName(classId)
 
@@ -213,7 +232,7 @@ class FirSupertypeResolverVisitor(
         }
     }
 
-    private fun prepareScopeForNestedClasses(klass: FirClass<*>): ScopePersistentList {
+    private fun prepareScopeForNestedClasses(klass: FirClass): ScopePersistentList {
         return supertypeComputationSession.getOrPutScopeForNestedClasses(klass) {
             val scopes = prepareScopes(klass)
 
@@ -223,9 +242,9 @@ class FirSupertypeResolverVisitor(
     }
 
     private fun resolveAllSupertypes(
-        classLikeDeclaration: FirClassLikeDeclaration<*>,
+        classLikeDeclaration: FirClassLikeDeclaration,
         supertypeRefs: List<FirTypeRef>,
-        visited: MutableSet<FirClassLikeDeclaration<*>> = mutableSetOf()
+        visited: MutableSet<FirClassLikeDeclaration> = mutableSetOf()
     ) {
         if (!visited.add(classLikeDeclaration)) return
         val supertypes =
@@ -238,13 +257,13 @@ class FirSupertypeResolverVisitor(
         }
     }
 
-    private fun FirClassLikeDeclaration<*>.supertypeRefs() = when (this) {
+    private fun FirClassLikeDeclaration.supertypeRefs() = when (this) {
         is FirRegularClass -> superTypeRefs
         is FirTypeAlias -> listOf(expandedTypeRef)
         else -> emptyList()
     }
 
-    private fun prepareScopes(classLikeDeclaration: FirClassLikeDeclaration<*>): PersistentList<FirScope> {
+    private fun prepareScopes(classLikeDeclaration: FirClassLikeDeclaration): PersistentList<FirScope> {
         val classId = classLikeDeclaration.symbol.classId
 
         val result = when {
@@ -256,7 +275,7 @@ class FirSupertypeResolverVisitor(
                 val parent = localClassesNavigationInfo.parentForClass[classLikeDeclaration]
 
                 when {
-                    parent != null && parent is FirClass<*> -> prepareScopeForNestedClasses(parent)
+                    parent != null && parent is FirClass -> prepareScopeForNestedClasses(parent)
                     else -> scopeForLocalClass ?: return persistentListOf()
                 }
             }
@@ -271,7 +290,7 @@ class FirSupertypeResolverVisitor(
     }
 
     private fun resolveSpecificClassLikeSupertypes(
-        classLikeDeclaration: FirClassLikeDeclaration<*>,
+        classLikeDeclaration: FirClassLikeDeclaration,
         resolveSuperTypeRefs: (FirTransformer<FirScope>, FirScope) -> List<FirResolvedTypeRef>
     ): List<FirTypeRef> {
         when (val status = supertypeComputationSession.getSupertypesComputationStatus(classLikeDeclaration)) {
@@ -295,18 +314,22 @@ class FirSupertypeResolverVisitor(
         return resolvedTypesRefs
     }
 
+    open fun visitDeclarationContent(declaration: FirDeclaration, data: Any?) {
+        declaration.acceptChildren(this, null)
+    }
+
     override fun visitRegularClass(regularClass: FirRegularClass, data: Any?) {
         resolveSpecificClassLikeSupertypes(regularClass, regularClass.superTypeRefs)
-        regularClass.acceptChildren(this, null)
+        visitDeclarationContent(regularClass, null)
     }
 
     override fun visitAnonymousObject(anonymousObject: FirAnonymousObject, data: Any?) {
         resolveSpecificClassLikeSupertypes(anonymousObject, anonymousObject.superTypeRefs)
-        anonymousObject.acceptChildren(this, null)
+        visitDeclarationContent(anonymousObject, null)
     }
 
     fun resolveSpecificClassLikeSupertypes(
-        classLikeDeclaration: FirClassLikeDeclaration<*>,
+        classLikeDeclaration: FirClassLikeDeclaration,
         supertypeRefs: List<FirTypeRef>
     ): List<FirTypeRef> {
         return resolveSpecificClassLikeSupertypes(classLikeDeclaration) { transformer, scope ->
@@ -350,7 +373,7 @@ class FirSupertypeResolverVisitor(
 
     private fun <T> List<T>.createCopy(): List<T> = ArrayList(this)
 
-    private fun addSupertypesFromExtensions(klass: FirClassLikeDeclaration<*>, supertypeRefs: MutableList<FirResolvedTypeRef>) {
+    private fun addSupertypesFromExtensions(klass: FirClassLikeDeclaration, supertypeRefs: MutableList<FirResolvedTypeRef>) {
         if (supertypeGenerationExtensions.isEmpty()) return
         val provider = session.predicateBasedProvider
         for (extension in supertypeGenerationExtensions) {
@@ -397,7 +420,7 @@ class FirSupertypeResolverVisitor(
     }
 
     override fun visitFile(file: FirFile, data: Any?) {
-        file.acceptChildren(this, null)
+        visitDeclarationContent(file, null)
     }
 }
 
@@ -408,35 +431,35 @@ private fun createErrorTypeRef(fir: FirElement, message: String, kind: Diagnosti
 
 class SupertypeComputationSession {
     private val fileScopesMap = hashMapOf<FirFile, ScopePersistentList>()
-    private val scopesForNestedClassesMap = hashMapOf<FirClass<*>, ScopePersistentList>()
-    private val supertypeStatusMap = linkedMapOf<FirClassLikeDeclaration<*>, SupertypeComputationStatus>()
+    private val scopesForNestedClassesMap = hashMapOf<FirClass, ScopePersistentList>()
+    val supertypeStatusMap = linkedMapOf<FirClassLikeDeclaration, SupertypeComputationStatus>()
 
     val supertypesSupplier: SupertypeSupplier = object : SupertypeSupplier() {
-        override fun forClass(firClass: FirClass<*>, useSiteSession: FirSession): List<ConeClassLikeType> {
-            if (firClass.resolvePhase > FirResolvePhase.SUPER_TYPES) return firClass.superConeTypes
+        override fun forClass(firClass: FirClass, useSiteSession: FirSession): List<ConeClassLikeType> {
+            if (firClass.superTypeRefs.all { it is FirResolvedTypeRef }) return firClass.superConeTypes
             return (getSupertypesComputationStatus(firClass) as? SupertypeComputationStatus.Computed)?.supertypeRefs?.mapNotNull {
                 it.coneTypeSafe<ConeClassLikeType>()
             }.orEmpty()
         }
 
-        override fun expansionForTypeAlias(typeAlias: FirTypeAlias): ConeClassLikeType? {
-            if (typeAlias.resolvePhase > FirResolvePhase.SUPER_TYPES) return typeAlias.expandedConeType
+        override fun expansionForTypeAlias(typeAlias: FirTypeAlias, useSiteSession: FirSession): ConeClassLikeType? {
+            if (typeAlias.expandedTypeRef is FirResolvedTypeRef) return typeAlias.expandedConeType
             return (getSupertypesComputationStatus(typeAlias) as? SupertypeComputationStatus.Computed)
                 ?.supertypeRefs
                 ?.getOrNull(0)?.coneTypeSafe()
         }
     }
 
-    fun getSupertypesComputationStatus(classLikeDeclaration: FirClassLikeDeclaration<*>): SupertypeComputationStatus =
+    fun getSupertypesComputationStatus(classLikeDeclaration: FirClassLikeDeclaration): SupertypeComputationStatus =
         supertypeStatusMap[classLikeDeclaration] ?: SupertypeComputationStatus.NotComputed
 
     fun getOrPutFileScope(file: FirFile, scope: () -> ScopePersistentList): ScopePersistentList =
         fileScopesMap.getOrPut(file) { scope() }
 
-    fun getOrPutScopeForNestedClasses(klass: FirClass<*>, scope: () -> ScopePersistentList): ScopePersistentList =
+    fun getOrPutScopeForNestedClasses(klass: FirClass, scope: () -> ScopePersistentList): ScopePersistentList =
         scopesForNestedClassesMap.getOrPut(klass) { scope() }
 
-    fun startComputingSupertypes(classLikeDeclaration: FirClassLikeDeclaration<*>) {
+    fun startComputingSupertypes(classLikeDeclaration: FirClassLikeDeclaration) {
         require(supertypeStatusMap[classLikeDeclaration] == null) {
             "Unexpected in startComputingSupertypes supertype status for $classLikeDeclaration: ${supertypeStatusMap[classLikeDeclaration]}"
         }
@@ -444,7 +467,7 @@ class SupertypeComputationSession {
         supertypeStatusMap[classLikeDeclaration] = SupertypeComputationStatus.Computing
     }
 
-    fun storeSupertypes(classLikeDeclaration: FirClassLikeDeclaration<*>, resolvedTypesRefs: List<FirResolvedTypeRef>) {
+    fun storeSupertypes(classLikeDeclaration: FirClassLikeDeclaration, resolvedTypesRefs: List<FirResolvedTypeRef>) {
         require(supertypeStatusMap[classLikeDeclaration] is SupertypeComputationStatus.Computing) {
             "Unexpected in storeSupertypes supertype status for $classLikeDeclaration: ${supertypeStatusMap[classLikeDeclaration]}"
         }
@@ -453,15 +476,15 @@ class SupertypeComputationSession {
         newClassifiersForBreakingLoops.add(classLikeDeclaration)
     }
 
-    private val newClassifiersForBreakingLoops = mutableListOf<FirClassLikeDeclaration<*>>()
+    private val newClassifiersForBreakingLoops = mutableListOf<FirClassLikeDeclaration>()
 
     fun breakLoops(session: FirSession) {
-        val visitedClassLikeDecls = mutableSetOf<FirClassLikeDeclaration<*>>()
-        val loopedClassLikeDecls = mutableSetOf<FirClassLikeDeclaration<*>>()
-        val path = mutableListOf<FirClassLikeDeclaration<*>>()
-        val pathSet = mutableSetOf<FirClassLikeDeclaration<*>>()
+        val visitedClassLikeDecls = mutableSetOf<FirClassLikeDeclaration>()
+        val loopedClassLikeDecls = mutableSetOf<FirClassLikeDeclaration>()
+        val path = mutableListOf<FirClassLikeDeclaration>()
+        val pathSet = mutableSetOf<FirClassLikeDeclaration>()
 
-        fun checkIsInLoop(classLikeDecl: FirClassLikeDeclaration<*>?) {
+        fun checkIsInLoop(classLikeDecl: FirClassLikeDeclaration?) {
             if (classLikeDecl == null) return
 
             val supertypeRefs: List<FirResolvedTypeRef>
@@ -548,7 +571,7 @@ class SupertypeComputationSession {
     }
 }
 
-fun FirTypeRef.firClassLike(session: FirSession): FirClassLikeDeclaration<*>? {
+fun FirTypeRef.firClassLike(session: FirSession): FirClassLikeDeclaration? {
     val type = coneTypeSafe<ConeClassLikeType>() ?: return null
     return type.lookupTag.toSymbol(session)?.fir
 }

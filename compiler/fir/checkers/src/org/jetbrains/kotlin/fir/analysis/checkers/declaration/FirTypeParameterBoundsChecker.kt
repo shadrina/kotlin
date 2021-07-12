@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.isOverride
 import org.jetbrains.kotlin.fir.typeContext
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.types.model.KotlinTypeMarker
@@ -42,6 +43,7 @@ object FirTypeParameterBoundsChecker : FirTypeParameterChecker() {
         checkConflictingBounds(declaration, context, reporter)
         checkTypeAliasBound(declaration, containingDeclaration, context, reporter)
         checkDynamicBounds(declaration, context, reporter)
+        checkInconsistentTypeParameterBounds(declaration, context, reporter)
     }
 
     private fun checkFinalUpperBounds(
@@ -89,7 +91,7 @@ object FirTypeParameterBoundsChecker : FirTypeParameterChecker() {
             // report the diagnostic on that bound
 
             //take TypeConstraint bounds only to report on the same point as old FE
-            val constraintBounds = with(SourceNavigator.forElement(declaration)){
+            val constraintBounds = with(SourceNavigator.forElement(declaration)) {
                 bounds.filter { it.isInTypeConstraint() }.toSet()
             }
             val reportOn =
@@ -154,5 +156,29 @@ object FirTypeParameterBoundsChecker : FirTypeParameterChecker() {
     private fun KotlinTypeMarker.isRelated(context: TypeCheckerProviderContext, type: KotlinTypeMarker?): Boolean =
         isSubtypeOf(context, type) || isSupertypeOf(context, type)
 
+    private fun checkInconsistentTypeParameterBounds(
+        declaration: FirTypeParameter,
+        context: CheckerContext,
+        reporter: DiagnosticReporter
+    ) {
+        if (declaration.bounds.size <= 1) return
 
+        val firTypeRefClasses = mutableListOf<Pair<FirTypeRef, FirRegularClass>>()
+        val firRegularClassesSet = mutableSetOf<FirRegularClass>()
+
+        for (bound in declaration.bounds) {
+            val firRegularClass = bound.toRegularClass(context.session)
+            if (firRegularClassesSet.contains(firRegularClass)) {
+                // no need to throw INCONSISTENT_TYPE_PARAMETER_BOUNDS diagnostics here because REPEATED_BOUNDS diagnostic is already exist
+                return
+            }
+
+            if (firRegularClass != null) {
+                firRegularClassesSet.add(firRegularClass)
+                firTypeRefClasses.add(Pair(bound, firRegularClass))
+            }
+        }
+
+        checkInconsistentTypeParameters(firTypeRefClasses, context, reporter, declaration.source, false)
+    }
 }

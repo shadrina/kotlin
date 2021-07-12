@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fir.FirFakeSourceElement
 import org.jetbrains.kotlin.fir.FirFakeSourceElementKind
-import org.jetbrains.kotlin.fir.FirPsiSourceElement
 import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.analysis.checkers.*
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
@@ -20,6 +19,8 @@ import org.jetbrains.kotlin.fir.analysis.checkers.declaration.isLocalMember
 import org.jetbrains.kotlin.fir.analysis.checkers.syntax.FirDeclarationSyntaxChecker
 import org.jetbrains.kotlin.fir.analysis.diagnostics.*
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.isOverride
+import org.jetbrains.kotlin.fir.declarations.utils.visibility
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.psi.KtDeclaration
 
@@ -32,7 +33,7 @@ object RedundantVisibilityModifierSyntaxChecker : FirDeclarationSyntaxChecker<Fi
         reporter: DiagnosticReporter
     ) {
         if (element is FirConstructor && source.kind is FirFakeSourceElementKind) return
-        if (source is FirFakeSourceElement<*>) return
+        if (source is FirFakeSourceElement) return
         if (
             element !is FirMemberDeclaration
             && !(element is FirPropertyAccessor && element.visibility == context.containingPropertyVisibility)
@@ -42,6 +43,7 @@ object RedundantVisibilityModifierSyntaxChecker : FirDeclarationSyntaxChecker<Fi
         val explicitVisibility = (visibilityModifier?.tokenType as? KtModifierKeywordToken)?.toVisibilityOrNull()
         val implicitVisibility = element.implicitVisibility(context)
         val containingMemberDeclaration = context.findClosest<FirMemberDeclaration>()
+        require(containingMemberDeclaration is FirDeclaration?)
 
         val redundantVisibility = when {
             explicitVisibility == implicitVisibility -> implicitVisibility
@@ -81,7 +83,7 @@ object RedundantVisibilityModifierSyntaxChecker : FirDeclarationSyntaxChecker<Fi
             }
 
             this is FirSimpleFunction
-                    && context.containingDeclarations.last() is FirClass<*>
+                    && context.containingDeclarations.last() is FirClass
                     && this.isOverride -> findFunctionVisibility(this, context)
 
             else -> Visibilities.DEFAULT_VISIBILITY
@@ -105,7 +107,7 @@ object RedundantVisibilityModifierSyntaxChecker : FirDeclarationSyntaxChecker<Fi
         return visibility
     }
 
-    private fun FirFunction<*>.visibility(): Visibility? {
+    private fun FirFunction.visibility(): Visibility? {
         (symbol.fir as? FirMemberDeclaration)?.visibility?.let {
             return it
         }

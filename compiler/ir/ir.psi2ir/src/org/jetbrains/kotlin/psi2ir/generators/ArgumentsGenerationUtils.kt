@@ -33,8 +33,8 @@ import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
 import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.util.isTrivial
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.ValueArgument
@@ -51,10 +51,7 @@ import org.jetbrains.kotlin.resolve.calls.components.isVararg
 import org.jetbrains.kotlin.resolve.calls.model.*
 import org.jetbrains.kotlin.resolve.calls.tower.NewResolvedCallImpl
 import org.jetbrains.kotlin.resolve.scopes.receivers.*
-import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlin.types.TypeProjectionImpl
-import org.jetbrains.kotlin.types.TypeSubstitutor
-import org.jetbrains.kotlin.types.Variance
+import org.jetbrains.kotlin.types.*
 import org.jetbrains.kotlin.types.typeUtil.isUnit
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
@@ -70,45 +67,65 @@ fun StatementGenerator.generateReceiver(ktDefaultElement: KtElement, receiver: R
 fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffset: Int, receiver: ReceiverValue): IntermediateValue {
     val irReceiverType =
         when (receiver) {
-            is ExtensionReceiver ->
-                receiver.declarationDescriptor.extensionReceiverParameter!!.type.toIrType()
+            is ExtensionReceiver -> {
+                val receiverParameters =
+                    receiver.declarationDescriptor.contextReceiverParameters + listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter)
+                val receiverParameter = receiverParameters.firstOrNull { it.value == receiver }
+                    ?: receiver.declarationDescriptor.extensionReceiverParameter!!
+                receiverParameter.type.toIrType()
+            }
             else ->
                 receiver.type.toIrType()
         }
 
     if (receiver is TransientReceiver) return TransientReceiverValue(irReceiverType)
 
-    return generateDelegatedValue(irReceiverType) {
-        val receiverExpression: IrExpression = when (receiver) {
-            is ImplicitClassReceiver -> {
-                val receiverClassDescriptor = receiver.classDescriptor
-                if (shouldGenerateReceiverAsSingletonReference(receiverClassDescriptor))
-                    generateSingletonReference(receiverClassDescriptor, defaultStartOffset, defaultEndOffset, receiver.type)
-                else
-                    IrGetValueImpl(
-                        defaultStartOffset, defaultEndOffset, irReceiverType,
-                        context.symbolTable.referenceValueParameter(receiverClassDescriptor.thisAsReceiverParameter)
+    return object : ExpressionValue(irReceiverType) {
+        override fun load(): IrExpression =
+            when (receiver) {
+                is ImplicitClassReceiver -> {
+                    val receiverClassDescriptor = receiver.classDescriptor
+                    if (shouldGenerateReceiverAsSingletonReference(receiverClassDescriptor))
+                        generateSingletonReference(receiverClassDescriptor, defaultStartOffset, defaultEndOffset, receiver.type)
+                    else
+                        IrGetValueImpl(
+                            defaultStartOffset, defaultEndOffset, irReceiverType,
+                            context.symbolTable.referenceValueParameter(receiverClassDescriptor.thisAsReceiverParameter)
+                        )
+                }
+                is ExtensionClassReceiver -> {
+                    val receiverClassDescriptor = receiver.classDescriptor
+                    val thisAsReceiverParameter = receiverClassDescriptor.thisAsReceiverParameter
+                    val thisReceiver = IrGetValueImpl(
+                        defaultStartOffset, defaultEndOffset,
+                        thisAsReceiverParameter.type.toIrType(),
+                        context.symbolTable.referenceValue(thisAsReceiverParameter)
                     )
+                    IrGetFieldImpl(
+                        defaultStartOffset, defaultEndOffset,
+                        context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiver)),
+                        irReceiverType, thisReceiver
+                    )
+                }
+                is ThisClassReceiver ->
+                    generateThisOrSuperReceiver(receiver, receiver.classDescriptor)
+                is SuperCallReceiverValue ->
+                    generateThisOrSuperReceiver(receiver, receiver.thisType.constructor.declarationDescriptor as ClassDescriptor)
+                is ExpressionReceiver ->
+                    generateExpression(receiver.expression)
+                is ExtensionReceiver -> {
+                    val receiverParameters = listOfNotNull(receiver.declarationDescriptor.extensionReceiverParameter) +
+                            receiver.declarationDescriptor.contextReceiverParameters
+                    val receiverParameter = receiverParameters.singleOrNull { it.value == receiver }
+                        ?: receiver.declarationDescriptor.extensionReceiverParameter!!
+                    IrGetValueImpl(
+                        defaultStartOffset, defaultStartOffset, irReceiverType,
+                        context.symbolTable.referenceValueParameter(receiverParameter)
+                    )
+                }
+                else ->
+                    throw AssertionError("Unexpected receiver: ${receiver::class.java.simpleName}")
             }
-            is ThisClassReceiver ->
-                generateThisOrSuperReceiver(receiver, receiver.classDescriptor)
-            is SuperCallReceiverValue ->
-                generateThisOrSuperReceiver(receiver, receiver.thisType.constructor.declarationDescriptor as ClassDescriptor)
-            is ExpressionReceiver ->
-                generateExpression(receiver.expression)
-            is ExtensionReceiver ->
-                IrGetValueImpl(
-                    defaultStartOffset, defaultStartOffset, irReceiverType,
-                    context.symbolTable.referenceValueParameter(receiver.declarationDescriptor.extensionReceiverParameter!!)
-                )
-            else ->
-                TODO("Receiver: ${receiver::class.java.simpleName}")
-        }
-
-        if (receiverExpression.isTrivial())
-            RematerializableValue(receiverExpression.type, receiverExpression)
-        else
-            OnceExpressionValue(receiverExpression)
     }
 }
 
@@ -178,11 +195,13 @@ fun StatementGenerator.generateCallReceiver(
     calleeDescriptor: CallableDescriptor,
     dispatchReceiver: ReceiverValue?,
     extensionReceiver: ReceiverValue?,
+    contextReceivers: List<ReceiverValue>,
     isSafe: Boolean,
     isAssignmentReceiver: Boolean = false
 ): CallReceiver {
     val dispatchReceiverValue: IntermediateValue?
     val extensionReceiverValue: IntermediateValue?
+    val contextReceiverValues: List<IntermediateValue>
     val startOffset = ktDefaultElement.startOffsetSkippingComments
     val endOffset = ktDefaultElement.endOffset
     when (calleeDescriptor) {
@@ -192,6 +211,7 @@ fun StatementGenerator.generateCallReceiver(
             }
             dispatchReceiverValue = generateReceiverForCalleeImportedFromObject(startOffset, endOffset, calleeDescriptor)
             extensionReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver)
+            contextReceiverValues = contextReceivers.mapNotNull { generateReceiverOrNull(ktDefaultElement, it) }
         }
         is TypeAliasConstructorDescriptor -> {
             assert(!(dispatchReceiver != null && extensionReceiver != null)) {
@@ -200,20 +220,25 @@ fun StatementGenerator.generateCallReceiver(
             }
             dispatchReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver ?: dispatchReceiver)
             extensionReceiverValue = null
+            contextReceiverValues = emptyList()
         }
         else -> {
             dispatchReceiverValue = generateReceiverOrNull(ktDefaultElement, dispatchReceiver)
             extensionReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver)
+            contextReceiverValues = if (ktDefaultElement is KtConstructorDelegationCall) contextReceivers.mapNotNull {
+                generateReceiverOrNull(ktDefaultElement, it as ExtensionClassReceiver)
+            }
+            else contextReceivers.mapNotNull { generateReceiverOrNull(ktDefaultElement, it) }
         }
     }
 
     return when {
         !isSafe ->
-            SimpleCallReceiver(dispatchReceiverValue, extensionReceiverValue)
+            SimpleCallReceiver(dispatchReceiverValue, extensionReceiverValue, contextReceiverValues)
         extensionReceiverValue != null || dispatchReceiverValue != null ->
             SafeCallReceiver(
                 this, startOffset, endOffset,
-                extensionReceiverValue, dispatchReceiverValue, isAssignmentReceiver
+                extensionReceiverValue, contextReceiverValues, dispatchReceiverValue, isAssignmentReceiver
             )
         else ->
             throw AssertionError("Safe call should have an explicit receiver: ${ktDefaultElement.text}")
@@ -567,7 +592,7 @@ fun StatementGenerator.generateSamConversionForValueArgumentsIfRequired(call: Ca
     val typeSubstitutor = TypeSubstitutor.create(substitutionContext)
 
     for (i in underlyingValueParameters.indices) {
-        val underlyingValueParameter = underlyingValueParameters[i]
+        val underlyingValueParameter: ValueParameterDescriptor = underlyingValueParameters[i]
 
         val expectedSamConversionTypesForVararg =
             if (expectSamConvertedArgumentToBeAvailableInResolvedCall && resolvedCall is NewResolvedCallImpl<*>) {
@@ -585,7 +610,7 @@ fun StatementGenerator.generateSamConversionForValueArgumentsIfRequired(call: Ca
             if (!originalValueParameters[i].type.isFunctionTypeOrSubtype) continue
         }
 
-        val samKotlinType = samConversion.getSamTypeForValueParameter(underlyingValueParameter)
+        val samKotlinType = getSamTypeForValueParameter(underlyingValueParameter)
             ?: underlyingValueParameter.varargElementType // If we have a vararg, vararg element type will be taken
             ?: underlyingValueParameter.type
 
@@ -645,6 +670,23 @@ fun StatementGenerator.generateSamConversionForValueArgumentsIfRequired(call: Ca
     }
 }
 
+private fun StatementGenerator.getSamTypeForValueParameter(valueParameter: ValueParameterDescriptor): KotlinType? {
+    val approximatedSamType = context.samTypeApproximator.getSamTypeForValueParameter(valueParameter)
+        ?: return null
+    if (!context.extensions.samConversion.isSamType(approximatedSamType))
+        return null
+    val classDescriptor = approximatedSamType.constructor.declarationDescriptor
+        ?: throw AssertionError("SAM type is expected to be a class type: $approximatedSamType")
+    return approximatedSamType.replace(
+        approximatedSamType.arguments.mapIndexed { index: Int, typeProjection: TypeProjection ->
+            if (typeProjection.type.constructor.isDenotable)
+                typeProjection
+            else
+                StarProjectionImpl(classDescriptor.typeConstructor.parameters[index])
+        }
+    )
+}
+
 fun StatementGenerator.pregenerateValueArgumentsUsing(
     call: CallBuilder,
     resolvedCall: ResolvedCall<*>,
@@ -665,6 +707,7 @@ fun StatementGenerator.pregenerateCallReceivers(resolvedCall: ResolvedCall<*>): 
         resolvedCall.resultingDescriptor,
         resolvedCall.dispatchReceiver,
         resolvedCall.extensionReceiver,
+        resolvedCall.contextReceivers,
         isSafe = resolvedCall.call.isSafeCall()
     )
 

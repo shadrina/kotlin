@@ -40,7 +40,8 @@ import org.jetbrains.kotlin.renderer.render
 
 internal class FirWhenWithSubjectConditionContributor(
     basicContext: FirBasicCompletionContext,
-) : FirContextCompletionContributorBase<FirWithSubjectEntryPositionContext>(basicContext) {
+    priority: Int,
+) : FirCompletionContributorBase<FirWithSubjectEntryPositionContext>(basicContext, priority) {
     override fun KtAnalysisSession.complete(positionContext: FirWithSubjectEntryPositionContext) {
         val whenCondition = positionContext.whenCondition
         val whenExpression = whenCondition.parentOfType<KtWhenExpression>() ?: return
@@ -72,7 +73,7 @@ internal class FirWhenWithSubjectConditionContributor(
     }
 
     private fun KtAnalysisSession.getClassSymbol(subjectType: KtType): KtNamedClassOrObjectSymbol? {
-        val classType = subjectType as? KtClassType
+        val classType = subjectType as? KtNonErrorClassType
         return classType?.classSymbol as? KtNamedClassOrObjectSymbol
     }
 
@@ -107,7 +108,7 @@ internal class FirWhenWithSubjectConditionContributor(
         return when (classifier) {
             is KtAnonymousObjectSymbol -> return false
             is KtNamedClassOrObjectSymbol -> !classifier.classKind.isObject
-            is KtTypeAliasSymbol -> (classifier.expandedType as? KtClassType)?.classSymbol?.let { isPrefixNeeded(it) } == true
+            is KtTypeAliasSymbol -> (classifier.expandedType as? KtNonErrorClassType)?.classSymbol?.let { isPrefixNeeded(it) } == true
             is KtTypeParameterSymbol -> true
         }
     }

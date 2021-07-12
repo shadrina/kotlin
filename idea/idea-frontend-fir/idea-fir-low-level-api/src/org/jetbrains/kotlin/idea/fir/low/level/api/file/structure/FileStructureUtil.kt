@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.fir.declarations.FirRegularClass
 import org.jetbrains.kotlin.fir.render
 import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.ModuleFileCache
-import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.FirLazyDeclarationResolver
+import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.declarationCanBeLazilyResolved
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.replaceFirst
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
@@ -23,11 +23,11 @@ internal object FileStructureUtil {
         ktDeclaration !is KtClassOrObject && ktDeclaration !is KtDeclarationWithBody && ktDeclaration !is KtProperty && ktDeclaration !is KtTypeAlias -> false
         ktDeclaration is KtEnumEntry -> false
         ktDeclaration.containingClassOrObject is KtEnumEntry -> false
-        ktDeclaration is KtNamedDeclaration -> !FirLazyDeclarationResolver.declarationCanBeLazilyResolved(ktDeclaration)
+        ktDeclaration is KtNamedDeclaration -> !declarationCanBeLazilyResolved(ktDeclaration)
         else -> false
     }
 
-    fun replaceDeclaration(firFile: FirFile, from: FirCallableDeclaration<*>, to: FirCallableDeclaration<*>) {
+    fun replaceDeclaration(firFile: FirFile, from: FirCallableDeclaration, to: FirCallableDeclaration) {
         val declarations = if (from.symbol.callableId.className == null) {
             firFile.declarations as MutableList<FirDeclaration>
         } else {
@@ -42,8 +42,8 @@ internal object FileStructureUtil {
     inline fun <R> withDeclarationReplaced(
         firFile: FirFile,
         cache: ModuleFileCache,
-        from: FirCallableDeclaration<*>,
-        to: FirCallableDeclaration<*>,
+        from: FirCallableDeclaration,
+        to: FirCallableDeclaration,
         action: () -> R,
     ): R {
         cache.firFileLockProvider.withWriteLock(firFile) { replaceDeclaration(firFile, from, to) }

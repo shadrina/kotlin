@@ -17,17 +17,29 @@ import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.ModuleFileCache
 import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.FirLazyDeclarationResolver
 import org.jetbrains.kotlin.idea.fir.low.level.api.providers.firIdeProvider
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.findSourceNonLocalFirDeclaration
-import org.jetbrains.kotlin.idea.util.getElementTextInContext
+import org.jetbrains.kotlin.idea.fir.low.level.api.util.getElementTextInContext
 import org.jetbrains.kotlin.psi.*
 import java.util.concurrent.ConcurrentHashMap
 
-internal class FileStructure(
+internal class FileStructure private constructor(
     private val ktFile: KtFile,
     private val firFile: FirFile,
     private val firLazyDeclarationResolver: FirLazyDeclarationResolver,
     private val firFileBuilder: FirFileBuilder,
     private val moduleFileCache: ModuleFileCache,
 ) {
+    companion object {
+        fun build(
+            ktFile: KtFile,
+            firLazyDeclarationResolver: FirLazyDeclarationResolver,
+            firFileBuilder: FirFileBuilder,
+            moduleFileCache: ModuleFileCache,
+        ): FileStructure {
+            val firFile = firFileBuilder.buildRawFirFileWithCaching(ktFile, moduleFileCache, preferLazyBodies = false)
+            return FileStructure(ktFile, firFile, firLazyDeclarationResolver, firFileBuilder, moduleFileCache)
+        }
+    }
+
     private val firIdeProvider = firFile.moduleData.session.firIdeProvider
 
     private val structureElements = ConcurrentHashMap<KtAnnotated, FileStructureElement>()
@@ -58,7 +70,7 @@ internal class FileStructure(
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): Collection<FirPsiDiagnostic<*>> {
+    fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): Collection<FirPsiDiagnostic> {
         val structureElements = getAllStructureElements()
 
         return buildList {
@@ -66,7 +78,7 @@ internal class FileStructure(
         }
     }
 
-    private fun MutableCollection<FirPsiDiagnostic<*>>.collectDiagnosticsFromStructureElements(
+    private fun MutableCollection<FirPsiDiagnostic>.collectDiagnosticsFromStructureElements(
         structureElements: Collection<FileStructureElement>,
         diagnosticCheckerFilter: DiagnosticCheckerFilter
     ) {
@@ -105,9 +117,10 @@ internal class FileStructure(
             firFile
         )
         firLazyDeclarationResolver.lazyResolveDeclaration(
-            firDeclaration,
-            moduleFileCache,
-            FirResolvePhase.BODY_RESOLVE,
+            firDeclarationToResolve = firDeclaration,
+            moduleFileCache = moduleFileCache,
+            scopeSession = ScopeSession(),
+            toPhase = FirResolvePhase.BODY_RESOLVE,
             checkPCE = true,
         )
         return moduleFileCache.firFileLockProvider.withReadLock(firFile) {
@@ -117,15 +130,14 @@ internal class FileStructure(
 
     private fun createStructureElement(container: KtAnnotated): FileStructureElement = when (container) {
         is KtFile -> {
-            val scopeSession = ScopeSession()
-            val firFile = firFileBuilder.getFirFileResolvedToPhaseWithCaching(
-                container,
-                moduleFileCache,
-                FirResolvePhase.IMPORTS,
-                scopeSession,
+            val firFile = firFileBuilder.buildRawFirFileWithCaching(ktFile, moduleFileCache, preferLazyBodies = true)
+            firLazyDeclarationResolver.resolveFileAnnotations(
+                firFile = firFile,
+                annotations = firFile.annotations,
+                moduleFileCache = moduleFileCache,
+                scopeSession = ScopeSession(),
                 checkPCE = true
             )
-            firLazyDeclarationResolver.resolveFileAnnotations(firFile, firFile.annotations, moduleFileCache, scopeSession)
             RootStructureElement(
                 firFile,
                 container,

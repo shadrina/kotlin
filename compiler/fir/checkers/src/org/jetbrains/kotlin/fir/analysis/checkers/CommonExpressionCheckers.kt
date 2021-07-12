@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.fir.analysis.checkers
 
+import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirAnonymousFunctionChecker
 import org.jetbrains.kotlin.fir.analysis.checkers.expression.*
 import org.jetbrains.kotlin.fir.analysis.checkers.syntax.FirAnonymousFunctionSyntaxChecker
 
@@ -12,15 +13,17 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val annotationCallCheckers: Set<FirAnnotationCallChecker>
         get() = setOf(
             FirAnnotationArgumentChecker,
+            FirOptInAnnotationCallChecker,
         )
 
     override val basicExpressionCheckers: Set<FirBasicExpressionChecker>
         get() = setOf(
             FirReservedUnderscoreExpressionChecker,
             FirExpressionAnnotationChecker,
+            FirDeprecationChecker,
         )
 
-    override val qualifiedAccessCheckers: Set<FirQualifiedAccessChecker>
+    override val qualifiedAccessExpressionCheckers: Set<FirQualifiedAccessExpressionChecker>
         get() = setOf(
             FirCallableReferenceChecker,
             FirSuperNotAvailableChecker,
@@ -29,7 +32,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             FirAbstractSuperCallChecker,
             FirQualifiedSupertypeExtendedByOtherSupertypeChecker,
             FirProjectionsOnNonClassTypeArgumentChecker,
-            FirUpperBoundViolatedChecker,
+            FirUpperBoundViolatedExpressionChecker,
             FirTypeArgumentsNotAllowedExpressionChecker,
             FirTypeParameterInQualifiedAccessChecker,
             FirSealedClassConstructorCallChecker,
@@ -51,7 +54,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 
     override val variableAssignmentCheckers: Set<FirVariableAssignmentChecker>
         get() = setOf(
-            FirValReassignmentViaBackingFieldChecker,
+            FirValReassignmentChecker,
             FirAssignmentTypeMismatchChecker
         )
 
@@ -59,6 +62,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(
             FirExhaustiveWhenChecker,
             FirWhenConditionChecker,
+            FirWhenSubjectChecker,
         )
 
     override val loopExpressionCheckers: Set<FirLoopExpressionChecker>
@@ -100,12 +104,6 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val safeCallExpressionCheckers: Set<FirSafeCallExpressionChecker>
         get() = setOf(
             FirUnnecessarySafeCallChecker,
-        )
-
-    override val anonymousFunctionAsExpressionCheckers: Set<FirAnonymousFunctionAsExpressionChecker>
-        get() = setOf(
-            FirAnonymousFunctionChecker,
-            FirAnonymousFunctionSyntaxChecker,
         )
 
     override val typeOperatorCallCheckers: Set<FirTypeOperatorCallChecker>

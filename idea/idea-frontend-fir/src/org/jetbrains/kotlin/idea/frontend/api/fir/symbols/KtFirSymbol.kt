@@ -6,7 +6,9 @@
 package org.jetbrains.kotlin.idea.frontend.api.fir.symbols
 
 import org.jetbrains.kotlin.fir.FirFakeSourceElementKind
-import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.FirCallableDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
 import org.jetbrains.kotlin.fir.originalIfFakeOverride
 import org.jetbrains.kotlin.fir.render
@@ -45,13 +47,13 @@ private tailrec fun FirDeclaration.ktSymbolOrigin(): KtSymbolOrigin = when (orig
         }
     }
     FirDeclarationOrigin.ImportedFromObject -> {
-        val importedFromObjectData = (this as FirCallableDeclaration<*>).importedFromObjectData
+        val importedFromObjectData = (this as FirCallableDeclaration).importedFromObjectData
             ?: error("Declaration has ImportedFromObject origin, but no importedFromObjectData present")
 
         importedFromObjectData.original.ktSymbolOrigin()
     }
     else -> {
-        val overridden = (this as? FirCallableDeclaration<*>)?.originalIfFakeOverride()
+        val overridden = (this as? FirCallableDeclaration)?.originalIfFakeOverride()
             ?: throw InvalidFirDeclarationOriginForSymbol(this)
         overridden.ktSymbolOrigin()
     }

@@ -32,7 +32,7 @@ internal class SingleNonLocalDeclarationDiagnosticRetriever(
         lockProvider: LockProvider<FirFile>
     ): FileStructureElementDiagnosticList {
         val sessionHolder = SessionHolderImpl.createWithEmptyScopeSession(firFile.moduleData.session)
-        val context = lockProvider.withReadLock(firFile) {
+        val context = lockProvider.withWriteLock(firFile) {
             PersistenceContextCollector.collectContext(sessionHolder, firFile, structureElementDeclaration)
         }
         return collector.collectForStructureElement(structureElementDeclaration) { components ->
@@ -112,6 +112,7 @@ internal object FileDiagnosticRetriever : FileStructureElementDiagnosticRetrieve
             withSuppressedDiagnostics(file) {
                 visitWithDeclaration(file) {
                     file.annotations.forEach { it.accept(this, data) }
+                    file.packageDirective.accept(this, data)
                     file.imports.forEach { it.accept(this, data) }
                     // do not visit declarations here
                 }

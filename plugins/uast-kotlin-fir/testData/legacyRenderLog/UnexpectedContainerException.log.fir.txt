@@ -7,4 +7,6 @@ UFile (package = )
         UMethod (name = crashMe)
             UParameter (name = clazz)
             UParameter (name = factory)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
+                UThrowExpression
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)

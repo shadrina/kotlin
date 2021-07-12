@@ -11,10 +11,14 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.analysis.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.collectEnumEntries
+import org.jetbrains.kotlin.fir.declarations.utils.isEnumClass
+import org.jetbrains.kotlin.fir.declarations.utils.isOperator
 import org.jetbrains.kotlin.fir.resolve.symbolProvider
 import org.jetbrains.kotlin.fir.scopes.impl.declaredMemberScope
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirTypeAliasSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.isStatic
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
@@ -57,15 +61,14 @@ object FirImportsChecker : FirFileChecker() {
             val classFir = classId.resolveToClass(context) ?: return
             if (classFir.classKind.isSingleton) return
 
-            val illegalImport = classFir.hasFunctionOrProperty(context, importedName) {
-                it is FirSimpleFunction && !it.isStatic || it is FirProperty
-            }
-            if (illegalImport) {
+            if (!classFir.canBeImported(context, importedName)) {
                 reporter.reportOn(import.source, FirErrors.CANNOT_BE_IMPORTED, importedName, context)
             }
         } else {
             val importedClassId = ClassId.topLevel(importedFqName)
-            if (importedClassId.resolveToClass(context) != null) {
+            if (importedClassId.resolveToClass(context) != null
+                || context.session.symbolProvider.getTopLevelCallableSymbols(importedFqName.parent(), importedName).isNotEmpty()
+            ) {
                 return
             }
             context.session.symbolProvider.getPackage(importedFqName)?.let {
@@ -146,26 +149,25 @@ object FirImportsChecker : FirFileChecker() {
         return result
     }
 
-    private fun FirRegularClass.hasFunctionOrProperty(
+    private fun FirRegularClass.canBeImported(
         context: CheckerContext,
-        name: Name,
-        predicate: (FirDeclaration) -> Boolean
+        name: Name
     ): Boolean {
-        var result = false
+        var hasStatic = false
+        var hasIllegal = false
         val scope = context.session.declaredMemberScope(this)
         scope.processFunctionsByName(name) { sym ->
-            if (!result) {
-                result = predicate(sym.fir)
-            }
+            if (sym.isStatic) hasStatic = true
+            else hasIllegal = true
         }
-        if (result) return true
+        if (hasStatic) return true
+        if (hasIllegal) return false
 
         scope.processPropertiesByName(name) { sym ->
-            if (!result) {
-                result = predicate(sym.fir)
-            }
+            if (sym.isStatic) hasStatic = true
+            else hasIllegal = true
         }
 
-        return result
+        return hasStatic || !hasIllegal
     }
 }

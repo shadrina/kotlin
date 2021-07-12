@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.DeclarationCheckers
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirDeclarationChecker
 import org.jetbrains.kotlin.fir.analysis.checkersComponent
-import org.jetbrains.kotlin.fir.analysis.collectors.AbstractDiagnosticCollector
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.declarations.*
 
@@ -30,7 +29,7 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allPropertyCheckers.check(property, data, reporter)
     }
 
-    override fun <F : FirClass<F>> visitClass(klass: FirClass<F>, data: CheckerContext) {
+    override fun visitClass(klass: FirClass, data: CheckerContext) {
         checkers.allClassCheckers.check(klass, data, reporter)
     }
 
@@ -43,7 +42,7 @@ class DeclarationCheckersDiagnosticComponent(
     }
 
     override fun visitTypeAlias(typeAlias: FirTypeAlias, data: CheckerContext) {
-        checkers.allMemberDeclarationCheckers.check(typeAlias, data, reporter)
+        checkers.allTypeAliasCheckers.check(typeAlias, data, reporter)
     }
 
     override fun visitConstructor(constructor: FirConstructor, data: CheckerContext) {
@@ -51,15 +50,15 @@ class DeclarationCheckersDiagnosticComponent(
     }
 
     override fun visitAnonymousFunction(anonymousFunction: FirAnonymousFunction, data: CheckerContext) {
-        checkers.allAnnotatedDeclarationCheckers.check(anonymousFunction, data, reporter)
+        checkers.allAnonymousFunctionCheckers.check(anonymousFunction, data, reporter)
     }
 
     override fun visitPropertyAccessor(propertyAccessor: FirPropertyAccessor, data: CheckerContext) {
-        checkers.allAnnotatedDeclarationCheckers.check(propertyAccessor, data, reporter)
+        checkers.allPropertyAccessorCheckers.check(propertyAccessor, data, reporter)
     }
 
     override fun visitValueParameter(valueParameter: FirValueParameter, data: CheckerContext) {
-        checkers.allAnnotatedDeclarationCheckers.check(valueParameter, data, reporter)
+        checkers.allValueParameterCheckers.check(valueParameter, data, reporter)
     }
 
     override fun visitTypeParameter(typeParameter: FirTypeParameter, data: CheckerContext) {
@@ -67,15 +66,15 @@ class DeclarationCheckersDiagnosticComponent(
     }
 
     override fun visitEnumEntry(enumEntry: FirEnumEntry, data: CheckerContext) {
-        checkers.allBasicDeclarationCheckers.check(enumEntry, data, reporter)
+        checkers.allEnumEntryCheckers.check(enumEntry, data, reporter)
     }
 
     override fun visitAnonymousObject(anonymousObject: FirAnonymousObject, data: CheckerContext) {
-        checkers.allClassCheckers.check(anonymousObject, data, reporter)
+        checkers.allAnonymousObjectCheckers.check(anonymousObject, data, reporter)
     }
 
     override fun visitAnonymousInitializer(anonymousInitializer: FirAnonymousInitializer, data: CheckerContext) {
-        checkers.allBasicDeclarationCheckers.check(anonymousInitializer, data, reporter)
+        checkers.allAnonymousInitializerCheckers.check(anonymousInitializer, data, reporter)
     }
 
     private fun <D : FirDeclaration> Collection<FirDeclarationChecker<D>>.check(

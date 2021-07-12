@@ -18,10 +18,7 @@ import org.jetbrains.kotlin.fir.declarations.builder.buildAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
 import org.jetbrains.kotlin.fir.errorTypeFromPrototype
 import org.jetbrains.kotlin.fir.expressions.*
-import org.jetbrains.kotlin.fir.expressions.builder.buildArgumentList
-import org.jetbrains.kotlin.fir.expressions.builder.buildBlock
-import org.jetbrains.kotlin.fir.expressions.builder.buildFunctionCall
-import org.jetbrains.kotlin.fir.expressions.builder.buildLambdaArgumentExpression
+import org.jetbrains.kotlin.fir.expressions.builder.*
 import org.jetbrains.kotlin.fir.moduleData
 import org.jetbrains.kotlin.fir.references.builder.buildSimpleNamedReference
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
@@ -62,7 +59,7 @@ open class FirContractResolveTransformer(
                 return simpleFunction
             }
             val containingDeclaration = context.containerIfAny
-            if (containingDeclaration != null && containingDeclaration !is FirClass<*>) {
+            if (containingDeclaration != null && containingDeclaration !is FirClass) {
                 simpleFunction.replaceReturnTypeRef(
                     simpleFunction.returnTypeRef.errorTypeFromPrototype(
                         ConeContractDescriptionError("Local function can not be used in contract description")
@@ -104,7 +101,7 @@ open class FirContractResolveTransformer(
             setter?.updatePhase()
         }
 
-        override fun transformField(field: FirField, data: ResolutionMode): FirDeclaration {
+        override fun transformField(field: FirField, data: ResolutionMode): FirField {
             field.updatePhase()
             return field
         }
@@ -146,7 +143,8 @@ open class FirContractResolveTransformer(
             if (resolvedId != FirContractsDslNames.CONTRACT) return transformOwnerWithUnresolvedContract(owner)
             if (contractCall.arguments.size != 1) return transformOwnerOfErrorContract(owner)
             val argument = contractCall.argument as? FirLambdaArgumentExpression ?: return transformOwnerOfErrorContract(owner)
-            val lambdaBody = (argument.expression as FirAnonymousFunction).body ?: return transformOwnerOfErrorContract(owner)
+            val lambdaBody = (argument.expression as FirAnonymousFunctionExpression).anonymousFunction.body
+                ?: return transformOwnerOfErrorContract(owner)
 
             val resolvedContractDescription = buildResolvedContractDescription {
                 val effectExtractor = ConeEffectExtractor(session, owner, valueParameters)
@@ -185,7 +183,9 @@ open class FirContractResolveTransformer(
             }
 
             val lambdaArgument = buildLambdaArgumentExpression {
-                expression = effectsBlock
+                expression = buildAnonymousFunctionExpression {
+                    anonymousFunction = effectsBlock
+                }
             }
 
             val contractCall = buildFunctionCall {
@@ -224,7 +224,7 @@ open class FirContractResolveTransformer(
             }
         }
 
-        open fun transformDeclarationContent(firClass: FirClass<*>, data: ResolutionMode) {
+        open fun transformDeclarationContent(firClass: FirClass, data: ResolutionMode) {
             firClass.transformDeclarations(this, data)
         }
 
@@ -251,17 +251,17 @@ open class FirContractResolveTransformer(
         override fun transformAnonymousInitializer(
             anonymousInitializer: FirAnonymousInitializer,
             data: ResolutionMode
-        ): FirDeclaration {
+        ): FirAnonymousInitializer {
             anonymousInitializer.updatePhase()
             return anonymousInitializer
         }
 
-        override fun transformConstructor(constructor: FirConstructor, data: ResolutionMode): FirDeclaration {
+        override fun transformConstructor(constructor: FirConstructor, data: ResolutionMode): FirConstructor {
             constructor.updatePhase()
             return constructor
         }
 
-        override fun transformEnumEntry(enumEntry: FirEnumEntry, data: ResolutionMode): FirDeclaration {
+        override fun transformEnumEntry(enumEntry: FirEnumEntry, data: ResolutionMode): FirEnumEntry {
             enumEntry.updatePhase()
             return enumEntry
         }

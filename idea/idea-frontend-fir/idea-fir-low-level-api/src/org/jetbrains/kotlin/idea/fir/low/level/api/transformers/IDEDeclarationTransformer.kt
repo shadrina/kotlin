@@ -6,25 +6,47 @@
 package org.jetbrains.kotlin.idea.fir.low.level.api.transformers
 
 import org.jetbrains.kotlin.fir.FirElement
+import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.render
-import org.jetbrains.kotlin.fir.resolve.transformers.FirAbstractPhaseTransformer
-import org.jetbrains.kotlin.fir.visitors.FirTransformer
-import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationUntypedDesignation
+import org.jetbrains.kotlin.fir.visitors.FirDefaultTransformer
+import org.jetbrains.kotlin.fir.visitors.FirVisitor
+import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationDesignation
 
-internal class IDEDeclarationTransformer(private val designation: FirDeclarationUntypedDesignation) {
+internal class IDEDeclarationTransformer(private val designation: FirDeclarationDesignation) {
     private val designationWithoutTargetIterator = designation.toSequence(includeTarget = false).iterator()
     private var isInsideTargetDeclaration: Boolean = false
     private var designationPassed: Boolean = false
 
-    inline fun <K, D> transformDeclarationContent(
-        transformer: FirAbstractPhaseTransformer<D>,
-        declaration: K,
+    inline fun <D> visitDeclarationContent(
+        visitor: FirVisitor<Unit, D>,
+        declaration: FirDeclaration,
         data: D,
-        defaultCallTransform: () -> K
-    ): K {
+        default: () -> FirDeclaration
+    ): FirDeclaration = processDeclarationContent(declaration, default) {
+        it.accept(visitor, data)
+    }
+
+    inline fun <D> transformDeclarationContent(
+        transformer: FirDefaultTransformer<D>,
+        declaration: FirDeclaration,
+        data: D,
+        default: () -> FirDeclaration
+    ): FirDeclaration = processDeclarationContent(declaration, default) { toTransform ->
+        toTransform.transform<FirElement, D>(transformer, data).also { transformed ->
+            check(transformed === toTransform) {
+                "become $transformed `${transformed.render()}`, was ${toTransform}: `${toTransform.render()}`"
+            }
+        }
+    }
+
+    private inline fun processDeclarationContent(
+        declaration: FirDeclaration,
+        default: () -> FirDeclaration,
+        applyToDesignated: (FirDeclaration) -> Unit,
+    ): FirDeclaration {
         //It means that we are inside the target declaration
         if (isInsideTargetDeclaration) {
-            return defaultCallTransform()
+            return default()
         }
 
         //It means that we already transform target declaration and now can skip all others
@@ -33,12 +55,12 @@ internal class IDEDeclarationTransformer(private val designation: FirDeclaration
         }
 
         if (designationWithoutTargetIterator.hasNext()) {
-            designationWithoutTargetIterator.next().visitNoTransform(transformer, data)
+            applyToDesignated(designationWithoutTargetIterator.next())
         } else {
             try {
                 isInsideTargetDeclaration = true
                 designationPassed = true
-                designation.declaration.visitNoTransform(transformer, data)
+                applyToDesignated(designation.declaration)
             } finally {
                 isInsideTargetDeclaration = false
             }
@@ -52,9 +74,4 @@ internal class IDEDeclarationTransformer(private val designation: FirDeclaration
     fun ensureDesignationPassed() {
         check(designationPassed) { "Designation not passed for declaration ${designation.declaration::class.simpleName}" }
     }
-}
-
-private fun <D> FirElement.visitNoTransform(transformer: FirTransformer<D>, data: D) {
-    val result = this.transform<FirElement, D>(transformer, data)
-    require(result === this) { "become $result `${result.render()}`, was ${this}: `${this.render()}`" }
 }

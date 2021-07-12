@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.diagnostics.ConeSimpleDiagnostic
 import org.jetbrains.kotlin.fir.diagnostics.DiagnosticKind
 import org.jetbrains.kotlin.fir.expressions.FirStatement
-import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.lookupSuperTypes
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
@@ -33,6 +32,8 @@ abstract class FirAbstractTreeTransformerWithSuperTypes(
     protected val scopes = mutableListOf<FirScope>()
     protected val towerScope = FirCompositeScope(scopes.asReversed())
 
+    protected open fun needReplacePhase(firDeclaration: FirDeclaration): Boolean = transformerPhase > firDeclaration.resolvePhase
+
     protected inline fun <T> withScopeCleanup(crossinline l: () -> T): T {
         val sizeBefore = scopes.size
         val result = l()
@@ -45,10 +46,12 @@ abstract class FirAbstractTreeTransformerWithSuperTypes(
     }
 
     protected fun resolveNestedClassesSupertypes(
-        firClass: FirClass<*>,
+        firClass: FirClass,
         data: Any?
     ): FirStatement {
-        firClass.replaceResolvePhase(transformerPhase)
+        if (needReplacePhase(firClass)) {
+            firClass.replaceResolvePhase(transformerPhase)
+        }
         return withScopeCleanup {
             // Otherwise annotations may try to resolve
             // themselves as inner classes of the `firClass`
@@ -81,7 +84,7 @@ abstract class FirAbstractTreeTransformerWithSuperTypes(
 
             // Note that annotations are still visited here
             // again, although there's no need in it
-            transformDeclarationContent(firClass, data) as FirClass<*>
+            transformDeclarationContent(firClass, data) as FirClass
         }
     }
 

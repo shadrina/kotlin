@@ -1,21 +1,30 @@
 UFile (package = )
     UClass (name = AnnotationParametersKt)
         UMethod (name = foo)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = 5)
         UMethod (name = bar)
-            [!] UnknownKotlinExpression (REFERENCE_EXPRESSION)
+            UBlockExpression
+                UReturnExpression
+                    USimpleNameReferenceExpression (identifier = Unit)
         UMethod (name = fooWithArrLiteral)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = 5)
         UMethod (name = fooWithStrArrLiteral)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = 3)
     UClass (name = IntRange)
-        UMethod (name = from)
-        UMethod (name = to)
+        UAnnotationMethod (name = from)
+        UAnnotationMethod (name = to)
     UClass (name = RequiresPermission)
-        UMethod (name = anyOf)
+        UAnnotationMethod (name = anyOf)
     UClass (name = RequiresStrPermission)
-        UMethod (name = strs)
+        UAnnotationMethod (name = strs)
     UClass (name = WithDefaultValue)
-        UMethod (name = value)
+        UAnnotationMethod (name = value)
+            ULiteralExpression (value = 42)
     UClass (name = SuppressLint)
-        UMethod (name = value)
+        UAnnotationMethod (name = value)

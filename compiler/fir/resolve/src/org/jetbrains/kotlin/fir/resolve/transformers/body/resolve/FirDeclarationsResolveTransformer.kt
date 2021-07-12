@@ -13,29 +13,37 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyAccessor
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
+import org.jetbrains.kotlin.fir.declarations.utils.isInline
+import org.jetbrains.kotlin.fir.declarations.utils.isLocal
+import org.jetbrains.kotlin.fir.declarations.utils.visibility
 import org.jetbrains.kotlin.fir.diagnostics.ConeSimpleDiagnostic
 import org.jetbrains.kotlin.fir.diagnostics.DiagnosticKind
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.builder.buildReturnExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildUnitExpression
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
-import org.jetbrains.kotlin.fir.resolve.*
+import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.calls.FirNamedReferenceWithCandidate
+import org.jetbrains.kotlin.fir.resolve.constructFunctionalTypeRef
 import org.jetbrains.kotlin.fir.resolve.dfa.FirControlFlowGraphReferenceImpl
 import org.jetbrains.kotlin.fir.resolve.dfa.unwrapSmartcastExpression
 import org.jetbrains.kotlin.fir.resolve.inference.extractLambdaInfoFromFunctionalType
 import org.jetbrains.kotlin.fir.resolve.inference.isSuspendFunctionType
+import org.jetbrains.kotlin.fir.resolve.mode
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.resolve.transformers.*
+import org.jetbrains.kotlin.fir.resolve.withExpectedType
 import org.jetbrains.kotlin.fir.scopes.impl.FirMemberTypeParameterScope
 import org.jetbrains.kotlin.fir.symbols.constructStarProjectedType
-import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.builder.buildErrorTypeRef
 import org.jetbrains.kotlin.fir.types.builder.buildImplicitTypeRef
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitUnitTypeRef
-import org.jetbrains.kotlin.fir.visitors.*
+import org.jetbrains.kotlin.fir.visitors.FirDefaultTransformer
+import org.jetbrains.kotlin.fir.visitors.FirTransformer
+import org.jetbrains.kotlin.fir.visitors.transformSingle
 import org.jetbrains.kotlin.name.Name
 
 open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransformer) : FirPartialBodyResolveTransformer(transformer) {
@@ -61,9 +69,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         }
     }
 
-    private fun transformDeclarationContent(
-        declaration: FirDeclaration, data: ResolutionMode
-    ): FirDeclaration {
+    private fun transformDeclarationContent(declaration: FirDeclaration, data: ResolutionMode): FirDeclaration {
         transformer.firTowerDataContextCollector?.addDeclarationContext(declaration, context.towerDataContext)
         transformer.replaceDeclarationResolvePhaseIfNeeded(declaration, transformerPhase)
         return transformer.transformDeclarationContent(declaration, data)
@@ -76,10 +82,10 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         return ((data as? ResolutionMode.WithStatus)?.status ?: declarationStatus)
     }
 
-    private fun prepareSignatureForBodyResolve(callableMember: FirCallableMemberDeclaration<*>) {
+    private fun prepareSignatureForBodyResolve(callableMember: FirCallableMemberDeclaration) {
         callableMember.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
         callableMember.transformReceiverTypeRef(transformer, ResolutionMode.ContextIndependent)
-        if (callableMember is FirFunction<*>) {
+        if (callableMember is FirFunction) {
             callableMember.valueParameters.forEach {
                 it.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
                 it.transformVarargTypeToArrayType()
@@ -100,8 +106,8 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         }
     }
 
-    override fun transformEnumEntry(enumEntry: FirEnumEntry, data: ResolutionMode): FirDeclaration {
-        if (enumEntry.resolvePhase == transformerPhase) return enumEntry
+    override fun transformEnumEntry(enumEntry: FirEnumEntry, data: ResolutionMode): FirEnumEntry {
+        if (implicitTypeOnly || enumEntry.initializerResolved) return enumEntry
         transformer.replaceDeclarationResolvePhaseIfNeeded(enumEntry, transformerPhase)
         return context.forEnumEntry {
             (enumEntry.transformChildren(this, data) as FirEnumEntry)
@@ -109,7 +115,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
     }
 
     override fun transformProperty(property: FirProperty, data: ResolutionMode): FirProperty {
-        require(property !is FirSyntheticProperty) { "Synthetic properties should not be processed by body transfromers" }
+        require(property !is FirSyntheticProperty) { "Synthetic properties should not be processed by body transformers" }
 
         if (property.isLocal) {
             prepareSignatureForBodyResolve(property)
@@ -120,11 +126,8 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         }
 
         val returnTypeRef = property.returnTypeRef
+        if (property.initializerAndAccessorsAreResolved) return property
         if (returnTypeRef !is FirImplicitTypeRef && implicitTypeOnly) return property
-        if (property.resolvePhase == transformerPhase) return property
-        if (property.resolvePhase == FirResolvePhase.BODY_RESOLVE || property.resolvePhase == transformerPhase) {
-            return property
-        }
 
         property.transformReceiverTypeRef(transformer, ResolutionMode.ContextIndependent)
         dataFlowAnalyzer.enterProperty(property)
@@ -152,16 +155,16 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
             dataFlowAnalyzer.exitProperty(property)?.let {
                 property.replaceControlFlowGraphReference(FirControlFlowGraphReferenceImpl(it))
             }
+            property.replaceInitializerAndAccessorsAreResolved(true)
             property
         }
     }
 
-    override fun transformField(field: FirField, data: ResolutionMode): FirDeclaration {
+    override fun transformField(field: FirField, data: ResolutionMode): FirField {
         val returnTypeRef = field.returnTypeRef
         if (implicitTypeOnly) return field
-        if (field.resolvePhase == FirResolvePhase.BODY_RESOLVE || field.resolvePhase == transformerPhase) {
-            return field
-        }
+        if (field.initializerResolved) return field
+
         dataFlowAnalyzer.enterField(field)
         return withFullBodyResolve {
             context.withField(field) {
@@ -301,6 +304,8 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         if (returnTypeRef is FirImplicitTypeRef) {
             storeVariableReturnType(this)
             enhancedTypeRef = returnTypeRef
+            // We need update type of getter for case when its type was approximated
+            getter?.replaceReturnTypeRef(enhancedTypeRef)
         }
         setter?.let {
             if (it.valueParameters[0].returnTypeRef is FirImplicitTypeRef) {
@@ -337,7 +342,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
     }
 
     private fun FirDeclaration.resolveStatus(
-        containingClass: FirClass<*>? = null,
+        containingClass: FirClass? = null,
         containingProperty: FirProperty? = null,
     ): FirDeclarationStatus {
         val containingDeclaration = context.containerIfAny
@@ -364,7 +369,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         return doTransformRegularClass(regularClass, data)
     }
 
-    override fun transformTypeAlias(typeAlias: FirTypeAlias, data: ResolutionMode): FirDeclaration {
+    override fun transformTypeAlias(typeAlias: FirTypeAlias, data: ResolutionMode): FirTypeAlias {
         if (typeAlias.isLocal && typeAlias !in context.targetedLocalClasses) {
             return typeAlias.runAllPhasesForLocalClass(
                 transformer,
@@ -378,6 +383,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         typeAlias.transformAnnotations(transformer, data)
         transformer.firTowerDataContextCollector?.addDeclarationContext(typeAlias, context.towerDataContext)
         typeAlias.transformExpandedTypeRef(transformer, data)
+        transformer.replaceDeclarationResolvePhaseIfNeeded(typeAlias, transformerPhase)
         return typeAlias
     }
 
@@ -385,23 +391,17 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         regularClass: FirRegularClass,
         data: ResolutionMode
     ): FirRegularClass {
-        val notAnalyzed = regularClass.resolvePhase < transformerPhase
-
-        if (notAnalyzed) {
-            dataFlowAnalyzer.enterClass()
-        }
+        dataFlowAnalyzer.enterClass()
 
         val result = context.withRegularClass(regularClass, components) {
             transformDeclarationContent(regularClass, data) as FirRegularClass
         }
 
-        if (notAnalyzed) {
-            if (!implicitTypeOnly) {
-                val controlFlowGraph = dataFlowAnalyzer.exitRegularClass(result)
-                result.replaceControlFlowGraphReference(FirControlFlowGraphReferenceImpl(controlFlowGraph))
-            } else {
-                dataFlowAnalyzer.exitClass()
-            }
+        if (!implicitTypeOnly) {
+            val controlFlowGraph = dataFlowAnalyzer.exitRegularClass(result)
+            result.replaceControlFlowGraphReference(FirControlFlowGraphReferenceImpl(controlFlowGraph))
+        } else {
+            dataFlowAnalyzer.exitClass()
         }
 
         return result
@@ -421,12 +421,6 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
             )
         }
         dataFlowAnalyzer.enterClass()
-        if (anonymousObject.typeRef !is FirResolvedTypeRef) {
-            anonymousObject.resultType = buildResolvedTypeRef {
-                source = anonymousObject.source
-                this.type = anonymousObject.defaultType()
-            }
-        }
         val result = context.withAnonymousObject(anonymousObject, components) {
             transformDeclarationContent(anonymousObject, data) as FirAnonymousObject
         }
@@ -473,7 +467,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         simpleFunction: FirSimpleFunction,
         data: ResolutionMode
     ): FirSimpleFunction {
-        if (simpleFunction.resolvePhase == FirResolvePhase.BODY_RESOLVE || simpleFunction.resolvePhase == transformerPhase) {
+        if (simpleFunction.bodyResolved) {
             return simpleFunction
         }
         val returnTypeRef = simpleFunction.returnTypeRef
@@ -486,7 +480,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         val containingDeclaration = context.containerIfAny
         return context.withSimpleFunction(simpleFunction) {
             // TODO: I think it worth creating something like runAllPhasesForLocalFunction
-            if (containingDeclaration != null && containingDeclaration !is FirClass<*>) {
+            if (containingDeclaration != null && containingDeclaration !is FirClass) {
                 // For class members everything should be already prepared
                 prepareSignatureForBodyResolve(simpleFunction)
                 simpleFunction.transformStatus(this, simpleFunction.resolveStatus().mode())
@@ -499,7 +493,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         }
     }
 
-    private fun <F : FirFunction<F>> transformFunctionWithGivenSignature(
+    private fun <F : FirFunction> transformFunctionWithGivenSignature(
         function: F,
         resolutionMode: ResolutionMode,
     ): F {
@@ -533,25 +527,25 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         return result
     }
 
-    override fun <F : FirFunction<F>> transformFunction(
-        function: FirFunction<F>,
+    override fun transformFunction(
+        function: FirFunction,
         data: ResolutionMode
     ): FirStatement {
-        val functionIsNotAnalyzed = transformerPhase != function.resolvePhase
+        val functionIsNotAnalyzed = !function.bodyResolved
         if (functionIsNotAnalyzed) {
             dataFlowAnalyzer.enterFunction(function)
         }
         @Suppress("UNCHECKED_CAST")
         return transformDeclarationContent(function, data).also {
             if (functionIsNotAnalyzed) {
-                val result = it as FirFunction<*>
+                val result = it as FirFunction
                 val controlFlowGraphReference = dataFlowAnalyzer.exitFunction(result)
                 result.replaceControlFlowGraphReference(controlFlowGraphReference)
             }
         } as FirStatement
     }
 
-    override fun transformConstructor(constructor: FirConstructor, data: ResolutionMode): FirDeclaration {
+    override fun transformConstructor(constructor: FirConstructor, data: ResolutionMode): FirConstructor {
         if (implicitTypeOnly) return constructor
         val container = context.containerIfAny as? FirRegularClass
         if (constructor.isPrimary && container?.classKind == ClassKind.ANNOTATION_CLASS) {
@@ -593,7 +587,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
     override fun transformAnonymousInitializer(
         anonymousInitializer: FirAnonymousInitializer,
         data: ResolutionMode
-    ): FirDeclaration {
+    ): FirAnonymousInitializer {
         if (implicitTypeOnly) return anonymousInitializer
         dataFlowAnalyzer.enterInitBlock(anonymousInitializer)
         return context.withAnonymousInitializer(anonymousInitializer) {
@@ -644,7 +638,6 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         return when (data) {
             is ResolutionMode.ContextDependent, is ResolutionMode.ContextDependentDelegate -> {
                 context.withAnonymousFunction(anonymousFunction, components, data) {
-                    dataFlowAnalyzer.visitPostponedAnonymousFunction(anonymousFunction)
                     anonymousFunction.addReturn()
                 }
             }
@@ -676,7 +669,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
                                     origin = FirDeclarationOrigin.Source
                                     returnTypeRef = singleParameterType.toFirResolvedTypeRef()
                                     this.name = name
-                                    symbol = FirVariableSymbol(name)
+                                    symbol = FirValueParameterSymbol(name)
                                     isCrossinline = false
                                     isNoinline = false
                                     isVararg = false
@@ -807,7 +800,7 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
         return this
     }
 
-    private fun storeVariableReturnType(variable: FirVariable<*>) {
+    private fun storeVariableReturnType(variable: FirVariable) {
         val initializer = variable.initializer
         if (variable.returnTypeRef is FirImplicitTypeRef) {
             val resultType = when {
@@ -890,4 +883,10 @@ open class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransfor
             return valueParameter
         }
     }
+
+    private val FirVariable.initializerResolved: Boolean
+        get() = initializer?.typeRef is FirResolvedTypeRef
+
+    private val FirFunction.bodyResolved: Boolean
+        get() = body?.typeRef is FirResolvedTypeRef
 }

@@ -6,11 +6,11 @@
 package org.jetbrains.kotlin.fir.analysis.checkers.context
 
 import org.jetbrains.kotlin.diagnostics.Severity
+import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirDiagnostic
 import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.expressions.FirGetClassCall
-import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccess
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.resolve.ImplicitReceiverStack
 import org.jetbrains.kotlin.fir.resolve.SessionHolder
@@ -43,7 +43,7 @@ abstract class CheckerContext {
         allErrorsSuppressed: Boolean
     ): PersistentCheckerContext
 
-    fun isDiagnosticSuppressed(diagnostic: FirDiagnostic<*>): Boolean {
+    fun isDiagnosticSuppressed(diagnostic: FirDiagnostic): Boolean {
         val factory = diagnostic.factory
         val name = factory.name
         val suppressedByAll = when (factory.severity) {
@@ -63,7 +63,7 @@ abstract class CheckerContext {
  *   the closest setter, while we want to keep searching for a getter.
  */
 
-inline fun <reified T : FirDeclaration> CheckerContext.findClosest(check: (T) -> Boolean = { true }): T? {
+inline fun <reified T : FirElement> CheckerContext.findClosest(check: (T) -> Boolean = { true }): T? {
     for (it in containingDeclarations.asReversed()) {
         return (it as? T)?.takeIf(check) ?: continue
     }

@@ -42,6 +42,7 @@ import org.jetbrains.kotlin.ir.types.impl.IrStarProjectionImpl
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
+import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.load.java.JavaDescriptorVisibilities
 import org.jetbrains.kotlin.load.java.JvmAbi
@@ -218,10 +219,8 @@ fun IrDeclaration.isInCurrentModule(): Boolean =
 // "not learned through smartcasting".
 fun IrExpression.isSmartcastFromHigherThanNullable(context: JvmBackendContext): Boolean {
     return when (this) {
-        is IrTypeOperatorCall -> operator == IrTypeOperator.IMPLICIT_CAST && !argument.type.isSubtypeOf(
-            type.makeNullable(),
-            context.irBuiltIns
-        )
+        is IrTypeOperatorCall ->
+            operator == IrTypeOperator.IMPLICIT_CAST && !argument.type.isSubtypeOf(type.makeNullable(), context.typeSystem)
         is IrGetValue -> {
             // Check if the variable initializer is smartcast. In FIR, if the subject of a `when` is smartcast,
             // the IMPLICIT_CAST is in the initializer of the variable for the subject.
@@ -404,3 +403,15 @@ fun IrFile.getKtFile(): KtFile? =
 
 fun IrType.isInlineClassType(): Boolean =
     erasedUpperBound.isInline
+
+inline fun IrElement.hasChild(crossinline block: (IrElement) -> Boolean): Boolean {
+    var result = false
+    acceptChildren(object : IrElementVisitorVoid {
+        override fun visitElement(element: IrElement) = when {
+            result -> Unit
+            block(element) -> result = true
+            else -> element.acceptChildren(this, null)
+        }
+    }, null)
+    return result
+}

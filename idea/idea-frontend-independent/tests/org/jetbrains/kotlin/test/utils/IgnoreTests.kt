@@ -9,12 +9,13 @@ import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.kotlin.test.InTextDirectivesUtils
 import org.jetbrains.kotlin.test.KtAssert
 import org.jetbrains.kotlin.test.testFramework.KtUsefulTestCase
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 
 object IgnoreTests {
-    private const val INSERT_DIRECTIVE_AUTOMATICALLY = true // TODO use environment variable instead
+    private const val INSERT_DIRECTIVE_AUTOMATICALLY = false // TODO use environment variable instead
     private const val ALWAYS_CONSIDER_TEST_AS_PASSING = false // TODO use environment variable instead
 
     fun runTestIfEnabledByFileDirective(
@@ -98,7 +99,11 @@ object IgnoreTests {
         } catch (e: Throwable) {
             if (testIsEnabled) {
                 if (directive is EnableOrDisableTestDirective.Disable) {
-                    handleTestWithWrongDirective(testPasses = false, testFile, directive, directivePosition, additionalFiles)
+                    try {
+                        handleTestWithWrongDirective(testPasses = false, testFile, directive, directivePosition, additionalFiles)
+                    } catch (e: AssertionError) {
+                        LoggerFactory.getLogger("test").info(e.message)
+                    }
                 }
                 throw e
             }
@@ -213,6 +218,7 @@ object IgnoreTests {
         const val FIR_IDENTICAL = "// FIR_IDENTICAL"
 
         const val IGNORE_FE10_BINDING_BY_FIR = "// IGNORE_FE10_BINDING_BY_FIR"
+        const val IGNORE_FE10 = "// IGNORE_FE10"
     }
 
     enum class DirectivePosition {

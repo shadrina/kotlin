@@ -5,24 +5,34 @@
 
 package org.jetbrains.kotlin.idea.fir.low.level.api.util
 
-import org.jetbrains.kotlin.fir.declarations.*
-import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationUntypedDesignation
+import org.jetbrains.kotlin.fir.declarations.FirCallableDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
+import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationDesignation
 
-internal fun FirDeclarationUntypedDesignation.ensurePathPhase(firResolvePhase: FirResolvePhase) {
-    toSequence(includeTarget = false).forEach { firDeclaration ->
-        check(firDeclaration.resolvePhase >= firResolvePhase) {
-            "Designation element phase required to be $firResolvePhase but element resolved to ${firDeclaration.resolvePhase}"
+internal fun FirDeclaration.ensurePhase(firResolvePhase: FirResolvePhase) =
+    check(resolvePhase >= firResolvePhase) {
+        "Element phase required to be $firResolvePhase but element resolved to $resolvePhase"
+    }
+
+internal fun FirDeclarationDesignation.ensurePathPhase(firResolvePhase: FirResolvePhase) =
+    path.forEach { it.ensurePhase(firResolvePhase) }
+
+internal fun FirDeclarationDesignation.ensureDesignation(firResolvePhase: FirResolvePhase) {
+    ensurePathPhase(firResolvePhase)
+    declaration.ensurePhase(firResolvePhase)
+}
+internal fun FirDeclarationDesignation.ensurePhaseForClasses(firResolvePhase: FirResolvePhase) {
+    ensurePathPhase(firResolvePhase)
+    if (declaration is FirClassLikeDeclaration) {
+        check(declaration.resolvePhase >= firResolvePhase) {
+            "Expected $firResolvePhase but found ${declaration.resolvePhase}"
         }
     }
 }
 
-internal fun FirDeclarationUntypedDesignation.ensureTargetPhase(firResolvePhase: FirResolvePhase) =
-    check(declaration.resolvePhase >= firResolvePhase) { "Expected $firResolvePhase but found ${declaration.resolvePhase}" }
+internal fun FirDeclarationDesignation.isTargetCallableDeclarationAndInPhase(firResolvePhase: FirResolvePhase): Boolean =
+    (declaration as? FirCallableDeclaration)?.let { it.resolvePhase >= firResolvePhase } ?: false
 
-internal fun FirDeclarationUntypedDesignation.ensureTargetPhaseIfClass(firResolvePhase: FirResolvePhase) = when (declaration) {
-    is FirProperty, is FirSimpleFunction -> Unit
-    is FirClass<*>, is FirTypeAlias -> ensureTargetPhase(firResolvePhase)
-    else -> error("Unexpected target")
-}
-
-internal fun FirDeclarationUntypedDesignation.targetContainingDeclaration(): FirDeclaration? = path.lastOrNull()
+internal fun FirDeclarationDesignation.targetContainingDeclaration(): FirDeclaration? = path.lastOrNull()

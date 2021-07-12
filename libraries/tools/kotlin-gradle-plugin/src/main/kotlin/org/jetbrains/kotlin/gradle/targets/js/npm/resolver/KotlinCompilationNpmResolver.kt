@@ -376,6 +376,7 @@ internal class KotlinCompilationNpmResolver(
         )
     }
 
+    @Suppress("unused")
     class PackageJsonProducerInputs(
         @get:Input
         val internalDependencies: Collection<String>,
@@ -424,7 +425,7 @@ internal class KotlinCompilationNpmResolver(
             )
 
         fun createPackageJson(skipWriting: Boolean): KotlinCompilationNpmResolution {
-            val resolvedInternalDependencies = internalDependencies.map {
+            internalDependencies.map {
                 compilationResolver.rootResolver[it.projectPath][it.compilationName].getResolutionOrResolveIfForced()
                     ?: error("Unresolved dependent npm package: ${compilationResolver} -> $it")
             }
@@ -483,20 +484,12 @@ internal class KotlinCompilationNpmResolver(
                 packageJson.dependencies[it.name] = it.version
             }
 
-            resolvedInternalDependencies.forEach {
-                packageJson.dependencies[it.packageJson.name] = it.packageJson.version
-            }
-
-            importedExternalGradleDependencies.forEach {
-                packageJson.dependencies[it.name] = fileVersion(it.path)
-            }
-
             compilationResolver.packageJsonHandlers.forEach {
                 it(packageJson)
             }
 
             if (!skipWriting) {
-                packageJson.saveTo(compilationResolver.npmProject.prePackageJsonFile)
+                packageJson.saveTo(compilationResolver.npmProject.packageJsonFile)
             }
 
             return KotlinCompilationNpmResolution(

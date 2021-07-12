@@ -13,9 +13,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: true
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: and
@@ -34,9 +36,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: compareTo
@@ -55,9 +59,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: compareTo
@@ -76,9 +82,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: compareTo
@@ -97,9 +105,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: compareTo
@@ -118,9 +128,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: compareTo
@@ -139,9 +151,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: compareTo
@@ -160,9 +174,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: dec
@@ -181,9 +197,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: div
@@ -202,9 +220,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: div
@@ -223,9 +243,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: div
@@ -244,9 +266,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: div
@@ -265,9 +289,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: div
@@ -286,9 +312,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: div
@@ -307,9 +335,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: inc
@@ -328,9 +358,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: inv
@@ -349,9 +381,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: minus
@@ -370,9 +404,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: minus
@@ -391,9 +427,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: minus
@@ -412,9 +450,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: minus
@@ -433,9 +473,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: minus
@@ -454,9 +496,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: minus
@@ -475,9 +519,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: true
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: or
@@ -496,9 +542,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: plus
@@ -517,9 +565,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: plus
@@ -538,9 +588,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: plus
@@ -559,9 +611,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: plus
@@ -580,9 +634,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: plus
@@ -601,9 +657,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: plus
@@ -622,9 +680,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rangeTo
@@ -643,9 +703,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rangeTo
@@ -664,9 +726,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rangeTo
@@ -685,9 +749,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rangeTo
@@ -706,9 +772,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rem
@@ -727,9 +795,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rem
@@ -748,9 +818,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rem
@@ -769,9 +841,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rem
@@ -790,9 +864,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rem
@@ -811,9 +887,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: rem
@@ -832,9 +910,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: true
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: shl
@@ -853,9 +933,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: true
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: shr
@@ -874,9 +956,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: times
@@ -895,9 +979,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: times
@@ -916,9 +1002,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: times
@@ -937,9 +1025,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: times
@@ -958,9 +1048,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: times
@@ -979,9 +1071,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: times
@@ -1000,9 +1094,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toByte
@@ -1021,9 +1117,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toChar
@@ -1042,9 +1140,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toDouble
@@ -1063,9 +1163,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toFloat
@@ -1084,9 +1186,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toInt
@@ -1105,9 +1209,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toLong
@@ -1126,9 +1232,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toShort
@@ -1147,9 +1255,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: unaryMinus
@@ -1168,9 +1278,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: unaryPlus
@@ -1189,9 +1301,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: true
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: ushr
@@ -1210,9 +1324,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Int
   isExtension: false
   isExternal: false
+  isInfix: true
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: FINAL
   name: xor
@@ -1231,9 +1347,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Any
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: true
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: equals
@@ -1252,9 +1370,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Any
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: hashCode
@@ -1273,9 +1393,11 @@ KtFirFunctionSymbol:
   dispatchType: kotlin/Any
   isExtension: false
   isExternal: false
+  isInfix: false
   isInline: false
   isOperator: false
   isOverride: false
+  isStatic: false
   isSuspend: false
   modality: OPEN
   name: toString

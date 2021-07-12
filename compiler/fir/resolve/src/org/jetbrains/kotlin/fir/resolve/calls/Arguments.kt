@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.fir.resolve.calls
 
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.declarations.FirAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.*
@@ -30,9 +29,9 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.resolve.calls.inference.ConstraintSystemBuilder
 import org.jetbrains.kotlin.resolve.calls.inference.addSubtypeConstraintIfCompatible
-import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintPosition
 import org.jetbrains.kotlin.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
 import org.jetbrains.kotlin.types.AbstractTypeChecker
+import org.jetbrains.kotlin.types.SmartcastStability
 import org.jetbrains.kotlin.types.model.CaptureStatus
 import org.jetbrains.kotlin.types.model.TypeSystemCommonSuperTypesContext
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
@@ -107,7 +106,7 @@ fun Candidate.resolveArgumentExpression(
             else
                 preprocessCallableReference(argument, expectedType, context)
         // TODO:!
-        is FirAnonymousFunction -> preprocessLambdaArgument(csBuilder, argument, expectedType, expectedTypeRef, context, sink)
+        is FirAnonymousFunctionExpression -> preprocessLambdaArgument(csBuilder, argument, expectedType, expectedTypeRef, context, sink)
         // TODO:!
         //TODO: Collection literal
         is FirWrappedArgumentExpression -> resolveArgumentExpression(
@@ -358,17 +357,7 @@ private fun checkApplicabilityForArgumentType(
 ) {
     if (expectedType == null) return
 
-    fun unstableSmartCastOrSubtypeError(
-        unstableType: ConeKotlinType?,
-        actualExpectedType: ConeKotlinType,
-        position: ConstraintPosition
-    ): ResolutionDiagnostic {
-        if (unstableType != null) {
-            if (csBuilder.addSubtypeConstraintIfCompatible(unstableType, actualExpectedType, position)) {
-                return UnstableSmartCast.ResolutionError(argument, unstableType)
-            }
-        }
-
+    fun subtypeError(actualExpectedType: ConeKotlinType): ResolutionDiagnostic {
         if (argument.isNullLiteral && actualExpectedType.nullability == ConeNullability.NOT_NULL) {
             return NullForNotNullType(argument)
         }
@@ -406,14 +395,17 @@ private fun checkApplicabilityForArgumentType(
     }
 
     if (!csBuilder.addSubtypeConstraintIfCompatible(argumentType, expectedType, position)) {
+        val smartcastExpression = argument as? FirExpressionWithSmartcast
+        if (smartcastExpression != null && smartcastExpression.smartcastStability != SmartcastStability.STABLE_VALUE) {
+            val unstableType = smartcastExpression.smartcastType.coneType
+            if (csBuilder.addSubtypeConstraintIfCompatible(unstableType, expectedType, position)) {
+                sink.reportDiagnostic(UnstableSmartCast(smartcastExpression, expectedType))
+                return
+            }
+        }
+
         if (!isReceiver) {
-            sink.reportDiagnosticIfNotNull(
-                unstableSmartCastOrSubtypeError(
-                    unstableType = null, // TODO: handle unstable smartcasts
-                    expectedType,
-                    position
-                )
-            )
+            sink.reportDiagnosticIfNotNull(subtypeError(expectedType))
             return
         }
 
@@ -494,7 +486,7 @@ private fun Candidate.getExpectedTypeWithSAMConversion(
 ): ConeKotlinType? {
     if (candidateExpectedType.isBuiltinFunctionalType(session)) return null
     // TODO: if (!callComponents.languageVersionSettings.supportsFeature(LanguageFeature.SamConversionPerArgument)) return null
-    val firFunction = symbol.fir as? FirFunction<*> ?: return null
+    val firFunction = symbol.fir as? FirFunction ?: return null
     if (!context.bodyResolveComponents.samResolver.shouldRunSamConversionForFunction(firFunction)) return null
 
     // TODO: resolvedCall.registerArgumentWithSamConversion(argument, SamConversionDescription(convertedTypeByOriginal, convertedTypeByCandidate!!))
@@ -515,7 +507,7 @@ fun FirExpression.isFunctional(
     expectedFunctionType: ConeKotlinType?,
 ): Boolean {
     when (unwrapArgument()) {
-        is FirAnonymousFunction, is FirCallableReferenceAccess -> return true
+        is FirAnonymousFunctionExpression, is FirCallableReferenceAccess -> return true
         else -> {
             // Either a functional type or a subtype of a class that has a contributed `invoke`.
             val coneType = typeRef.coneTypeSafe<ConeKotlinType>() ?: return false

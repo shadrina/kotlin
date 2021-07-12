@@ -9,16 +9,17 @@ import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineParameter
 import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.InlineClassAbi
-import org.jetbrains.kotlin.backend.jvm.lower.suspendFunctionOriginal
 import org.jetbrains.kotlin.codegen.IrExpressionLambda
 import org.jetbrains.kotlin.codegen.JvmKotlinType
 import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.codegen.ValueKind
 import org.jetbrains.kotlin.codegen.inline.*
 import org.jetbrains.kotlin.codegen.state.GenerationState
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
-import org.jetbrains.kotlin.ir.declarations.*
-import org.jetbrains.kotlin.ir.descriptors.*
+import org.jetbrains.kotlin.ir.declarations.IrConstructor
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.descriptors.toIrBasedKotlinType
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
@@ -37,38 +38,19 @@ class IrInlineCodegen(
     codegen: ExpressionCodegen,
     state: GenerationState,
     private val function: IrFunction,
-    methodOwner: Type,
     signature: JvmMethodSignature,
     typeParameterMappings: TypeParameterMappings<IrType>,
     sourceCompiler: SourceCompilerForInline,
     reifiedTypeInliner: ReifiedTypeInliner<IrType>
 ) :
-    InlineCodegen<ExpressionCodegen>(
-        codegen, state, function.toIrBasedDescriptor(), methodOwner, signature, typeParameterMappings, sourceCompiler, reifiedTypeInliner
-    ),
+    InlineCodegen<ExpressionCodegen>(codegen, state, signature, typeParameterMappings, sourceCompiler, reifiedTypeInliner),
     IrInlineCallGenerator {
 
-    override fun generateAssertFieldIfNeeded(info: RootInliningContext) {
-        if (info.generateAssertField) {
-            // May be inlining code into `<clinit>`, in which case it's too late to modify the IR and
-            // `generateAssertFieldIfNeeded` will return a statement for which we need to emit bytecode.
-            val isClInit = info.callSiteInfo.functionName == "<clinit>"
-            codegen.classCodegen.generateAssertFieldIfNeeded(isClInit)?.accept(codegen, BlockInfo())?.discard()
-        }
-    }
-
-    override fun putClosureParametersOnStack(next: LambdaInfo, functionReferenceReceiver: StackValue?) {
-        activeLambda = next
-
-        when (next) {
-            is IrExpressionLambdaImpl -> next.reference.getArgumentsWithIr().forEachIndexed { index, (_, ir) ->
-                putCapturedValueOnStack(ir, next.capturedVars[index].type, index)
-            }
-            is IrDefaultLambda -> rememberCapturedForDefaultLambda(next)
-            else -> throw RuntimeException("Unknown lambda: $next")
-        }
-
-        activeLambda = null
+    override fun generateAssertField() {
+        // May be inlining code into `<clinit>`, in which case it's too late to modify the IR and
+        // `generateAssertFieldIfNeeded` will return a statement for which we need to emit bytecode.
+        val isClInit = sourceCompiler.inlineCallSiteInfo.method.name == "<clinit>"
+        codegen.classCodegen.generateAssertFieldIfNeeded(isClInit)?.accept(codegen, BlockInfo())?.discard()
     }
 
     override fun genValueAndPut(
@@ -82,14 +64,12 @@ class IrInlineCodegen(
         if (isInlineParameter && argumentExpression.isInlineIrExpression()) {
             val irReference = (argumentExpression as IrBlock).statements.filterIsInstance<IrFunctionReference>().single()
             val lambdaInfo = IrExpressionLambdaImpl(codegen, irReference, irValueParameter)
-            val closureInfo = invocationParamBuilder.addNextValueParameter(parameterType, true, null, irValueParameter.index)
-            closureInfo.functionalArgument = lambdaInfo
-            expressionMap[closureInfo.index] = lambdaInfo
-            val boundReceiver = irReference.extensionReceiver
-            if (boundReceiver != null) {
-                activeLambda = lambdaInfo
-                putCapturedValueOnStack(boundReceiver, lambdaInfo.capturedVars.single().type, 0)
-                activeLambda = null
+            rememberClosure(parameterType, irValueParameter.index, lambdaInfo)
+            lambdaInfo.generateLambdaBody(sourceCompiler)
+            lambdaInfo.reference.getArgumentsWithIr().forEachIndexed { index, (_, ir) ->
+                val param = lambdaInfo.capturedVars[index]
+                val onStack = codegen.genOrGetLocal(ir, param.type, ir.type, BlockInfo())
+                putCapturedToLocalVal(onStack, param, ir.type.toIrBasedKotlinType())
             }
         } else {
             val kind = when (irValueParameter.origin) {
@@ -108,7 +88,7 @@ class IrInlineCodegen(
             val onStack = when {
                 kind == ValueKind.METHOD_HANDLE_IN_DEFAULT -> StackValue.constant(null, AsmTypes.OBJECT_TYPE)
                 kind == ValueKind.DEFAULT_MASK -> StackValue.constant((argumentExpression as IrConst<*>).value, Type.INT_TYPE)
-                kind == ValueKind.DEFAULT_PARAMETER -> StackValue.constant(null, AsmTypes.OBJECT_TYPE)
+                kind == ValueKind.DEFAULT_PARAMETER -> StackValue.createDefaultValue(parameterType)
                 irValueParameter.index >= 0
                     // Reuse an existing local if possible. NOTE: when stopping at a breakpoint placed
                     // in an inline function, arguments which reuse an existing local will not be visible
@@ -121,19 +101,9 @@ class IrInlineCodegen(
                 -> codegen.gen(argumentExpression, parameterType, irValueParameter.type, blockInfo)
             }
 
-
-            //TODO support default argument erasure
-            if (!processDefaultMaskOrMethodHandler(onStack, kind)) {
-                val expectedType = JvmKotlinType(parameterType, irValueParameter.type.toIrBasedKotlinType())
-                putArgumentOrCapturedToLocalVal(expectedType, onStack, -1, irValueParameter.index, kind)
-            }
+            val expectedType = JvmKotlinType(parameterType, irValueParameter.type.toIrBasedKotlinType())
+            putArgumentToLocalVal(expectedType, onStack, irValueParameter.index, kind)
         }
-    }
-
-    private fun putCapturedValueOnStack(argumentExpression: IrExpression, valueType: Type, capturedParamIndex: Int) {
-        val onStack = codegen.genOrGetLocal(argumentExpression, valueType, argumentExpression.type, BlockInfo())
-        val expectedType = JvmKotlinType(valueType, argumentExpression.type.toIrBasedKotlinType())
-        putArgumentOrCapturedToLocalVal(expectedType, onStack, capturedParamIndex, capturedParamIndex, ValueKind.CAPTURED)
     }
 
     override fun beforeValueParametersStart() {
@@ -146,38 +116,24 @@ class IrInlineCodegen(
         expression: IrFunctionAccessExpression,
         isInsideIfCondition: Boolean,
     ) {
-        performInline(
-            expression.symbol.owner.typeParameters.map { it.symbol },
-            // Always look for default lambdas to allow custom default argument handling in compiler plugins.
-            true,
-            false,
-            codegen.typeMapper.typeSystem,
-            registerLineNumberAfterwards = isInsideIfCondition,
-        )
+        performInline(isInsideIfCondition, function.isInlineOnly())
     }
 
     override fun genCycleStub(text: String, codegen: ExpressionCodegen) {
         generateStub(text, codegen)
     }
 
-    override fun extractDefaultLambdas(node: MethodNode): List<DefaultLambda> {
-        if (maskStartIndex == -1) return listOf()
-        return expandMaskConditionsAndUpdateVariableNodes(
-            node, maskStartIndex, maskValues, methodHandleInDefaultMethodIndex,
-            extractDefaultLambdaOffsetAndDescriptor(jvmSignature, function),
-            ::IrDefaultLambda
-        )
-    }
-
-    override fun descriptorIsDeserialized(memberDescriptor: CallableMemberDescriptor): Boolean =
-        ((memberDescriptor as IrBasedDeclarationDescriptor<*>).owner as IrMemberWithContainerSource).parentClassId != null
+    override fun extractDefaultLambdas(node: MethodNode): List<DefaultLambda> =
+        extractDefaultLambdas(node, extractDefaultLambdaOffsetAndDescriptor(jvmSignature, function)) { parameter ->
+            IrDefaultLambda(type, capturedArgs, parameter, offset, needReification, sourceCompiler as IrSourceCompilerForInline)
+        }
 }
 
 class IrExpressionLambdaImpl(
     codegen: ExpressionCodegen,
     val reference: IrFunctionReference,
     irValueParameter: IrValueParameter
-) : ExpressionLambda(irValueParameter.isCrossinline), IrExpressionLambda {
+) : ExpressionLambda(), IrExpressionLambda {
     override val isExtensionLambda: Boolean = irValueParameter.type.isExtensionFunctionType
 
     val function: IrFunction
@@ -223,7 +179,7 @@ class IrExpressionLambdaImpl(
         val freeAsmParameters = asmMethod.argumentTypes.let { it.take(startCapture) + it.drop(endCapture) }
         // The return type, on the other hand, should be the original type if this is a suspend lambda that returns
         // an unboxed inline class value so that the inliner will box it (FunctionN.invoke should return a boxed value).
-        val unboxedReturnType = function.suspendFunctionOriginal().originalReturnTypeOfSuspendFunctionReturningUnboxedInlineClass()
+        val unboxedReturnType = function.originalReturnTypeOfSuspendFunctionReturningUnboxedInlineClass()
         val unboxedAsmReturnType = unboxedReturnType?.let(codegen.typeMapper::mapType)
         invokeMethod = Method(asmMethod.name, unboxedAsmReturnType ?: asmMethod.returnType, freeAsmParameters.toTypedArray())
         invokeMethodParameters = freeParameters.map { it.type.toIrBasedKotlinType() }
@@ -232,13 +188,15 @@ class IrExpressionLambdaImpl(
 }
 
 class IrDefaultLambda(
-    override val lambdaClassType: Type,
+    lambdaClassType: Type,
     capturedArgs: Array<Type>,
-    private val irValueParameter: IrValueParameter,
+    irValueParameter: IrValueParameter,
     offset: Int,
-    needReification: Boolean
-) : DefaultLambda(capturedArgs, irValueParameter.isCrossinline, offset, needReification) {
-    private lateinit var typeArguments: List<IrType>
+    needReification: Boolean,
+    sourceCompiler: IrSourceCompilerForInline
+) : DefaultLambda(lambdaClassType, capturedArgs, offset, needReification, sourceCompiler) {
+
+    private val typeArguments: MutableList<IrType>
 
     override val invokeMethodParameters: List<KotlinType>
         get() = typeArguments.dropLast(1).map { it.toIrBasedKotlinType() }
@@ -246,33 +204,38 @@ class IrDefaultLambda(
     override val invokeMethodReturnType: KotlinType
         get() = typeArguments.last().toIrBasedKotlinType()
 
-    override fun mapAsmMethod(sourceCompiler: SourceCompilerForInline, isPropertyReference: Boolean): Method {
-        val context = (sourceCompiler as IrSourceCompilerForInline).codegen.context
-        typeArguments = (irValueParameter.type as IrSimpleType).arguments.let {
-            if (isPropertyReference) {
-                // Property references: `(A) -> B` => `get(Any?): Any?`
-                List(it.size) { context.irBuiltIns.anyNType }
-            } else {
-                // Non-suspend function references and lambdas: `(A) -> B` => `invoke(A): B`
-                // Suspend function references: `suspend (A) -> B` => `invoke(A, Continuation<B>): Any?`
-                // TODO: default suspend lambdas are currently uninlinable
-                it.mapTo(mutableListOf()) { argument -> (argument as IrTypeProjection).type }.apply {
+    init {
+        val context = sourceCompiler.codegen.context
+
+        typeArguments =
+            (irValueParameter.type as IrSimpleType).arguments
+                .mapTo(mutableListOf()) {
+                    when (it) {
+                        is IrTypeProjection -> it.type
+                        else -> context.irBuiltIns.anyNType
+                    }
+                }
+                .apply {
+                    // Suspend function references: `suspend (A) -> B` => `invoke(A, Continuation<B>): Any?`
+                    // TODO: default suspend lambdas are currently uninlinable due to having a state machine
                     if (irValueParameter.type.isSuspendFunction()) {
                         set(size - 1, context.ir.symbols.continuationClass.typeWith(get(size - 1)))
                         add(context.irBuiltIns.anyNType)
                     }
                 }
-            }
-        }
+
         val base = if (isPropertyReference) OperatorNameConventions.GET.asString() else OperatorNameConventions.INVOKE.asString()
         val name = InlineClassAbi.hashSuffix(
             context.state.useOldManglingSchemeForFunctionsWithInlineClassesInSignatures,
             typeArguments.dropLast(1),
             typeArguments.last().takeIf { it.isInlineClassType() }
         )?.let { "$base-$it" } ?: base
-        // TODO: while technically only the number of arguments here matters right now (see DefaultLambdaInfo.generateLambdaBody),
+        // TODO: while technically only the number of arguments here matters right now (see `loadInvoke`),
         //       it would be better to map to a non-erased signature if not a property reference.
-        return Method(name, AsmTypes.OBJECT_TYPE, Array(typeArguments.size - 1) { AsmTypes.OBJECT_TYPE })
+        if (loadInvoke(sourceCompiler, base, Method(name, AsmTypes.OBJECT_TYPE, Array(typeArguments.size - 1) { AsmTypes.OBJECT_TYPE }))) {
+            // If the loaded method is `invoke(Object, ...) -> Object`, then it expects boxed parameters and returns a boxed value.
+            typeArguments.replaceAll { context.irBuiltIns.anyNType }
+        }
     }
 }
 

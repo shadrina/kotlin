@@ -20,20 +20,21 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-sealed interface FirCallableMemberDeclaration<F : FirCallableMemberDeclaration<F>> : FirCallableDeclaration<F>, FirMemberDeclaration {
-    override val source: FirSourceElement?
-    override val moduleData: FirModuleData
-    override val resolvePhase: FirResolvePhase
-    override val origin: FirDeclarationOrigin
-    override val attributes: FirDeclarationAttributes
-    override val annotations: List<FirAnnotationCall>
-    override val returnTypeRef: FirTypeRef
-    override val receiverTypeRef: FirTypeRef?
-    override val symbol: FirCallableSymbol<F>
-    override val typeParameters: List<FirTypeParameterRef>
-    override val status: FirDeclarationStatus
-    val containerSource: DeserializedContainerSource?
-    val dispatchReceiverType: ConeKotlinType?
+sealed class FirCallableMemberDeclaration : FirCallableDeclaration(), FirMemberDeclaration {
+    abstract override val source: FirSourceElement?
+    abstract override val moduleData: FirModuleData
+    abstract override val resolvePhase: FirResolvePhase
+    abstract override val origin: FirDeclarationOrigin
+    abstract override val attributes: FirDeclarationAttributes
+    abstract override val annotations: List<FirAnnotationCall>
+    abstract override val returnTypeRef: FirTypeRef
+    abstract override val receiverTypeRef: FirTypeRef?
+    abstract override val deprecation: DeprecationsPerUseSite?
+    abstract override val symbol: FirCallableSymbol<out FirCallableDeclaration>
+    abstract override val typeParameters: List<FirTypeParameterRef>
+    abstract override val status: FirDeclarationStatus
+    abstract val containerSource: DeserializedContainerSource?
+    abstract val dispatchReceiverType: ConeKotlinType?
 
     override fun <R, D> accept(visitor: FirVisitor<R, D>, data: D): R = visitor.visitCallableMemberDeclaration(this, data)
 
@@ -41,19 +42,21 @@ sealed interface FirCallableMemberDeclaration<F : FirCallableMemberDeclaration<F
     override fun <E: FirElement, D> transform(transformer: FirTransformer<D>, data: D): E = 
         transformer.transformCallableMemberDeclaration(this, data) as E
 
-    override fun replaceResolvePhase(newResolvePhase: FirResolvePhase)
+    abstract override fun replaceResolvePhase(newResolvePhase: FirResolvePhase)
 
-    override fun replaceReturnTypeRef(newReturnTypeRef: FirTypeRef)
+    abstract override fun replaceReturnTypeRef(newReturnTypeRef: FirTypeRef)
 
-    override fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?)
+    abstract override fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?)
 
-    override fun <D> transformAnnotations(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration<F>
+    abstract override fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?)
 
-    override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration<F>
+    abstract override fun <D> transformAnnotations(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration
 
-    override fun <D> transformReceiverTypeRef(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration<F>
+    abstract override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration
 
-    override fun <D> transformTypeParameters(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration<F>
+    abstract override fun <D> transformReceiverTypeRef(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration
 
-    override fun <D> transformStatus(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration<F>
+    abstract override fun <D> transformTypeParameters(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration
+
+    abstract override fun <D> transformStatus(transformer: FirTransformer<D>, data: D): FirCallableMemberDeclaration
 }

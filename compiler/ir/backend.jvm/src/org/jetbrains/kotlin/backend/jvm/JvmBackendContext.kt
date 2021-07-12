@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionReference
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrTypeSystemContext
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.SymbolTable
 import org.jetbrains.kotlin.name.FqName
@@ -46,7 +47,7 @@ class JvmBackendContext(
     val state: GenerationState,
     override val irBuiltIns: IrBuiltIns,
     irModuleFragment: IrModuleFragment,
-    private val symbolTable: SymbolTable,
+    val symbolTable: SymbolTable,
     val phaseConfig: PhaseConfig,
     val generatorExtensions: JvmGeneratorExtensions,
     val backendExtension: JvmBackendExtension,
@@ -62,6 +63,7 @@ class JvmBackendContext(
     override val scriptMode: Boolean = false
 
     override val builtIns = state.module.builtIns
+    override val typeSystem: IrTypeSystemContext = JvmIrTypeSystemContext(irBuiltIns)
     val typeMapper = IrTypeMapper(this)
     val methodSignatureMapper = MethodSignatureMapper(this)
 
@@ -132,6 +134,8 @@ class JvmBackendContext(
 
     val inlineMethodGenerationLock = Any()
 
+    val directInvokedLambdas = mutableListOf<IrAttributeContainer>()
+
     init {
         state.mapInlineClass = { descriptor ->
             typeMapper.mapType(referenceClass(descriptor).defaultType)
@@ -183,6 +187,13 @@ class JvmBackendContext(
             val newOriginal = functionSymbolMap[original.symbol]?.owner ?: continue
             val newStaticReplacement = inlineClassReplacements.getReplacementFunction(newOriginal) ?: continue
             functionSymbolMap[staticReplacement.symbol] = newStaticReplacement.symbol
+        }
+
+        for ((methodReplacement, original) in inlineClassReplacements.originalFunctionForMethodReplacement) {
+            if (methodReplacement !is IrSimpleFunction) continue
+            val newOriginal = functionSymbolMap[original.symbol]?.owner ?: continue
+            val newMethodReplacement = inlineClassReplacements.getReplacementFunction(newOriginal) ?: continue
+            functionSymbolMap[methodReplacement.symbol] = newMethodReplacement.symbol
         }
 
         for ((original, suspendView) in suspendFunctionOriginalToView) {

@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fir.containingClass
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
+import org.jetbrains.kotlin.fir.declarations.utils.*
 import org.jetbrains.kotlin.idea.fir.findPsi
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirModuleResolveState
 import org.jetbrains.kotlin.idea.frontend.api.fir.KtSymbolByFirBuilder
@@ -104,6 +105,7 @@ internal class KtFirKotlinPropertySymbol(
     override val isConst: Boolean get() = firRef.withFir { it.isConst }
 
     override val isOverride: Boolean get() = firRef.withFir { it.isOverride }
+    override val isStatic: Boolean get() = firRef.withFir { it.isStatic }
 
     override val hasGetter: Boolean get() = firRef.withFir { it.getter != null }
     override val hasSetter: Boolean get() = firRef.withFir { it.setter != null }

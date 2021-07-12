@@ -363,7 +363,7 @@ object PositioningStrategies {
     val LATEINIT_MODIFIER: PositioningStrategy<KtModifierListOwner> = modifierSetPosition(KtTokens.LATEINIT_KEYWORD)
 
     @JvmField
-    val VARIANCE_MODIFIER: PositioningStrategy<KtModifierListOwner> = modifierSetPosition(KtTokens.IN_KEYWORD, KtTokens.OUT_KEYWORD)
+    val VARIANCE_MODIFIER: PositioningStrategy<KtModifierListOwner> = projectionPosition()
 
     @JvmField
     val CONST_MODIFIER: PositioningStrategy<KtModifierListOwner> = modifierSetPosition(KtTokens.CONST_KEYWORD)
@@ -414,7 +414,25 @@ object PositioningStrategies {
                         return markElement(modifier)
                     }
                 }
+
                 throw IllegalStateException("None of the modifiers is found: " + listOf(*tokens))
+            }
+        }
+    }
+
+    @JvmStatic
+    fun projectionPosition(): PositioningStrategy<KtModifierListOwner> {
+        return object : PositioningStrategy<KtModifierListOwner>() {
+            override fun mark(element: KtModifierListOwner): List<TextRange> {
+                if (element is KtTypeProjection && element.projectionKind == KtProjectionKind.STAR) {
+                    return markElement(element)
+                }
+
+                val modifierList = element.modifierList.sure { "No modifier list, but modifier has been found by the analyzer" }
+                modifierList.getModifier(KtTokens.IN_KEYWORD)?.let { return markElement(it) }
+                modifierList.getModifier(KtTokens.OUT_KEYWORD)?.let { return markElement(it) }
+
+                throw IllegalStateException("None of the modifiers is found: in, out")
             }
         }
     }
@@ -937,6 +955,7 @@ object PositioningStrategies {
                 is KtOperationExpression -> element.operationReference
                 is KtWhenConditionInRange -> element.operationReference
                 is KtAnnotationEntry -> element.calleeExpression ?: element
+                is KtTypeReference -> (element.typeElement as? KtNullableType)?.innerType ?: element
                 else -> element
             }
             while (locateReferencedName && result is KtParenthesizedExpression) {

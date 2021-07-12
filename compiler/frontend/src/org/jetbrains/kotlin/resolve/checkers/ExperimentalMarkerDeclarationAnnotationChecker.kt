@@ -33,15 +33,6 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.getAnnotationRetention
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 class ExperimentalMarkerDeclarationAnnotationChecker(private val module: ModuleDescriptor) : AdditionalAnnotationChecker {
-    companion object {
-        private val WRONG_TARGETS_FOR_MARKER = setOf(
-            KotlinTarget.EXPRESSION,
-            KotlinTarget.FILE,
-            KotlinTarget.TYPE,
-            KotlinTarget.TYPE_PARAMETER
-        )
-    }
-
     override fun checkEntries(
         entries: List<KtAnnotationEntry>,
         actualTargets: List<KotlinTarget>,
@@ -52,18 +43,18 @@ class ExperimentalMarkerDeclarationAnnotationChecker(private val module: ModuleD
         for (entry in entries) {
             val annotation = trace.bindingContext.get(BindingContext.ANNOTATION, entry) ?: continue
             when (annotation.fqName) {
-                in ExperimentalUsageChecker.USE_EXPERIMENTAL_FQ_NAMES -> {
+                in OptInNames.USE_EXPERIMENTAL_FQ_NAMES -> {
                     val annotationClasses =
-                        annotation.allValueArguments[ExperimentalUsageChecker.USE_EXPERIMENTAL_ANNOTATION_CLASS]
+                        annotation.allValueArguments[OptInNames.USE_EXPERIMENTAL_ANNOTATION_CLASS]
                             .safeAs<ArrayValue>()?.value.orEmpty()
                     checkUseExperimentalUsage(annotationClasses, trace, entry)
                 }
-                in ExperimentalUsageChecker.EXPERIMENTAL_FQ_NAMES -> {
+                in OptInNames.EXPERIMENTAL_FQ_NAMES -> {
                     isAnnotatedWithExperimental = true
                 }
             }
             val annotationClass = annotation.annotationClass ?: continue
-            if (annotationClass.annotations.any { it.fqName in ExperimentalUsageChecker.EXPERIMENTAL_FQ_NAMES }) {
+            if (annotationClass.annotations.any { it.fqName in OptInNames.EXPERIMENTAL_FQ_NAMES }) {
                 val annotationUseSiteTarget = entry.useSiteTarget?.getAnnotationUseSiteTarget()
                 if (KotlinTarget.PROPERTY_GETTER in actualTargets ||
                     annotationUseSiteTarget == AnnotationUseSiteTarget.PROPERTY_GETTER
@@ -154,7 +145,7 @@ class ExperimentalMarkerDeclarationAnnotationChecker(private val module: ModuleD
         if (targetEntry != null) {
             val (entry, descriptor) = targetEntry
             val allowedTargets = AnnotationChecker.loadAnnotationTargets(descriptor!!) ?: return
-            val wrongTargets = allowedTargets.intersect(WRONG_TARGETS_FOR_MARKER)
+            val wrongTargets = allowedTargets.intersect(Experimentality.WRONG_TARGETS_FOR_MARKER)
             if (wrongTargets.isNotEmpty()) {
                 trace.report(
                     Errors.EXPERIMENTAL_ANNOTATION_WITH_WRONG_TARGET.on(

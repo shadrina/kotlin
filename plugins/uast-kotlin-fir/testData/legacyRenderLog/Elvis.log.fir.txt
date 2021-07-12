@@ -2,8 +2,14 @@ UFile (package = )
     UClass (name = ElvisKt)
         UMethod (name = foo)
             UParameter (name = bar)
-            [!] UnknownKotlinExpression (NULL)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = null)
         UMethod (name = bar)
-            [!] UnknownKotlinExpression (INTEGER_CONSTANT)
+            UBlockExpression
+                UReturnExpression
+                    ULiteralExpression (value = 42)
         UMethod (name = baz)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
+                UReturnExpression
+                    [!] UnknownKotlinExpression (BINARY_EXPRESSION)

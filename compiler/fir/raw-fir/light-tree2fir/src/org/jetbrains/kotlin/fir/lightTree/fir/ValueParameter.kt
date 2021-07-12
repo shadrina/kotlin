@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
+import org.jetbrains.kotlin.fir.declarations.utils.fromPrimaryConstructor
+import org.jetbrains.kotlin.fir.declarations.utils.isFromVararg
 import org.jetbrains.kotlin.fir.diagnostics.ConeSimpleDiagnostic
 import org.jetbrains.kotlin.fir.diagnostics.DiagnosticKind
 import org.jetbrains.kotlin.fir.expressions.builder.buildQualifiedAccessExpression
@@ -46,20 +48,18 @@ class ValueParameter(
         }
 
         return buildProperty {
-            val parameterSource = firValueParameter.source as? FirLightSourceElement
-            val parameterNode = parameterSource?.lighterASTNode
-            source = parameterNode?.toFirLightSourceElement(
-                parameterSource.treeStructure, FirFakeSourceElementKind.PropertyFromParameter
-            )
+            val propertySource = firValueParameter.source?.fakeElement(FirFakeSourceElementKind.PropertyFromParameter)
+            source = propertySource
             this.moduleData = moduleData
             origin = FirDeclarationOrigin.Source
             returnTypeRef = type.copyWithNewSourceKind(FirFakeSourceElementKind.PropertyFromParameter)
             this.name = name
             initializer = buildQualifiedAccessExpression {
-                source = firValueParameter.source
+                source = propertySource
                 calleeReference = buildPropertyFromParameterResolvedNamedReference {
                     this.name = name
                     resolvedSymbol = this@ValueParameter.firValueParameter.symbol
+                    source = propertySource
                 }
             }
             isVar = this@ValueParameter.isVar

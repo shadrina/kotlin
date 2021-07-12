@@ -37,11 +37,12 @@ import org.jetbrains.kotlin.ir.descriptors.IrAbstractFunctionFactory
 import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.IrPublicSymbolBase
+import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
-import org.jetbrains.kotlin.library.IrLibrary
+import org.jetbrains.kotlin.library.KotlinAbiVersion
 import org.jetbrains.kotlin.library.KotlinLibrary
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -91,18 +92,19 @@ internal class KonanIrLinker(
     override fun isBuiltInModule(moduleDescriptor: ModuleDescriptor): Boolean = moduleDescriptor.isNativeStdlib()
 
     private val forwardDeclarationDeserializer = forwardModuleDescriptor?.let { KonanForwardDeclarationModuleDeserializer(it) }
-    override val fakeOverrideBuilder = FakeOverrideBuilder(this, symbolTable, IdSignatureSerializer(KonanManglerIr), builtIns, KonanFakeOverrideClassFilter)
+    override val fakeOverrideBuilder: FakeOverrideBuilder =
+        FakeOverrideBuilder(this, symbolTable, KonanManglerIr, IrTypeSystemContextImpl(builtIns), KonanFakeOverrideClassFilter)
 
-    override fun createModuleDeserializer(moduleDescriptor: ModuleDescriptor, klib: IrLibrary?, strategy: DeserializationStrategy): IrModuleDeserializer {
+    override fun createModuleDeserializer(moduleDescriptor: ModuleDescriptor, klib: KotlinLibrary?, strategy: DeserializationStrategy): IrModuleDeserializer {
         if (moduleDescriptor === forwardModuleDescriptor) {
             return forwardDeclarationDeserializer ?: error("forward declaration deserializer expected")
         }
 
-        if (klib is KotlinLibrary && klib.isInteropLibrary()) {
+        if (klib != null && klib.isInteropLibrary()) {
             // See https://youtrack.jetbrains.com/issue/KT-43517.
             // Disabling this flag forces linker to generate IR.
             val isCached = false //cachedLibraries.isLibraryCached(klib)
-            return KonanInteropModuleDeserializer(moduleDescriptor, isCached)
+            return KonanInteropModuleDeserializer(moduleDescriptor, klib, isCached)
         }
 
         return KonanModuleDeserializer(moduleDescriptor, klib ?: error("Expecting kotlin library"), strategy)
@@ -110,16 +112,17 @@ internal class KonanIrLinker(
 
     private inner class KonanModuleDeserializer(
             moduleDescriptor: ModuleDescriptor,
-            klib: IrLibrary,
+            klib: KotlinLibrary,
             strategy: DeserializationStrategy
-    ): BasicIrModuleDeserializer(this@KonanIrLinker, moduleDescriptor, klib, strategy){
+    ): BasicIrModuleDeserializer(this@KonanIrLinker, moduleDescriptor, klib, strategy, klib.versions.abiVersion ?: KotlinAbiVersion.CURRENT) {
         override val moduleFragment: IrModuleFragment = KonanIrModuleFragmentImpl(moduleDescriptor, builtIns, emptyList())
     }
 
     private inner class KonanInteropModuleDeserializer(
             moduleDescriptor: ModuleDescriptor,
+            klib: KotlinLibrary,
             private val isLibraryCached: Boolean
-    ) : IrModuleDeserializer(moduleDescriptor) {
+    ) : IrModuleDeserializer(moduleDescriptor, klib.versions.abiVersion ?: KotlinAbiVersion.CURRENT) {
         init {
             assert(moduleDescriptor.kotlinLibrary.isInteropLibrary())
         }
@@ -131,7 +134,7 @@ internal class KonanIrLinker(
         private fun IdSignature.isInteropSignature(): Boolean = IdSignature.Flags.IS_NATIVE_INTEROP_LIBRARY.test()
 
         override fun contains(idSig: IdSignature): Boolean {
-            if (idSig.isPublic) {
+            if (idSig.isPubliclyVisible) {
                 if (idSig.isInteropSignature()) {
                     // TODO: add descriptor cache??
                     return descriptorByIdSignatureFinder.findDescriptorBySignature(idSig) != null
@@ -170,7 +173,7 @@ internal class KonanIrLinker(
         override val moduleDependencies: Collection<IrModuleDeserializer> = listOfNotNull(forwardDeclarationDeserializer)
     }
 
-    private inner class KonanForwardDeclarationModuleDeserializer(moduleDescriptor: ModuleDescriptor) : IrModuleDeserializer(moduleDescriptor) {
+    private inner class KonanForwardDeclarationModuleDeserializer(moduleDescriptor: ModuleDescriptor) : IrModuleDeserializer(moduleDescriptor, KotlinAbiVersion.CURRENT) {
         init {
             assert(moduleDescriptor.isForwardDeclarationModule)
         }
@@ -178,7 +181,7 @@ internal class KonanIrLinker(
         private val declaredDeclaration = mutableMapOf<IdSignature, IrClass>()
 
         private fun IdSignature.isForwardDeclarationSignature(): Boolean {
-            if (isPublic) {
+            if (isPubliclyVisible) {
                 return packageFqName().run {
                     startsWith(C_NAMES_NAME) || startsWith(OBJC_NAMES_NAME)
                 }
@@ -190,7 +193,7 @@ internal class KonanIrLinker(
         override fun contains(idSig: IdSignature): Boolean = idSig.isForwardDeclarationSignature()
 
         private fun resolveDescriptor(idSig: IdSignature): ClassDescriptor =
-            with(idSig as IdSignature.PublicSignature) {
+            with(idSig as IdSignature.CommonSignature) {
                 val classId = ClassId(packageFqName(), FqName(declarationFqName), false)
                 moduleDescriptor.findClassAcrossModuleDependencies(classId) ?: error("No declaration found with $idSig")
             }

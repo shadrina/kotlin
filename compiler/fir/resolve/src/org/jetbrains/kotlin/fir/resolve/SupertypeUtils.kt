@@ -8,6 +8,9 @@ package org.jetbrains.kotlin.fir.resolve
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.expandedConeType
+import org.jetbrains.kotlin.fir.declarations.utils.isLocal
+import org.jetbrains.kotlin.fir.declarations.utils.superConeTypes
 import org.jetbrains.kotlin.fir.resolve.substitution.substitutorByMap
 import org.jetbrains.kotlin.fir.resolve.transformers.createSubstitutionForSupertype
 import org.jetbrains.kotlin.fir.resolve.transformers.ensureResolved
@@ -23,11 +26,11 @@ import org.jetbrains.kotlin.utils.SmartList
 import org.jetbrains.kotlin.utils.SmartSet
 
 abstract class SupertypeSupplier {
-    abstract fun forClass(firClass: FirClass<*>, useSiteSession: FirSession): List<ConeClassLikeType>
-    abstract fun expansionForTypeAlias(typeAlias: FirTypeAlias): ConeClassLikeType?
+    abstract fun forClass(firClass: FirClass, useSiteSession: FirSession): List<ConeClassLikeType>
+    abstract fun expansionForTypeAlias(typeAlias: FirTypeAlias, useSiteSession: FirSession): ConeClassLikeType?
 
     object Default : SupertypeSupplier() {
-        override fun forClass(firClass: FirClass<*>, useSiteSession: FirSession): List<ConeClassLikeType> {
+        override fun forClass(firClass: FirClass, useSiteSession: FirSession): List<ConeClassLikeType> {
             if (!firClass.isLocal) {
                 // for local classes the phase may not be updated till that moment
                 firClass.ensureResolved(FirResolvePhase.SUPER_TYPES, useSiteSession)
@@ -35,12 +38,15 @@ abstract class SupertypeSupplier {
             return firClass.superConeTypes
         }
 
-        override fun expansionForTypeAlias(typeAlias: FirTypeAlias) = typeAlias.expandedConeType
+        override fun expansionForTypeAlias(typeAlias: FirTypeAlias, useSiteSession: FirSession): ConeClassLikeType? {
+            typeAlias.ensureResolved(FirResolvePhase.SUPER_TYPES, useSiteSession)
+            return typeAlias.expandedConeType
+        }
     }
 }
 
 fun lookupSuperTypes(
-    klass: FirClass<*>,
+    klass: FirClass,
     lookupInterfaces: Boolean,
     deep: Boolean,
     useSiteSession: FirSession,
@@ -52,7 +58,7 @@ fun lookupSuperTypes(
     }
 }
 
-fun FirClass<*>.isThereLoopInSupertypes(session: FirSession): Boolean {
+fun FirClass.isThereLoopInSupertypes(session: FirSession): Boolean {
     val visitedSymbols: MutableSet<FirClassifierSymbol<*>> = SmartSet.create()
     val inProcess: MutableSet<FirClassifierSymbol<*>> = mutableSetOf()
 
@@ -66,7 +72,7 @@ fun FirClass<*>.isThereLoopInSupertypes(session: FirSession): Boolean {
         }
 
         when (val fir = current.fir) {
-            is FirClass<*> -> {
+            is FirClass -> {
                 fir.superConeTypes.forEach {
                     it.lookupTag.toSymbol(session)?.let(::dfs)
                 }
@@ -136,7 +142,7 @@ fun createSubstitution(
 fun ConeClassLikeType.wrapSubstitutionScopeIfNeed(
     session: FirSession,
     useSiteMemberScope: FirTypeScope,
-    declaration: FirClassLikeDeclaration<*>,
+    declaration: FirClassLikeDeclaration,
     builder: ScopeSession,
     derivedClass: FirRegularClass
 ): FirTypeScope {
@@ -166,7 +172,7 @@ fun ConeClassLikeType.wrapSubstitutionScopeIfNeed(
 private fun ConeClassLikeType.computePartialExpansion(
     useSiteSession: FirSession,
     supertypeSupplier: SupertypeSupplier
-): ConeClassLikeType = fullyExpandedType(useSiteSession, supertypeSupplier::expansionForTypeAlias)
+): ConeClassLikeType = fullyExpandedType(useSiteSession) { supertypeSupplier.expansionForTypeAlias(it, useSiteSession) }
 
 private fun FirClassifierSymbol<*>.collectSuperTypes(
     list: MutableList<ConeClassLikeType>,
@@ -217,8 +223,10 @@ private fun FirClassifierSymbol<*>.collectSuperTypes(
                 }
         }
         is FirTypeAliasSymbol -> {
-            val expansion =
-                supertypeSupplier.expansionForTypeAlias(fir)?.computePartialExpansion(useSiteSession, supertypeSupplier) ?: return
+            val expansion = supertypeSupplier
+                .expansionForTypeAlias(fir, useSiteSession)
+                ?.computePartialExpansion(useSiteSession, supertypeSupplier)
+                ?: return
             expansion.lookupTag.toSymbol(useSiteSession)
                 ?.collectSuperTypes(list, visitedSymbols, deep, lookupInterfaces, substituteSuperTypes, useSiteSession, supertypeSupplier)
         }

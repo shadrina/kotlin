@@ -5,18 +5,13 @@
 
 package org.jetbrains.uast.test.kotlin
 
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.TestDataPath
-import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.test.JUnit3RunnerWithInners
 import org.jetbrains.kotlin.test.TestMetadata
-import org.jetbrains.uast.UFile
+import org.jetbrains.uast.*
+import org.jetbrains.uast.test.common.kotlin.UastResolveApiTestBase
 import org.jetbrains.uast.test.env.kotlin.AbstractFirUastTest
-import org.junit.Assert
 import org.junit.runner.RunWith
-import java.lang.IllegalStateException
 
 @RunWith(JUnit3RunnerWithInners::class)
 class FirUastResolveApiTest : AbstractFirUastTest() {
@@ -26,52 +21,31 @@ class FirUastResolveApiTest : AbstractFirUastTest() {
         // Bogus
     }
 
+    // TODO: once call is supported, test labeledExpression.kt for labeled this and super
+
     @TestMetadata("plugins/uast-kotlin/testData")
     @TestDataPath("\$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners::class)
-    class Legacy : AbstractFirUastTest() {
+    class Legacy : AbstractFirUastTest(), UastResolveApiTestBase {
         override val isFirUastPlugin: Boolean = true
 
         override fun check(filePath: String, file: UFile) {
             // Bogus
         }
 
+        @TestMetadata("MethodReference.kt")
+        fun testMethodReference() {
+            doCheck("plugins/uast-kotlin/testData/MethodReference.kt", ::checkCallbackForMethodReference)
+        }
+
         @TestMetadata("Imports.kt")
         fun testImports() {
-            doCheck("plugins/uast-kotlin/testData/Imports.kt") { _, uFile ->
-                uFile.imports.forEach { uImport ->
-                    if ((uImport.sourcePsi as? KtImportDirective)?.text?.contains("sleep") == true) {
-                        //todo investigate
-                        return@forEach
-                    }
-                    val resolvedImport = uImport.resolve()
-                        ?: throw IllegalStateException("Unresolved import: ${uImport.asRenderString()}")
-                    val expected = when (resolvedImport) {
-                        is PsiClass -> {
-                            // import java.lang.Thread.*
-                            resolvedImport.name == "Thread" || resolvedImport.name == "UncaughtExceptionHandler"
-                        }
-                        is PsiMethod -> {
-                            // import java.lang.Thread.(currentThread/sleep)
-                            resolvedImport.name == "currentThread" || resolvedImport.name == "sleep"
-                        }
-                        is PsiField -> {
-                            // import java.lang.Thread.NORM_PRIORITY
-                            resolvedImport.name == "NORM_PRIORITY"
-                        }
-                        is KtNamedFunction -> {
-                            // import kotlin.collections.emptyList
-                            resolvedImport.isTopLevel && resolvedImport.name == "emptyList"
-                        }
-                        is KtProperty -> {
-                            // import kotlin.Int.Companion.SIZE_BYTES
-                            resolvedImport.name == "SIZE_BYTES"
-                        }
-                        else -> false
-                    }
-                    Assert.assertTrue("Unexpected import: $resolvedImport", expected)
-                }
-            }
+            doCheck("plugins/uast-kotlin/testData/Imports.kt", ::checkCallbackForImports)
+        }
+
+        @TestMetadata("ReceiverFun.kt")
+        fun testReceiverFun() {
+            doCheck("plugins/uast-kotlin/testData/ReceiverFun.kt", ::checkCallbackForReceiverFun)
         }
     }
 }

@@ -1177,6 +1177,7 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
 
         val whenEmittingContext = WhenEmittingContext(expression)
 
+        generateDebugTrambolineIf("when", expression)
         expression.branches.forEach {
             val bbNext = if (it == expression.branches.last())
                              null
@@ -1193,6 +1194,15 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
             expression.type.isNothing() -> functionGenerationContext.kNothingFakeValue
             whenEmittingContext.resultPhi.isInitialized() -> whenEmittingContext.resultPhi.value
             else -> LLVMGetUndef(whenEmittingContext.llvmType)!!
+        }
+    }
+
+    private fun generateDebugTrambolineIf(name: String, expression: IrExpression) {
+        val generationContext = (currentCodeContext.functionScope() as? FunctionScope)?.functionGenerationContext
+                .takeIf { context.config.generateDebugTrampoline }
+        generationContext?.basicBlock(name, expression.startLocation)?.let {
+            generationContext.br(it)
+            generationContext.positionAtEnd(it)
         }
     }
 
@@ -1818,12 +1828,7 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
         context.log{"evaluateReturnableBlock         : ${value.statements.forEach { ir2string(it) }}"}
 
         val returnableBlockScope = ReturnableBlockScope(value)
-        val generationContext = (currentCodeContext.functionScope() as? FunctionScope)?.functionGenerationContext
-                .takeIf { context.config.generateInlinedBodyTrampoline }
-        generationContext?.basicBlock("inline", value.startLocation)?.let {
-            generationContext.br(it)
-            generationContext.positionAtEnd(it)
-        }
+        generateDebugTrambolineIf("inline", value)
         using(returnableBlockScope) {
             using(VariableScope()) {
                 value.statements.forEach {
@@ -2453,6 +2458,7 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
             return
 
         overrideRuntimeGlobal("Kotlin_destroyRuntimeMode", Int32(context.config.destroyRuntimeMode.value))
+        overrideRuntimeGlobal("Kotlin_gcAggressive", Int32(if (context.config.gcAggressive) 1 else 0))
     }
 
     //-------------------------------------------------------------------------//

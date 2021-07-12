@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.idea.fir.api.fixes.KtQuickFixesList
 import org.jetbrains.kotlin.idea.fir.api.fixes.KtQuickFixesListBuilder
 import org.jetbrains.kotlin.idea.frontend.api.fir.diagnostics.KtFirDiagnostic
 import org.jetbrains.kotlin.idea.quickfix.fixes.*
-import org.jetbrains.kotlin.idea.quickfix.fixes.InitializePropertyQuickFixFactory
 
 class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
     private val keywords = KtQuickFixesListBuilder.registerPsiQuickFix {
@@ -63,6 +62,10 @@ class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
             KtFirDiagnostic.AbstractClassMemberNotImplemented::class,
             AddModifierFix.addAbstractModifier
         )
+        registerPsiQuickFixes(
+            KtFirDiagnostic.VirtualMemberHidden::class,
+            AddModifierFix.addOverrideModifier
+        )
         registerPsiQuickFixes(KtFirDiagnostic.ValOrVarOnLoopParameter::class, RemoveValVarFromParameterFix)
         registerPsiQuickFixes(KtFirDiagnostic.ValOrVarOnFunParameter::class, RemoveValVarFromParameterFix)
         registerPsiQuickFixes(KtFirDiagnostic.ValOrVarOnCatchParameter::class, RemoveValVarFromParameterFix)
@@ -74,9 +77,9 @@ class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
             KtFirDiagnostic.MustBeInitializedOrBeAbstract::class,
             AddModifierFix.addAbstractModifier,
         )
-        registerApplicator(InitializePropertyQuickFixFactory.initializePropertyFactory)
+        registerApplicators(InitializePropertyQuickFixFactories.initializePropertyFactory)
         registerApplicator(AddLateInitFactory.addLateInitFactory)
-        registerApplicator(AddAccessorsFactories.addAccessorsToUninitializedProperty)
+        registerApplicators(AddAccessorsFactories.addAccessorsToUninitializedProperty)
     }
 
     private val overrides = KtQuickFixesListBuilder.registerPsiQuickFix {
@@ -118,21 +121,36 @@ class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
         registerApplicator(AddExclExclCallFixFactories.iteratorOnNullableFactory)
         registerApplicator(TypeMismatchFactories.argumentTypeMismatchFactory)
         registerApplicator(TypeMismatchFactories.returnTypeMismatchFactory)
-
-        // TODO: NON_EXHAUSTIVE_WHEN[_ON_SEALED_CLASS] will be replaced in future. We need to register the fix for those diagnostics as well
-        registerPsiQuickFixes(KtFirDiagnostic.NoElseInWhen::class, AddWhenElseBranchFix)
+        registerApplicator(TypeMismatchFactories.assignmentTypeMismatch)
+        registerApplicator(TypeMismatchFactories.initializerTypeMismatch)
 
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeImplicitInvokeCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeInfixCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeOperatorCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forArgumentTypeMismatch)
+
+        registerPsiQuickFixes(KtFirDiagnostic.NullableSupertype::class, RemoveNullableFix.removeForSuperType)
+        registerPsiQuickFixes(KtFirDiagnostic.InapplicableLateinitModifier::class, RemoveNullableFix.removeForLateInitProperty)
     }
 
-    private val returnTypes = KtQuickFixesListBuilder.registerPsiQuickFix {
+    private val whenStatements = KtQuickFixesListBuilder.registerPsiQuickFix {
+        // TODO: NON_EXHAUSTIVE_WHEN[_ON_SEALED_CLASS] will be replaced in future. We need to register the fix for those diagnostics as well
+        registerPsiQuickFixes(KtFirDiagnostic.NoElseInWhen::class, AddWhenElseBranchFix)
+        registerApplicator(AddWhenRemainingBranchFixFactories.noElseInWhen)
+    }
+
+    private val typeMismatch = KtQuickFixesListBuilder.registerPsiQuickFix {
         registerApplicator(ChangeTypeQuickFixFactories.componentFunctionReturnTypeMismatch)
         registerApplicator(ChangeTypeQuickFixFactories.returnTypeMismatch)
+
+        registerApplicator(AddToStringFixFactories.typeMismatch)
+        registerApplicator(AddToStringFixFactories.argumentTypeMismatch)
+        registerApplicator(AddToStringFixFactories.assignmentTypeMismatch)
+        registerApplicator(AddToStringFixFactories.returnTypeMismatch)
+        registerApplicator(AddToStringFixFactories.initializerTypeMismatch)
     }
+
 
     override val list: KtQuickFixesList = KtQuickFixesList.createCombined(
         keywords,
@@ -141,6 +159,7 @@ class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
         imports,
         mutability,
         expressions,
-        returnTypes
+        whenStatements,
+        typeMismatch
     )
 }

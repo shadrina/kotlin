@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.IrExportCheck
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ir.IrMangleComputer
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
+import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.idea.MainFunctionDetector
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
@@ -27,11 +28,7 @@ import org.jetbrains.kotlin.load.java.lazy.descriptors.isJavaField
 
 abstract class AbstractJvmManglerIr : IrBasedKotlinManglerImpl() {
 
-    companion object {
-        private val exportChecker = JvmIrExportChecker()
-    }
-
-    private class JvmIrExportChecker : IrExportCheckerVisitor() {
+    private class JvmIrExportChecker(compatibleMode: Boolean) : IrExportCheckerVisitor(compatibleMode) {
         override fun IrDeclaration.isPlatformSpecificExported() = false
     }
 
@@ -43,7 +40,7 @@ abstract class AbstractJvmManglerIr : IrBasedKotlinManglerImpl() {
             irFunction.isFromJava()
     }
 
-    override fun getExportChecker(): KotlinExportChecker<IrDeclaration> = exportChecker
+    override fun getExportChecker(compatibleMode: Boolean): KotlinExportChecker<IrDeclaration> = JvmIrExportChecker(compatibleMode)
 
     override fun getMangleComputer(mode: MangleMode): KotlinMangleComputer<IrDeclaration> {
         return JvmIrManglerComputer(StringBuilder(256), mode)
@@ -70,8 +67,7 @@ abstract class AbstractJvmDescriptorMangler(private val mainDetector: MainFuncti
         override fun addReturnTypeSpecialCase(functionDescriptor: FunctionDescriptor): Boolean =
             functionDescriptor is JavaMethodDescriptor
 
-        override fun copy(newMode: MangleMode): DescriptorMangleComputer =
-            JvmDescriptorManglerComputer(builder, mainDetector, newMode)
+        override fun copy(newMode: MangleMode): DescriptorMangleComputer = JvmDescriptorManglerComputer(builder, mainDetector, newMode)
 
         private fun isMainFunction(descriptor: FunctionDescriptor): Boolean = mainDetector?.isMain(descriptor) ?: false
 
@@ -87,9 +83,15 @@ abstract class AbstractJvmDescriptorMangler(private val mainDetector: MainFuncti
             // For more details see JvmPlatformOverloadsSpecificityComparator.kt
             return if (isJavaField) MangleConstant.JAVA_FIELD_SUFFIX else null
         }
+
+        override fun visitModuleDeclaration(descriptor: ModuleDescriptor, data: Nothing?) {
+            // In general, having module descriptor as `containingDeclaration` for regular declaration is considered an error (in JS/Native)
+            // because there should be `PackageFragmentDescriptor` in between
+            // but on JVM there is `SyntheticJavaPropertyDescriptor` whose parent is a module. So let just skip it.
+        }
     }
 
-    override fun getExportChecker(): KotlinExportChecker<DeclarationDescriptor> = exportChecker
+    override fun getExportChecker(compatibleMode: Boolean): KotlinExportChecker<DeclarationDescriptor> = exportChecker
 
     override fun getMangleComputer(mode: MangleMode): KotlinMangleComputer<DeclarationDescriptor> {
         return JvmDescriptorManglerComputer(StringBuilder(256), mainDetector, mode)

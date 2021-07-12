@@ -27,8 +27,6 @@ plugins {
 native {
     val obj = if (HostManager.hostIsMingw) "obj" else "o"
     val llvmDir = project.findProperty("llvmDir")
-    val host = rootProject.project(":kotlin-native").extra["hostName"]
-    val hostLibffiDir = rootProject.project(":kotlin-native").extra["${host}LibffiDir"]
     val cxxflags = mutableListOf(
         "--std=c++17",
         "-I${llvmDir}/include",
@@ -44,9 +42,6 @@ native {
         OSX -> {
             cxxflags += "-DKONAN_MACOS=1"
         }
-    }
-    if (!HostManager.hostIsMingw) {
-        cxxflags += "-fPIC"
     }
     suffixes {
         (".cpp" to ".$obj") {

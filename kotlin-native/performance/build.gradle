@@ -31,7 +31,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.29")
+        classpath("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.31")
     }
 }
 
@@ -90,6 +90,7 @@ subprojects { proj ->
         }
     }
     proj.repositories {
+        mavenCentral()
         maven {
             url proj.ext["bootstrapKotlinRepo"]
         }

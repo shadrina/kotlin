@@ -11,6 +11,7 @@
 #include "GlobalsRegistry.hpp"
 #include "TestSupport.hpp"
 #include "ThreadData.hpp"
+#include "ThreadState.hpp"
 
 using namespace kotlin;
 
@@ -43,10 +44,10 @@ std::vector<mm::ThreadData*> collect(mm::ThreadRegistry::Iterable& iterable) {
 
 extern "C" void Kotlin_TestSupport_AssertClearGlobalState() {
     // Validate that global registries are empty.
-    auto globals = mm::GlobalsRegistry::Instance().Iter();
-    auto objects = mm::GlobalData::Instance().objectFactory().Iter();
-    auto stableRefs = mm::StableRefRegistry::Instance().Iter();
-    auto threads = mm::ThreadRegistry::Instance().Iter();
+    auto globals = mm::GlobalsRegistry::Instance().LockForIter();
+    auto objects = mm::GlobalData::Instance().objectFactory().LockForIter();
+    auto stableRefs = mm::StableRefRegistry::Instance().LockForIter();
+    auto threads = mm::ThreadRegistry::Instance().LockForIter();
 
     EXPECT_THAT(collect<ObjHeader**>(globals), testing::UnorderedElementsAre());
     EXPECT_THAT(collect<mm::ObjectFactory<gc::GC>::NodeRef>(objects), testing::UnorderedElementsAre());
@@ -56,5 +57,9 @@ extern "C" void Kotlin_TestSupport_AssertClearGlobalState() {
 
 void kotlin::DeinitMemoryForTests(MemoryState* memoryState) {
     DeinitMemory(memoryState, false);
-    mm::ThreadRegistry::TestSupport::ClearCurrentThreadData();
+    mm::ThreadRegistry::ClearCurrentThreadData();
+}
+
+std::ostream& kotlin::operator<<(std::ostream& stream, ThreadState state) {
+    return stream << ThreadStateName(state);
 }

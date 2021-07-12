@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.fir.references.FirSuperReference
 import org.jetbrains.kotlin.fir.resolve.transformers.firClassLike
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
-object FirQualifiedSupertypeExtendedByOtherSupertypeChecker : FirQualifiedAccessChecker() {
+object FirQualifiedSupertypeExtendedByOtherSupertypeChecker : FirQualifiedAccessExpressionChecker() {
     override fun check(expression: FirQualifiedAccessExpression, context: CheckerContext, reporter: DiagnosticReporter) {
         // require to be called over a super reference
         val superReference = expression.calleeReference.safeAs<FirSuperReference>()
@@ -27,7 +27,7 @@ object FirQualifiedSupertypeExtendedByOtherSupertypeChecker : FirQualifiedAccess
 
         val explicitType = superReference.superTypeRef
             .firClassLike(context.session)
-            ?.followAllAlias(context.session).safeAs<FirClass<*>>()
+            ?.followAllAlias(context.session).safeAs<FirClass>()
             ?: return
 
         val surroundingType = context.findClosestClassOrObject()
@@ -37,11 +37,11 @@ object FirQualifiedSupertypeExtendedByOtherSupertypeChecker : FirQualifiedAccess
         // have `explicitType` as their supertype or
         // equal to it
         var count = 0
-        var candidate: FirClass<*>? = null
+        var candidate: FirClass? = null
 
         for (it in surroundingType.superTypeRefs) {
             val that = it.firClassLike(context.session)
-                ?.followAllAlias(context.session).safeAs<FirClass<*>>()
+                ?.followAllAlias(context.session).safeAs<FirClass>()
                 ?: continue
 
             val isSupertype = explicitType.isSupertypeOf(that, context.session)

@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.generators.imltogradle
 
 import com.google.gson.JsonParser
+import com.intellij.openapi.util.io.systemIndependentPath
 import org.jetbrains.jps.model.JpsSimpleElement
 import org.jetbrains.jps.model.java.JavaResourceRootType
 import org.jetbrains.jps.model.java.JavaSourceRootType
@@ -17,10 +18,12 @@ import org.jetbrains.jps.model.module.*
 import org.jetbrains.kotlin.generators.imltogradle.GradleDependencyNotation.IntellijDepGradleDependencyNotation
 import java.io.File
 import java.util.*
+import kotlin.system.measureNanoTime
 
 private lateinit var intellijModuleNameToGradleDependencyNotationsMapping: Map<String, List<GradleDependencyNotation>>
 private val KOTLIN_REPO_ROOT = File(".").canonicalFile
 private val INTELLIJ_REPO_ROOT = KOTLIN_REPO_ROOT.resolve("kotlin-ide")
+private val INTELLIJ_COMMUNITY_REPO_ROOT = INTELLIJ_REPO_ROOT.resolve("kotlin").takeIf { it.exists() } ?: INTELLIJ_REPO_ROOT
 
 private val intellijModuleNameToGradleDependencyNotationsMappingManual: List<Pair<String, GradleDependencyNotation>> = listOf(
     "intellij.platform.jps.build" to GradleDependencyNotation("jpsBuildTest()"),
@@ -35,7 +38,8 @@ private val intellijModulesForWhichGenerateBuildGradle = listOf(
     "intellij.platform.lang.tests",
     "intellij.platform.testExtensions",
     "intellij.java.compiler.tests",
-    "intellij.gradle.toolingExtension.tests"
+    "intellij.gradle.toolingExtension.tests",
+    "intellij.maven",
 )
 
 val jsonUrlPrefixes = mapOf(
@@ -47,11 +51,14 @@ val jsonUrlPrefixes = mapOf(
 fun main() {
     val ijCommunityModuleNameToJpsModuleMapping = INTELLIJ_REPO_ROOT.loadJpsProject().modules.associateBy { it.name }
 
-    val imlFiles = INTELLIJ_REPO_ROOT.walk()
-        .onEnter { it != INTELLIJ_REPO_ROOT.resolve("out") }
+    val skipDirNames = setOf("src", "out", "org", "com", "testData")
+    val imlFiles = INTELLIJ_REPO_ROOT
+        .walk()
+        .onEnter { dir -> dir.name !in skipDirNames }
         .filter {
             it.isFile && it.extension == "iml" &&
-                    (it.name.startsWith("kotlin.") || it.nameWithoutExtension in intellijModulesForWhichGenerateBuildGradle)
+                    (it.name.startsWith("kotlin.") ||
+                            it.nameWithoutExtension in intellijModulesForWhichGenerateBuildGradle)
         }
         .toList()
 
@@ -87,8 +94,15 @@ fun main() {
             valueTransform = { (_, dependencyNotation) -> dependencyNotation }
         )
 
+    val imlsInSameDirectory: List<List<File>> = imlFiles.groupBy { it.parentFile }.filter { it.value.size > 1 }.map { it.value }
+    if (imlsInSameDirectory.isNotEmpty()) {
+        val report = imlsInSameDirectory.joinToString("\n") { "In same directory: " + it.joinToString() }
+        error("It's not allowed to have imls in same directory:\n$report")
+    }
+
     imlFiles.mapNotNull { imlFile -> ijCommunityModuleNameToJpsModuleMapping[imlFile.nameWithoutExtension]?.let { imlFile to it } }
         .forEach { (imlFile, jpsModule) ->
+            println("Processing iml ${imlFile}")
             imlFile.parentFile.resolve("build.gradle.kts").writeText(convertJpsModule(imlFile, jpsModule))
         }
 }
@@ -100,10 +114,15 @@ fun convertJpsLibrary(lib: JpsLibrary, scope: JpsJavaDependencyScope, exported: 
     return when {
         mavenRepositoryLibraryDescriptor == null -> {
             lib.getRootUrls(JpsOrderRootType.COMPILED)
-                .map { File(it.removePrefix("jar://").removeSuffix("!/")).relativeTo(KOTLIN_REPO_ROOT) }
                 .map {
+                    it.removePrefix("jar://").removeSuffix("!/")
+                        .removePrefix(KOTLIN_REPO_ROOT.canonicalPath.replace("\\", "/"))
+                }
+                .map {
+                    check(it.startsWith("/kotlin-ide/intellij/")) { "Only jars from Community repo are accepted $it" }
+                    val relativeToCommunity = it.removePrefix("/kotlin-ide/intellij/").removePrefix("community/")
                     JpsLikeJarDependency(
-                        "files(rootDir.resolve(\"$it\").canonicalPath)",
+                        "files(intellijCommunityDir.resolve(\"$relativeToCommunity\").canonicalPath)",
                         scope,
                         dependencyConfiguration = null,
                         exported = exported
@@ -128,7 +147,9 @@ fun convertJpsLibrary(lib: JpsLibrary, scope: JpsJavaDependencyScope, exported: 
         }
         else -> {
             val dependencyNotation = "\"${mavenRepositoryLibraryDescriptor.mavenId}\""
-            listOf(JpsLikeJarDependency(dependencyNotation, scope, dependencyConfiguration = null, exported = exported))
+            val dependencyConfiguration =
+                "{ isTransitive = false }".takeIf { !mavenRepositoryLibraryDescriptor.isIncludeTransitiveDependencies }
+            listOf(JpsLikeJarDependency(dependencyNotation, scope, dependencyConfiguration, exported = exported))
         }
     }
 }
@@ -181,8 +202,8 @@ fun convertJpsDependencyElement(dep: JpsDependencyElement): List<JpsLikeDependen
 
 fun convertJpsModuleSourceRoot(imlFile: File, sourceRoot: JpsModuleSourceRoot): String {
     return when (sourceRoot.rootType) {
-        is JavaSourceRootType -> "java.srcDir(\"${sourceRoot.file.relativeTo(imlFile.parentFile)}\")"
-        is JavaResourceRootType -> "resources.srcDir(\"${sourceRoot.file.relativeTo(imlFile.parentFile)}\")"
+        is JavaSourceRootType -> "java.srcDir(\"${sourceRoot.file.relativeTo(imlFile.parentFile).systemIndependentPath}\")"
+        is JavaResourceRootType -> "resources.srcDir(\"${sourceRoot.file.relativeTo(imlFile.parentFile).systemIndependentPath}\")"
         else -> error("Unknown sourceRoot = $sourceRoot")
     }
 }
@@ -193,7 +214,7 @@ fun convertJpsModule(imlFile: File, jpsModule: JpsModule): String {
         .mapValues { entry -> entry.value.joinToString("\n") { convertJpsModuleSourceRoot(imlFile, it) } }
         .let { Pair(it[false] ?: "", it[true] ?: "") }
 
-    val mavenRepos = INTELLIJ_REPO_ROOT.resolve(".idea/jarRepositories.xml").readXml().traverseChildren()
+    val mavenRepos = INTELLIJ_COMMUNITY_REPO_ROOT.resolve(".idea/jarRepositories.xml").readXml().traverseChildren()
         .filter { it.getAttributeValue("name") == "url" }
         .map { it.getAttributeValue("value")!! }
         .map { "maven { setUrl(\"$it\") }" }
@@ -211,22 +232,32 @@ fun convertJpsModule(imlFile: File, jpsModule: JpsModule): String {
         ?.joinToString { "\"$it\"" }
         ?: ""
 
+    val testsJar =
+        if (jpsModule.sourceRoots.any { it.rootType.isForTests }) "testsJar()"
+        else """
+            // Fake empty configuration in order to make `DependencyHandler.projectTests(name: String)` work
+            configurations.getOrCreate("tests-jar")
+        """.trimIndent()
+
     val deps = jpsModule.dependencies.flatMap { convertJpsDependencyElement(it) }
         .distinctBy { it.normalizedForComparison() }
         .joinToString("\n") { it.convertToGradleCall() }
     return """
         |// GENERATED build.gradle.kts
         |// GENERATED BY ${imlFile.name}
-        |// USE `./gradlew generateIdeaGradleFiles` TO REGENERATE THIS FILE
+        |// USE `./gradlew generateIdePluginGradleFiles` TO REGENERATE THIS FILE
         |
         |plugins {
         |    kotlin("jvm")
+        |    `java-library` // Add `compileOnlyApi` configuration
         |    id("jps-compatible")
         |}
         |
         |repositories {
         |    $mavenRepos
         |}
+        |
+        |disableDependencyVerification()
         |
         |dependencies {
         |    implementation(toolsJarApi())
@@ -254,10 +285,9 @@ fun convertJpsModule(imlFile: File, jpsModule: JpsModule): String {
         |
         |tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
         |    kotlinOptions.freeCompilerArgs = listOf($compilerArgs)
-        |    kotlinOptions.jdkHome = rootProject.extra["JDK_11"] as String
         |    kotlinOptions.useOldBackend = true // KT-45697
         |}
         |
-        |testsJar()
+        |$testsJar
     """.trimMarginWithInterpolations()
 }

@@ -737,6 +737,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             runTest("idea/testData/quickfix/addExclExclCall/nullExpression.kt");
         }
 
+        @TestMetadata("nullReceiver.kt")
+        public void testNullReceiver() throws Exception {
+            runTest("idea/testData/quickfix/addExclExclCall/nullReceiver.kt");
+        }
+
         @TestMetadata("operationBinary.kt")
         public void testOperationBinary() throws Exception {
             runTest("idea/testData/quickfix/addExclExclCall/operationBinary.kt");
@@ -774,6 +779,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
                 runTest("idea/testData/quickfix/addExclExclCall/typeMismatch/assignmentRValue.kt");
             }
 
+            @TestMetadata("initializer.kt")
+            public void testInitializer() throws Exception {
+                runTest("idea/testData/quickfix/addExclExclCall/typeMismatch/initializer.kt");
+            }
+
             @TestMetadata("memberAccessInExtension.kt")
             public void testMemberAccessInExtension() throws Exception {
                 runTest("idea/testData/quickfix/addExclExclCall/typeMismatch/memberAccessInExtension.kt");
@@ -782,6 +792,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             @TestMetadata("memberAccessInExtensionAsAssignmentRValue.kt")
             public void testMemberAccessInExtensionAsAssignmentRValue() throws Exception {
                 runTest("idea/testData/quickfix/addExclExclCall/typeMismatch/memberAccessInExtensionAsAssignmentRValue.kt");
+            }
+
+            @TestMetadata("memberAccessInExtensionAsInitializer.kt")
+            public void testMemberAccessInExtensionAsInitializer() throws Exception {
+                runTest("idea/testData/quickfix/addExclExclCall/typeMismatch/memberAccessInExtensionAsInitializer.kt");
             }
 
             @TestMetadata("nullArgument.kt")
@@ -13653,6 +13668,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("idea/testData/quickfix/toString"), Pattern.compile("^([\\w\\-_]+)\\.kt$"), null, true);
         }
 
+        @TestMetadata("callArgument.kt")
+        public void testCallArgument() throws Exception {
+            runTest("idea/testData/quickfix/toString/callArgument.kt");
+        }
+
         @TestMetadata("notNullableExpectedNullable.kt")
         public void testNotNullableExpectedNullable() throws Exception {
             runTest("idea/testData/quickfix/toString/notNullableExpectedNullable.kt");
@@ -13668,9 +13688,19 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             runTest("idea/testData/quickfix/toString/nullableExpectedNullable.kt");
         }
 
-        @TestMetadata("simple.kt")
-        public void testSimple() throws Exception {
-            runTest("idea/testData/quickfix/toString/simple.kt");
+        @TestMetadata("propertyInitializer.kt")
+        public void testPropertyInitializer() throws Exception {
+            runTest("idea/testData/quickfix/toString/propertyInitializer.kt");
+        }
+
+        @TestMetadata("returnStatement.kt")
+        public void testReturnStatement() throws Exception {
+            runTest("idea/testData/quickfix/toString/returnStatement.kt");
+        }
+
+        @TestMetadata("variableAssignment.kt")
+        public void testVariableAssignment() throws Exception {
+            runTest("idea/testData/quickfix/toString/variableAssignment.kt");
         }
     }
 
@@ -15486,6 +15516,21 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         @TestMetadata("addRemainingBranchesInNonDefaultPackage.kt")
         public void testAddRemainingBranchesInNonDefaultPackage() throws Exception {
             runTest("idea/testData/quickfix/when/addRemainingBranchesInNonDefaultPackage.kt");
+        }
+
+        @TestMetadata("addRemainingBranchesMissingLeftBracket.kt")
+        public void testAddRemainingBranchesMissingLeftBracket() throws Exception {
+            runTest("idea/testData/quickfix/when/addRemainingBranchesMissingLeftBracket.kt");
+        }
+
+        @TestMetadata("addRemainingBranchesMissingRightBracket.kt")
+        public void testAddRemainingBranchesMissingRightBracket() throws Exception {
+            runTest("idea/testData/quickfix/when/addRemainingBranchesMissingRightBracket.kt");
+        }
+
+        @TestMetadata("addRemainingBranchesMissingRightParenthesis.kt")
+        public void testAddRemainingBranchesMissingRightParenthesis() throws Exception {
+            runTest("idea/testData/quickfix/when/addRemainingBranchesMissingRightParenthesis.kt");
         }
 
         @TestMetadata("addRemainingBranchesSealed.kt")

@@ -4,4 +4,12 @@ UFile (package = A.B.C)
     UClass (name = Bar)
         UMethod (name = Bar)
         UMethod (name = getFoo)
-            [!] UnknownKotlinExpression (BLOCK)
+            UBlockExpression
+                UReturnExpression
+                    UQualifiedReferenceExpression
+                        UQualifiedReferenceExpression
+                            UQualifiedReferenceExpression
+                                USimpleNameReferenceExpression (identifier = A)
+                                USimpleNameReferenceExpression (identifier = B)
+                            USimpleNameReferenceExpression (identifier = C)
+                        [!] UnknownKotlinExpression (CALL_EXPRESSION)

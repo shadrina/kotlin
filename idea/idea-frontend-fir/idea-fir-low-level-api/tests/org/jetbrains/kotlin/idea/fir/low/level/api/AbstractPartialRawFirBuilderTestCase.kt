@@ -5,8 +5,6 @@
 
 package org.jetbrains.kotlin.idea.fir.low.level.api
 
-import com.intellij.openapi.util.io.FileUtilRt
-import com.intellij.util.PathUtil
 import junit.framework.TestCase
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.builder.RawFirBuilder
@@ -18,50 +16,46 @@ import org.jetbrains.kotlin.fir.scopes.FirTypeScope
 import org.jetbrains.kotlin.fir.session.FirSessionFactory
 import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationDesignation
-import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirDeclarationUntypedDesignation
 import org.jetbrains.kotlin.idea.fir.low.level.api.lazy.resolve.RawFirNonLocalDeclarationBuilder
-import org.jetbrains.kotlin.parsing.KotlinParserDefinition
+import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.AbstractLowLevelApiSingleFileTest
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
 import org.jetbrains.kotlin.test.InTextDirectivesUtils
 import org.jetbrains.kotlin.test.KotlinTestUtils
-import org.jetbrains.kotlin.test.testFramework.KtParsingTestCase
-import java.io.File
+import org.jetbrains.kotlin.test.services.TestModuleStructure
+import org.jetbrains.kotlin.test.services.TestServices
+import org.jetbrains.kotlin.test.services.assertions
+import kotlin.io.path.readText
 
-abstract class AbstractPartialRawFirBuilderTestCase : KtParsingTestCase(
-    "",
-    "kt",
-    KotlinParserDefinition()
-) {
-
-    fun doRawFirTest(filePath: String) {
-        val fileText = File(filePath).readText()
+abstract class AbstractPartialRawFirBuilderTestCase : AbstractLowLevelApiSingleFileTest() {
+    override fun doTestByFileStructure(ktFile: KtFile, moduleStructure: TestModuleStructure, testServices: TestServices) {
+        val fileText = testDataPath.readText()
         val functionName = InTextDirectivesUtils.findStringWithPrefixes(fileText, FUNCTION_DIRECTIVE)
         val propertyName = InTextDirectivesUtils.findStringWithPrefixes(fileText, PROPERTY_DIRECTIVE)
 
         when {
-            functionName != null -> testFunctionPartialBuilding(filePath, functionName)
-            propertyName != null -> testPropertyPartialBuilding(filePath, propertyName)
-            else -> fail("No '$FUNCTION_DIRECTIVE' or '$PROPERTY_DIRECTIVE' directives found!")
+            functionName != null -> testFunctionPartialBuilding(ktFile, functionName)
+            propertyName != null -> testPropertyPartialBuilding(ktFile, propertyName)
+            else -> testServices.assertions.fail { "No '$FUNCTION_DIRECTIVE' or '$PROPERTY_DIRECTIVE' directives found!" }
         }
-
     }
 
-    private fun testFunctionPartialBuilding(filePath: String, nameToFind: String) {
+
+    private fun testFunctionPartialBuilding(ktFile: KtFile, nameToFind: String) {
         testPartialBuilding(
-            filePath
+            ktFile
         ) { file -> file.findDescendantOfType<KtNamedFunction> { it.name == nameToFind }!! }
     }
 
-    private fun testPropertyPartialBuilding(filePath: String, nameToFind: String) {
+    private fun testPropertyPartialBuilding(ktFile: KtFile, nameToFind: String) {
         testPartialBuilding(
-            filePath
+            ktFile
         ) { file -> file.findDescendantOfType<KtProperty> { it.name == nameToFind }!! }
     }
 
     private class DesignationBuilder(private val elementToBuild: KtDeclaration) : FirVisitorVoid() {
         private val path = mutableListOf<FirDeclaration>()
-        var resultDesignation: FirDeclarationUntypedDesignation? = null
+        var resultDesignation: FirDeclarationDesignation? = null
             private set
 
         override fun visitElement(element: FirElement) {
@@ -70,7 +64,7 @@ abstract class AbstractPartialRawFirBuilderTestCase : KtParsingTestCase(
                 is FirSimpleFunction, is FirProperty -> {
                     if (element.psi == elementToBuild) {
                         val originalDeclaration = element as FirDeclaration
-                        resultDesignation = FirDeclarationDesignation(path, originalDeclaration, false)
+                        resultDesignation = FirDeclarationDesignation(path, originalDeclaration)
                     } else {
                         element.acceptChildren(this)
                     }
@@ -89,37 +83,25 @@ abstract class AbstractPartialRawFirBuilderTestCase : KtParsingTestCase(
         }
     }
 
-    private fun createKtFile(filePath: String): KtFile {
-        val name = PathUtil.getFileName(filePath)
-        val extension = FileUtilRt.getExtension(name)
-        val fileDirectory = PathUtil.getParentPath(filePath)
-
-        myFileExt = extension
-        val fileText = loadFileDefault(fileDirectory, name)
-        val ktFile = createPsiFile(name, fileText) as KtFile
-        myFile = ktFile
-        return ktFile
-    }
 
     private fun <T : KtElement> testPartialBuilding(
-        filePath: String,
+        file: KtFile,
         findPsiElement: (KtFile) -> T
     ) {
-        val file = createKtFile(filePath)
         val elementToBuild = findPsiElement(file) as KtDeclaration
 
         val scopeProvider = object : FirScopeProvider() {
-            override fun getUseSiteMemberScope(klass: FirClass<*>, useSiteSession: FirSession, scopeSession: ScopeSession): FirTypeScope =
+            override fun getUseSiteMemberScope(klass: FirClass, useSiteSession: FirSession, scopeSession: ScopeSession): FirTypeScope =
                 error("Should not be called")
 
             override fun getStaticMemberScopeForCallables(
-                klass: FirClass<*>,
+                klass: FirClass,
                 useSiteSession: FirSession,
                 scopeSession: ScopeSession
             ): FirScope =
                 error("Should not be called")
 
-            override fun getNestedClassifierScope(klass: FirClass<*>, useSiteSession: FirSession, scopeSession: ScopeSession): FirScope =
+            override fun getNestedClassifierScope(klass: FirClass, useSiteSession: FirSession, scopeSession: ScopeSession): FirScope =
                 error("Should not be called")
         }
 
@@ -132,16 +114,16 @@ abstract class AbstractPartialRawFirBuilderTestCase : KtParsingTestCase(
         val designation = designationBuilder.resultDesignation
         TestCase.assertTrue(designation != null)
 
-        val firElement = RawFirNonLocalDeclarationBuilder.build(
-            session,
-            scopeProvider,
+        val firElement = RawFirNonLocalDeclarationBuilder.buildWithReplacement(
+            session = session,
+            scopeProvider = scopeProvider,
             designation!!,
-            elementToBuild
+            elementToBuild,
+            null
         )
 
         val firDump = firElement.render(FirRenderer.RenderMode.WithFqNames)
-        val expectedPath = filePath.replace(".kt", ".txt")
-        KotlinTestUtils.assertEqualsToFile(File(expectedPath), firDump)
+        KotlinTestUtils.assertEqualsToFile(testDataFileSibling(".txt"), firDump)
     }
 
     companion object {

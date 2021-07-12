@@ -120,9 +120,6 @@ class ClassCodegen private constructor(
         if (generated) return
         generated = true
 
-        // We remove reads of `$$delegatedProperties` (and the field itself) if they are not in fact used for anything.
-        val delegatedProperties = irClass.fields.singleOrNull { it.origin == JvmLoweredDeclarationOrigin.GENERATED_PROPERTY_REFERENCE }
-        val delegatedPropertyOptimizer = if (delegatedProperties != null) DelegatedPropertyOptimizer() else null
         // Generating a method node may cause the addition of a field with an initializer if an inline function
         // call uses `assert` and the JVM assertions mode is enabled. To avoid concurrent modification errors,
         // there is a very specific generation order.
@@ -130,19 +127,14 @@ class ClassCodegen private constructor(
         // 1. Any method other than `<clinit>` can add a field and a `<clinit>` statement:
         for (method in irClass.declarations.filterIsInstance<IrFunction>()) {
             if (method.name.asString() != "<clinit>") {
-                generateMethod(method, smap, delegatedPropertyOptimizer)
+                generateMethod(method, smap)
             }
         }
         // 2. `<clinit>` itself can add a field, but the statement is generated via the `return init` hack:
-        irClass.functions.find { it.name.asString() == "<clinit>" }?.let { generateMethod(it, smap, delegatedPropertyOptimizer) }
-        // 3. Now we have all the fields (`$$delegatedProperties` might be redundant if all reads were optimized out):
+        irClass.functions.find { it.name.asString() == "<clinit>" }?.let { generateMethod(it, smap) }
+        // 3. Now we have all the fields, including `$assertionsDisabled` if needed:
         for (field in irClass.fields) {
-            if (field !== delegatedProperties ||
-                delegatedPropertyOptimizer?.needsDelegatedProperties == true ||
-                irClass.isCompanion
-            ) {
-                generateField(field)
-            }
+            generateField(field)
         }
         // 4. Generate nested classes at the end, to ensure that when the companion's metadata is serialized
         //    everything moved to the outer class has already been recorded in `globalSerializationBindings`.
@@ -205,22 +197,19 @@ class ClassCodegen private constructor(
         }
     }
 
-
     fun generateAssertFieldIfNeeded(generatingClInit: Boolean): IrExpression? {
         if (irClass.hasAssertionsDisabledField(context))
             return null
         val topLevelClass = generateSequence(this) { it.parentClassCodegen }.last().irClass
         val field = irClass.buildAssertionsDisabledField(context, topLevelClass)
-        generateField(field)
-        // Normally, `InitializersLowering` would move the initializer to <clinit>, but
-        // it's obviously too late for that.
-        val init = IrSetFieldImpl(
-            field.startOffset, field.endOffset, field.symbol, null,
-            field.initializer!!.expression, context.irBuiltIns.unitType
-        )
+        irClass.declarations.add(0, field)
+        // Normally, `InitializersLowering` would move the initializer to <clinit>, but it's obviously too late for that.
+        val init = with(field) {
+            IrSetFieldImpl(startOffset, endOffset, symbol, null, initializer!!.expression, context.irBuiltIns.unitType)
+        }
         if (generatingClInit) {
-            // Too late to modify the IR; have to ask the currently active `ExpressionCodegen`
-            // to generate this statement directly.
+            // Too late to modify the IR; have to ask the currently active `ExpressionCodegen` to generate this statement
+            // directly. At least we know that nothing before this point uses the field.
             return init
         }
         val classInitializer = irClass.functions.singleOrNull { it.name.asString() == "<clinit>" } ?: irClass.addFunction {
@@ -229,6 +218,7 @@ class ClassCodegen private constructor(
         }.apply {
             body = IrBlockBodyImpl(startOffset, endOffset)
         }
+        // Should be initialized first in case some inline function call in `<clinit>` also uses assertions.
         (classInitializer.body as IrBlockBody).statements.add(0, init)
         return null
     }
@@ -357,19 +347,13 @@ class ClassCodegen private constructor(
         return SMAPAndMethodNode(cloneMethodNode(node), smap)
     }
 
-    private fun generateMethod(method: IrFunction, classSMAP: SourceMapper, delegatedPropertyOptimizer: DelegatedPropertyOptimizer?) {
+    private fun generateMethod(method: IrFunction, classSMAP: SourceMapper) {
         if (method.isFakeOverride) {
             jvmSignatureClashDetector.trackFakeOverrideMethod(method)
             return
         }
 
         val (node, smap) = generateMethodNode(method)
-        if (delegatedPropertyOptimizer != null) {
-            delegatedPropertyOptimizer.transform(node)
-            if (method.name.asString() == "<clinit>" && !irClass.isCompanion) {
-                delegatedPropertyOptimizer.transformClassInitializer(node)
-            }
-        }
         node.preprocessSuspendMarkers(
             method.origin == JvmLoweredDeclarationOrigin.FOR_INLINE_STATE_MACHINE_TEMPLATE || method.isEffectivelyInlineOnly(),
             method.origin == JvmLoweredDeclarationOrigin.FOR_INLINE_STATE_MACHINE_TEMPLATE_CAPTURES_CROSSINLINE

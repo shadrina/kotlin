@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.npm.CompositeNodeModulesCache
 import org.jetbrains.kotlin.gradle.targets.js.npm.GradleNodeModulesCache
 import org.jetbrains.kotlin.gradle.targets.js.npm.KotlinNpmResolutionManager
-import org.jetbrains.kotlin.gradle.targets.js.npm.PackageJsonUpToDateCheck
 import org.jetbrains.kotlin.gradle.targets.js.npm.plugins.RootResolverPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.KotlinCompilationNpmResolution
 import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.KotlinProjectNpmResolution
@@ -127,7 +126,7 @@ internal class KotlinRootNpmResolver internal constructor(
     val plugins
         get() = plugins_ ?: resolverStateHolder.get().parameters.plugins.get()
 
-    val projectResolvers
+    private val projectResolvers
         get() = projectResolvers_ ?: configurationCacheProjectResolvers
 
     val yarn by lazy {
@@ -201,7 +200,9 @@ internal class KotlinRootNpmResolver internal constructor(
                 logger,
                 allNpmPackages,
                 yarn.resolutions
-                    .associate { it.path to it.toVersionString() })
+                    .associate { it.path to it.toVersionString() },
+                forceFullResolve
+            )
 
             return Installation(
                 projectResolutions
@@ -229,26 +230,16 @@ internal class KotlinRootNpmResolver internal constructor(
                     .values
                     .flatMap { it.npmProjects }
 
-                // we need manual up-to-date checking to avoid call package manager during
-                // idea import if nothing was changed
-                // we should call it even kotlinNpmInstall task is up-to-date (skipPackageManager is true)
-                // because our upToDateChecks saves state for next execution
-                val upToDateChecks = allNpmPackages.map {
-                    PackageJsonUpToDateCheck(services, it.npmProject)
-                }
-                val upToDate = forceUpToDate || upToDateChecks.all { it.upToDate }
-
+                val yarnConfigured = yarn.requireConfigured()
                 nodeJs.packageManager.resolveRootProject(
                     services,
                     logger,
                     nodeJs,
-                    yarn.requireConfigured().home,
+                    yarnConfigured.executable,
+                    yarnConfigured.standalone,
                     allNpmPackages,
-                    upToDate,
                     args
                 )
-
-                upToDateChecks.forEach { it.commit() }
 
                 return KotlinRootNpmResolution(rootProject, projectResolutions)
             }

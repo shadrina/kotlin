@@ -326,7 +326,7 @@ public class FreezableAtomicReference<T>(private var value_: T) {
     public var value: T
         get() = @Suppress("UNCHECKED_CAST")(getImpl() as T)
         set(new) {
-            if (this.isFrozen)
+            if (this.isShareable())
                 setImpl(new)
             else
                 value_ = new
@@ -342,7 +342,9 @@ public class FreezableAtomicReference<T>(private var value_: T) {
      * @return the old value
      */
      public fun compareAndSwap(expected: T, new: T): T {
-        return if (this.isFrozen) @Suppress("UNCHECKED_CAST")(compareAndSwapImpl(expected, new) as T) else {
+        return if (this.isShareable()) {
+            @Suppress("UNCHECKED_CAST")(compareAndSwapImpl(expected, new) as T)
+        } else {
             val old = value_
             if (old === expected) value_ = new
             old
@@ -358,7 +360,8 @@ public class FreezableAtomicReference<T>(private var value_: T) {
      * @return true if successful
      */
     public fun compareAndSet(expected: T, new: T): Boolean {
-        if (this.isFrozen) return compareAndSetImpl(expected, new)
+        if (this.isShareable())
+            return compareAndSetImpl(expected, new)
         val old = value_
         if (old === expected) {
             value_ = new
@@ -375,6 +378,19 @@ public class FreezableAtomicReference<T>(private var value_: T) {
      */
     public override fun toString(): String =
             "${debugString(this)} -> ${debugString(value)}"
+
+    // TODO: Consider making this public.
+    internal fun swap(new: T): T {
+        while (true) {
+            val old = value
+            if (old === new) {
+                return old
+            }
+            if (compareAndSet(old, new)) {
+                return old
+            }
+        }
+    }
 
     // Implementation details.
     @GCUnsafeCall("Kotlin_AtomicReference_set")

@@ -5,11 +5,14 @@
 
 package org.jetbrains.uast.kotlin
 
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.uast.DEFAULT_EXPRESSION_TYPES_LIST
-import org.jetbrains.uast.DEFAULT_TYPES_LIST
-import org.jetbrains.uast.UElement
-import org.jetbrains.uast.UExpression
+import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.utils.KotlinExceptionWithAttachments
+import org.jetbrains.uast.*
+import org.jetbrains.uast.kotlin.internal.KotlinFakeUElement
 
 fun expressionTypes(requiredType: Class<out UElement>?) =
     requiredType?.let { arrayOf(it) } ?: DEFAULT_EXPRESSION_TYPES_LIST
@@ -47,3 +50,37 @@ val identifiersTokens = setOf(
     KtTokens.THIS_KEYWORD, KtTokens.SUPER_KEYWORD,
     KtTokens.GET_KEYWORD, KtTokens.SET_KEYWORD
 )
+
+fun UElement.toSourcePsiFakeAware(): List<PsiElement> {
+    if (this is KotlinFakeUElement) return this.unwrapToSourcePsi()
+    return listOfNotNull(this.sourcePsi)
+}
+
+fun wrapExpressionBody(function: UElement, bodyExpression: KtExpression): UExpression? = when (bodyExpression) {
+    !is KtBlockExpression -> {
+        KotlinLazyUBlockExpression(function) { block ->
+            val implicitReturn = KotlinUImplicitReturnExpression(block)
+            val uBody = function.getLanguagePlugin().convertElement(bodyExpression, implicitReturn) as? UExpression
+                ?: return@KotlinLazyUBlockExpression emptyList()
+            listOf(implicitReturn.apply { returnExpression = uBody })
+        }
+
+    }
+    else -> function.getLanguagePlugin().convertElement(bodyExpression, function) as? UExpression
+}
+
+fun reportConvertFailure(psiMethod: PsiMethod): Nothing {
+    val isValid = psiMethod.isValid
+    val report = KotlinExceptionWithAttachments(
+        "cant convert $psiMethod of ${psiMethod.javaClass} to UMethod" + if (!isValid) " (method is not valid)" else ""
+    )
+
+    if (isValid) {
+        report.withAttachment("method", psiMethod.text)
+        psiMethod.containingFile?.let {
+            report.withAttachment("file", it.text)
+        }
+    }
+
+    throw report
+}

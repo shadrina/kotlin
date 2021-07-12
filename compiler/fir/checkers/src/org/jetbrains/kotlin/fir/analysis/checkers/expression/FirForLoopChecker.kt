@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.fir.analysis.checkers.expression
 
-import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.fir.FirFakeSourceElementKind
 import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
@@ -22,7 +21,7 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NEXT_MISSING
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NEXT_NONE_APPLICABLE
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.OPERATOR_MODIFIER_REQUIRED
 import org.jetbrains.kotlin.fir.declarations.FirProperty
-import org.jetbrains.kotlin.fir.declarations.isOperator
+import org.jetbrains.kotlin.fir.declarations.utils.isOperator
 import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
 import org.jetbrains.kotlin.fir.expressions.FirWhileLoop
@@ -32,9 +31,8 @@ import org.jetbrains.kotlin.fir.resolve.calls.UnsafeCall
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeAmbiguityError
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeInapplicableCandidateError
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeUnresolvedNameError
-import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
-import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.resolve.calls.tower.isSuccess
 
 object FirForLoopChecker : FirBlockChecker() {
@@ -95,10 +93,10 @@ object FirForLoopChecker : FirBlockChecker() {
         reporter: DiagnosticReporter,
         reportSource: FirSourceElement?,
         context: CheckerContext,
-        ambiguityFactory: FirDiagnosticFactory1<PsiElement, Collection<AbstractFirBasedSymbol<*>>>,
-        missingFactory: FirDiagnosticFactory0<KtExpression>,
-        noneApplicableFactory: FirDiagnosticFactory1<KtExpression, Collection<AbstractFirBasedSymbol<*>>>? = null,
-        unsafeCallFactory: FirDiagnosticFactory0<KtExpression>? = null,
+        ambiguityFactory: FirDiagnosticFactory1<Collection<FirBasedSymbol<*>>>,
+        missingFactory: FirDiagnosticFactory0,
+        noneApplicableFactory: FirDiagnosticFactory1<Collection<FirBasedSymbol<*>>>? = null,
+        unsafeCallFactory: FirDiagnosticFactory0? = null,
     ): Boolean {
         when (val calleeReference = call.calleeReference) {
             is FirErrorNamedReference -> {

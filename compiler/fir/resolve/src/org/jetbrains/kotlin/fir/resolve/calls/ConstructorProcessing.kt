@@ -10,6 +10,8 @@ import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.buildConstructedClassTypeParameterRef
 import org.jetbrains.kotlin.fir.declarations.builder.buildConstructorCopy
+import org.jetbrains.kotlin.fir.declarations.utils.classId
+import org.jetbrains.kotlin.fir.declarations.utils.isInner
 import org.jetbrains.kotlin.fir.resolve.BodyResolveComponents
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.resolve.scope
@@ -24,7 +26,6 @@ import org.jetbrains.kotlin.fir.scopes.scopeForClass
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.name.Name
-import java.util.*
 
 private operator fun <T> Pair<T, *>?.component1() = this?.first
 private operator fun <T> Pair<*, T>?.component2() = this?.second
@@ -189,7 +190,7 @@ private fun processConstructors(
                     } else basicScope
                 }
                 is FirClassSymbol -> {
-                    val firClass = matchedSymbol.fir as FirClass<*>
+                    val firClass = matchedSymbol.fir as FirClass
                     if (firClass.classKind == ClassKind.INTERFACE) null
                     else firClass.scopeForClass(
                         substitutor, session, bodyResolveComponents.scopeSession

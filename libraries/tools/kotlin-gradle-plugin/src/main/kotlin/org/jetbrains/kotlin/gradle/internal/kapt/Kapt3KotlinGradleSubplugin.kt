@@ -292,8 +292,6 @@ class Kapt3GradleSubplugin @Inject internal constructor(private val registry: To
         val kaptTaskProvider: TaskProvider<out KaptTask> = context.createKaptKotlinTask(useWorkerApi = project.isUseWorkerApi())
 
         kaptGenerateStubsTaskProvider.configure { kaptGenerateStubsTask ->
-            kaptGenerateStubsTask.source(*kaptConfigurations.toTypedArray())
-
             kaptGenerateStubsTask.dependsOn(*buildDependencies.toTypedArray())
             kaptGenerateStubsTask.dependsOn(
                 project.provider {
@@ -365,7 +363,6 @@ class Kapt3GradleSubplugin @Inject internal constructor(private val registry: To
     private fun Kapt3SubpluginContext.getAPOptions(): Provider<CompositeSubpluginOption> = project.provider {
         val androidVariantData = KaptWithAndroid.androidVariantData(this)
 
-        val androidOptions = androidVariantData?.annotationProcessorOptions ?: emptyMap()
         val annotationProcessorProviders = androidVariantData?.annotationProcessorOptionProviders
 
         val subluginOptionsFromProvidedApOptions = lazy {
@@ -383,23 +380,25 @@ class Kapt3GradleSubplugin @Inject internal constructor(private val registry: To
             }
         }
 
-        val nonAndroidOptions = androidOptions.toList().map { SubpluginOption(it.first, it.second) } + getKaptApOptions().get()
-
         CompositeSubpluginOption(
             "apoptions",
-            lazy { encodeList((nonAndroidOptions + subluginOptionsFromProvidedApOptions.value).associate { it.key to it.value }) },
-            nonAndroidOptions
+            lazy { encodeList((getDslKaptApOptions().get() + subluginOptionsFromProvidedApOptions.value).associate { it.key to it.value }) },
+            getDslKaptApOptions().get()
         )
     }
 
-    private fun Kapt3SubpluginContext.getKaptApOptions(): Provider<List<SubpluginOption>> = project.provider {
+    /* Returns AP options from static DSL. */
+    private fun Kapt3SubpluginContext.getDslKaptApOptions(): Provider<List<SubpluginOption>> = project.provider {
         val androidVariantData = KaptWithAndroid.androidVariantData(this)
 
         val androidExtension = androidVariantData?.let {
             project.extensions.findByName("android") as? BaseExtension
         }
 
-        kaptExtension.getAdditionalArguments(project, androidVariantData, androidExtension).toList()
+        val androidOptions = androidVariantData?.annotationProcessorOptions ?: emptyMap()
+        val androidSubpluginOptions = androidOptions.toList().map { SubpluginOption(it.first, it.second) }
+
+        androidSubpluginOptions + kaptExtension.getAdditionalArguments(project, androidVariantData, androidExtension).toList()
             .map { SubpluginOption(it.first, it.second) } +
                 FilesSubpluginOption(KAPT_KOTLIN_GENERATED, listOf(kotlinSourcesOutputDir))
     }
@@ -595,7 +594,6 @@ class Kapt3GradleSubplugin @Inject internal constructor(private val registry: To
         if (taskClass == KaptWithoutKotlincTask::class.java) {
             kaptTaskProvider.configure {
                 it as KaptWithoutKotlincTask
-                it.isVerbose = project.isKaptVerbose()
                 it.mapDiagnosticLocations = kaptExtension.mapDiagnosticLocations
                 it.annotationProcessorFqNames = kaptExtension.processors.split(',').filter { it.isNotEmpty() }
                 it.javacOptions = dslJavacOptions.get()
@@ -610,7 +608,7 @@ class Kapt3GradleSubplugin @Inject internal constructor(private val registry: To
                 it.disableClassloaderCacheForProcessors = project.disableClassloaderCacheForProcessors()
             }
 
-            val subpluginOptions = getKaptApOptions()
+            val subpluginOptions = getDslKaptApOptions()
             registerSubpluginOptions(kaptTaskProvider, subpluginOptions)
         }
 

@@ -15,6 +15,9 @@ import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.backend.generators.FakeOverrideGenerator
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
+import org.jetbrains.kotlin.fir.declarations.utils.isInline
+import org.jetbrains.kotlin.fir.declarations.utils.isJava
+import org.jetbrains.kotlin.fir.declarations.utils.visibility
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirConstExpression
 import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccess
@@ -27,10 +30,13 @@ import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.calls.FirSyntheticPropertySymbol
 import org.jetbrains.kotlin.fir.resolve.calls.originalConstructorIfTypeAlias
 import org.jetbrains.kotlin.fir.resolve.providers.FirProvider
-import org.jetbrains.kotlin.fir.scopes.*
+import org.jetbrains.kotlin.fir.scopes.FirTypeScope
+import org.jetbrains.kotlin.fir.scopes.ProcessorAction
 import org.jetbrains.kotlin.fir.scopes.impl.delegatedWrapperData
-import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.scopes.unsubstitutedScope
+import org.jetbrains.kotlin.fir.scopes.unsubstitutedScope
 import org.jetbrains.kotlin.fir.symbols.AccessorSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.ir.IrElement
@@ -140,7 +146,7 @@ fun FirClassifierSymbol<*>.toSymbol(
     }
 }
 
-private fun AbstractFirBasedSymbol<*>.toSymbolForCall(
+private fun FirBasedSymbol<*>.toSymbolForCall(
     session: FirSession,
     classifierStorage: Fir2IrClassifierStorage,
     declarationStorage: Fir2IrDeclarationStorage,
@@ -193,7 +199,7 @@ private fun FirCallableSymbol<*>.toSymbolForCall(declarationStorage: Fir2IrDecla
         is FirPropertySymbol -> declarationStorage.getIrPropertySymbol(this)
         is FirFieldSymbol -> declarationStorage.getIrFieldSymbol(this)
         is FirBackingFieldSymbol -> declarationStorage.getIrBackingFieldSymbol(this)
-        is FirDelegateFieldSymbol<*> -> declarationStorage.getIrBackingFieldSymbol(this)
+        is FirDelegateFieldSymbol -> declarationStorage.getIrBackingFieldSymbol(this)
         is FirVariableSymbol<*> -> declarationStorage.getIrValueSymbol(this)
         else -> null
     }
@@ -290,7 +296,7 @@ internal tailrec fun FirCallableSymbol<*>.unwrapCallRepresentative(root: FirCall
 }
 
 internal fun FirSimpleFunction.generateOverriddenFunctionSymbols(
-    containingClass: FirClass<*>,
+    containingClass: FirClass,
     session: FirSession,
     scopeSession: ScopeSession,
     declarationStorage: Fir2IrDeclarationStorage,
@@ -318,15 +324,11 @@ internal fun FirSimpleFunction.generateOverriddenFunctionSymbols(
 
 fun FirTypeScope.processOverriddenFunctionsFromSuperClasses(
     functionSymbol: FirNamedFunctionSymbol,
-    containingClass: FirClass<*>,
+    containingClass: FirClass,
     processor: (FirNamedFunctionSymbol) -> ProcessorAction
 ): ProcessorAction = processDirectOverriddenFunctionsWithBaseScope(functionSymbol) { overridden, baseScope ->
-    val unwrapped =
-        overridden.fir.delegatedWrapperData?.takeIf { it.containingClass == containingClass.symbol.toLookupTag() }?.wrapped?.symbol
-            ?: overridden
-
-    if (unwrapped.containingClass() == containingClass.symbol.toLookupTag()) {
-        baseScope.processOverriddenFunctionsFromSuperClasses(unwrapped, containingClass, processor)
+    if (overridden.containingClass() == containingClass.symbol.toLookupTag()) {
+        baseScope.processOverriddenFunctionsFromSuperClasses(overridden, containingClass, processor)
     } else {
         processor(overridden)
     }
@@ -334,7 +336,7 @@ fun FirTypeScope.processOverriddenFunctionsFromSuperClasses(
 
 fun FirTypeScope.processOverriddenPropertiesFromSuperClasses(
     propertySymbol: FirPropertySymbol,
-    containingClass: FirClass<*>,
+    containingClass: FirClass,
     processor: (FirPropertySymbol) -> ProcessorAction
 ): ProcessorAction = processDirectOverriddenPropertiesWithBaseScope(propertySymbol) { overridden, baseScope ->
     if (overridden.containingClass() == containingClass.symbol.toLookupTag()) {
@@ -344,7 +346,7 @@ fun FirTypeScope.processOverriddenPropertiesFromSuperClasses(
     }
 }
 
-private fun FirClass<*>.getSuperTypesAsIrClasses(
+private fun FirClass.getSuperTypesAsIrClasses(
     declarationStorage: Fir2IrDeclarationStorage
 ): Set<IrClass>? {
     val irClass =
@@ -354,7 +356,7 @@ private fun FirClass<*>.getSuperTypesAsIrClasses(
 }
 
 internal fun FirProperty.generateOverriddenPropertySymbols(
-    containingClass: FirClass<*>,
+    containingClass: FirClass,
     session: FirSession,
     scopeSession: ScopeSession,
     declarationStorage: Fir2IrDeclarationStorage,
@@ -381,7 +383,7 @@ internal fun FirProperty.generateOverriddenPropertySymbols(
 }
 
 internal fun FirProperty.generateOverriddenAccessorSymbols(
-    containingClass: FirClass<*>,
+    containingClass: FirClass,
     isGetter: Boolean,
     session: FirSession,
     scopeSession: ScopeSession,
@@ -460,9 +462,9 @@ internal fun IrDeclarationParent.declareThisReceiverParameter(
         this.parent = this@declareThisReceiverParameter
     }
 
-fun FirClass<*>.irOrigin(firProvider: FirProvider): IrDeclarationOrigin = when {
+fun FirClass.irOrigin(firProvider: FirProvider): IrDeclarationOrigin = when {
     firProvider.getFirClassifierContainerFileIfAny(symbol) != null -> IrDeclarationOrigin.DEFINED
-    origin == FirDeclarationOrigin.Java -> IrDeclarationOrigin.IR_EXTERNAL_JAVA_DECLARATION_STUB
+    isJava -> IrDeclarationOrigin.IR_EXTERNAL_JAVA_DECLARATION_STUB
     else -> IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB
 }
 

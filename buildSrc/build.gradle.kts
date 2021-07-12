@@ -22,7 +22,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.29")
+        classpath("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.31")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.bootstrapKotlinVersion}")
         classpath("org.jetbrains.kotlin:kotlin-sam-with-receiver:${project.bootstrapKotlinVersion}")
     }
@@ -69,7 +69,6 @@ rootProject.apply {
 }
 
 val isTeamcityBuild = kotlinBuildProperties.isTeamcityBuild
-val intellijUltimateEnabled by extra(kotlinBuildProperties.intellijUltimateEnabled)
 val intellijSeparateSdks by extra(project.getBooleanProperty("intellijSeparateSdks") ?: false)
 
 extra["intellijReleaseType"] = when {
@@ -144,7 +143,7 @@ java {
 dependencies {
     implementation(kotlin("stdlib", embeddedKotlinVersion))
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.bootstrapKotlinVersion}")
-    implementation("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.29")
+    implementation("org.jetbrains.kotlin:kotlin-build-gradle-plugin:0.0.31")
     implementation("com.gradle.publish:plugin-publish-plugin:0.14.0")
 
     implementation("net.rubygrapefruit:native-platform:${property("versions.native-platform")}")
@@ -159,7 +158,7 @@ dependencies {
     implementation("gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.5")
 
     implementation("org.gradle:test-retry-gradle-plugin:1.2.0")
-    implementation("com.gradle.enterprise:test-distribution-gradle-plugin:1.2.1")
+    implementation("com.gradle.enterprise:test-distribution-gradle-plugin:2.1")
 
     compileOnly(gradleApi())
 

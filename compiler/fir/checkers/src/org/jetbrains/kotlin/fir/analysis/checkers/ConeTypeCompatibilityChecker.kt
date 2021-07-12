@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.fir.analysis.checkers
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.*
 import org.jetbrains.kotlin.fir.isPrimitiveType
 import org.jetbrains.kotlin.fir.languageVersionSettings
 import org.jetbrains.kotlin.fir.resolve.calls.fullyExpandedClass
@@ -336,7 +337,7 @@ internal object ConeTypeCompatibilityChecker {
 
     private fun MutableMap<FirTypeParameterRef, BoundTypeArguments>.collect(
         ctx: ConeInferenceContext,
-        typeParameterOwner: FirClassLikeDeclaration<*>,
+        typeParameterOwner: FirClassLikeDeclaration,
         parameter: FirTypeParameterRef,
         boundTypeArgument: BoundTypeArgument,
         compatibilityUpperBound: Compatibility,
@@ -364,28 +365,28 @@ internal object ConeTypeCompatibilityChecker {
         }
     }
 
-    private fun FirClassLikeDeclaration<*>.getSuperTypes(): List<ConeClassLikeType> {
+    private fun FirClassLikeDeclaration.getSuperTypes(): List<ConeClassLikeType> {
         return when (this) {
             is FirTypeAlias -> listOfNotNull(expandedTypeRef.coneTypeSafe())
-            is FirClass<*> -> superTypeRefs.mapNotNull { it.coneTypeSafe() }
+            is FirClass -> superTypeRefs.mapNotNull { it.coneTypeSafe() }
             else -> emptyList()
         }
     }
 
-    private fun ConeClassLikeType.getClassLikeElement(ctx: ConeInferenceContext): FirClassLikeDeclaration<*>? =
+    private fun ConeClassLikeType.getClassLikeElement(ctx: ConeInferenceContext): FirClassLikeDeclaration? =
         ctx.symbolProvider.getSymbolByLookupTag(lookupTag)?.fir
 
-    private fun FirClassLikeDeclaration<*>.getTypeParameter(index: Int): FirTypeParameterRef? {
+    private fun FirClassLikeDeclaration.getTypeParameter(index: Int): FirTypeParameterRef? {
         return when (this) {
             is FirTypeAlias -> typeParameters[index]
-            is FirClass<*> -> typeParameters[index]
+            is FirClass -> typeParameters[index]
             else -> return null
         }
     }
 
     /** A class declaration and the arguments bound to the declared type parameters. */
     private data class TypeArgumentMapping(
-        val typeParameterOwner: FirClassLikeDeclaration<*>,
+        val typeParameterOwner: FirClassLikeDeclaration,
         val mapping: Map<FirTypeParameterRef, BoundTypeArgument>
     )
 
@@ -407,11 +408,11 @@ internal object ConeTypeCompatibilityChecker {
         ctx: ConeInferenceContext
     ): FirClassWithSuperClasses? = when (val klass = ctx.symbolProvider.getSymbolByLookupTag(this)?.fir) {
         is FirTypeAlias -> klass.fullyExpandedClass(ctx.session)?.let { FirClassWithSuperClasses(it, ctx) }
-        is FirClass<*> -> FirClassWithSuperClasses(klass, ctx)
+        is FirClass -> FirClassWithSuperClasses(klass, ctx)
         else -> null
     }
 
-    private data class FirClassWithSuperClasses(val firClass: FirClass<*>, val ctx: ConeInferenceContext) {
+    private data class FirClassWithSuperClasses(val firClass: FirClass, val ctx: ConeInferenceContext) {
         val isInterface: Boolean get() = firClass.isInterface
 
         val superClasses: Set<FirClassWithSuperClasses> by lazy {
@@ -453,7 +454,7 @@ internal object ConeTypeCompatibilityChecker {
                     (firClass is FirRegularClass && (firClass.isData || firClass.isInline))
         }
 
-        private val FirClass<*>.isFinal: Boolean
+        private val FirClass.isFinal: Boolean
             get() {
                 return when (this) {
                     is FirAnonymousObject -> true

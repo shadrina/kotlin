@@ -22,6 +22,7 @@ enum class DiagnosticKind {
     UnresolvedLabel,
     NoThis,
     IllegalConstExpression,
+    IllegalSelector,
     IllegalUnderscore,
     DeserializationError,
     InferenceError,
@@ -50,5 +51,5 @@ enum class DiagnosticKind {
     FloatLiteralOutOfRange,
     WrongLongSuffix,
 
-    Other
+    Other,
 }

@@ -10,16 +10,18 @@ import org.jetbrains.kotlin.fir.FirModuleData
 import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.builder.FirBuilderDsl
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.references.FirControlFlowGraphReference
-import org.jetbrains.kotlin.fir.symbols.impl.FirDelegateFieldSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
+import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.visitors.FirTransformer
 import org.jetbrains.kotlin.fir.visitors.FirVisitor
 import org.jetbrains.kotlin.fir.visitors.transformSingle
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -32,7 +34,7 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     override val attributes: FirDeclarationAttributes,
     override var returnTypeRef: FirTypeRef,
     override val name: Name,
-    override val symbol: FirVariableSymbol<FirValueParameter>,
+    override val symbol: FirValueParameterSymbol,
     annotationBuilder: () -> List<FirAnnotationCall>,
     override var defaultValue: FirExpression?,
     override val isVararg: Boolean,
@@ -61,13 +63,13 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     override val receiverTypeRef: FirTypeRef?
         get() = null
 
+    override val deprecation: DeprecationsPerUseSite
+        get() = EmptyDeprecationsPerUseSite
+
     override val initializer: FirExpression?
         get() = null
 
     override val delegate: FirExpression?
-        get() = null
-
-    override val delegateFieldSymbol: FirDelegateFieldSymbol<FirValueParameter>?
         get() = null
 
     override val getter: FirPropertyAccessor?
@@ -77,6 +79,18 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
         get() = null
 
     override val controlFlowGraphReference: FirControlFlowGraphReference?
+        get() = null
+
+    override val typeParameters: List<FirTypeParameterRef>
+        get() = emptyList()
+
+    override val status: FirDeclarationStatus
+        get() = FirResolvedDeclarationStatusImpl.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+
+    override val containerSource: DeserializedContainerSource?
+        get() = null
+
+    override val dispatchReceiverType: ConeKotlinType?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
@@ -125,6 +139,14 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
         return this
     }
 
+    override fun <D> transformTypeParameters(transformer: FirTransformer<D>, data: D): FirValueParameter {
+        return this
+    }
+
+    override fun <D> transformStatus(transformer: FirTransformer<D>, data: D): FirValueParameter {
+        return this
+    }
+
     override fun replaceResolvePhase(newResolvePhase: FirResolvePhase) {
         resolvePhase = newResolvePhase
     }
@@ -134,6 +156,10 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     }
 
     override fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?) {
+    }
+
+    override fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?) {
+
     }
 
     override fun replaceInitializer(newInitializer: FirExpression?) {
@@ -163,7 +189,7 @@ class FirJavaValueParameterBuilder {
             attributes,
             returnTypeRef,
             name,
-            symbol = FirVariableSymbol(name),
+            symbol = FirValueParameterSymbol(name),
             annotationBuilder,
             defaultValue,
             isVararg,

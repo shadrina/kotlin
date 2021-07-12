@@ -12,7 +12,10 @@ import kotlinx.collections.immutable.persistentListOf
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.FirAnnotatedDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirFile
+import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.extensions.*
@@ -91,7 +94,7 @@ private class FirAnnotationResolveTransformer(
 
     private var owners: PersistentList<FirAnnotatedDeclaration> = persistentListOf()
 
-    override fun beforeChildren(declaration: FirAnnotatedDeclaration): PersistentList<FirAnnotatedDeclaration>? {
+    override fun beforeChildren(declaration: FirAnnotatedDeclaration): PersistentList<FirAnnotatedDeclaration> {
         val current = owners
         owners = owners.add(declaration)
         return current
@@ -126,7 +129,7 @@ private class FirAnnotationResolveTransformer(
     override fun transformAnnotatedDeclaration(
         annotatedDeclaration: FirAnnotatedDeclaration,
         data: Multimap<AnnotationFqn, FirRegularClass>
-    ): FirDeclaration {
+    ): FirAnnotatedDeclaration {
         return super.transformAnnotatedDeclaration(annotatedDeclaration, data).also {
             session.predicateBasedProvider.registerAnnotatedDeclaration(annotatedDeclaration, owners)
         }

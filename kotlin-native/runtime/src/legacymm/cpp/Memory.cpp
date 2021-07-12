@@ -3331,10 +3331,10 @@ void ClearMemoryForTests(MemoryState*) {
     // Nothing to do, DeinitMemory will do the job.
 }
 
-OBJ_GETTER(AllocInstanceStrict, const TypeInfo* type_info) {
+RUNTIME_NOTHROW OBJ_GETTER(AllocInstanceStrict, const TypeInfo* type_info) {
   RETURN_RESULT_OF(allocInstance<true>, type_info);
 }
-OBJ_GETTER(AllocInstanceRelaxed, const TypeInfo* type_info) {
+RUNTIME_NOTHROW OBJ_GETTER(AllocInstanceRelaxed, const TypeInfo* type_info) {
   RETURN_RESULT_OF(allocInstance<false>, type_info);
 }
 
@@ -3429,7 +3429,7 @@ RUNTIME_NOTHROW void UpdateHeapRefIfNull(ObjHeader** location, const ObjHeader* 
   updateHeapRefIfNull(location, object);
 }
 
-OBJ_GETTER(SwapHeapRefLocked,
+RUNTIME_NOTHROW OBJ_GETTER(SwapHeapRefLocked,
     ObjHeader** location, ObjHeader* expectedValue, ObjHeader* newValue, int32_t* spinlock, int32_t* cookie) {
   RETURN_RESULT_OF(swapHeapRefLocked, location, expectedValue, newValue, spinlock, cookie);
 }
@@ -3438,7 +3438,7 @@ RUNTIME_NOTHROW void SetHeapRefLocked(ObjHeader** location, ObjHeader* newValue,
   setHeapRefLocked(location, newValue, spinlock, cookie);
 }
 
-OBJ_GETTER(ReadHeapRefLocked, ObjHeader** location, int32_t* spinlock, int32_t* cookie) {
+RUNTIME_NOTHROW OBJ_GETTER(ReadHeapRefLocked, ObjHeader** location, int32_t* spinlock, int32_t* cookie) {
   RETURN_RESULT_OF(readHeapRefLocked, location, spinlock, cookie);
 }
 
@@ -3584,11 +3584,11 @@ RUNTIME_NOTHROW void DisposeStablePointerFor(MemoryState* memoryState, KNativePt
   DisposeStablePointer(pointer);
 }
 
-OBJ_GETTER(DerefStablePointer, KNativePtr pointer) {
+RUNTIME_NOTHROW OBJ_GETTER(DerefStablePointer, KNativePtr pointer) {
   RETURN_RESULT_OF(derefStablePointer, pointer);
 }
 
-OBJ_GETTER(AdoptStablePointer, KNativePtr pointer) {
+RUNTIME_NOTHROW OBJ_GETTER(AdoptStablePointer, KNativePtr pointer) {
   RETURN_RESULT_OF(adoptStablePointer, pointer);
 }
 
@@ -3746,7 +3746,7 @@ kotlin::ThreadState kotlin::GetThreadState(MemoryState* thread) noexcept {
     return ThreadState::kRunnable;
 }
 
-ALWAYS_INLINE kotlin::CalledFromNativeGuard::CalledFromNativeGuard() noexcept {
+ALWAYS_INLINE kotlin::CalledFromNativeGuard::CalledFromNativeGuard(bool reentrant) noexcept {
     // no-op, used by the new MM only.
 }
 

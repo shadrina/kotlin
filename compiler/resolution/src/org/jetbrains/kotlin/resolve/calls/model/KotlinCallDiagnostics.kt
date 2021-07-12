@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.resolve.calls.model
 
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import org.jetbrains.kotlin.descriptors.ReceiverParameterDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.resolve.calls.components.CallableReferenceCandidate
 import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintSystemError
@@ -161,7 +162,7 @@ sealed class UnstableSmartCast(
 class UnstableSmartCastResolutionError(
     argument: ExpressionKotlinCallArgument,
     targetType: UnwrappedType,
-) : UnstableSmartCast(argument, targetType, MAY_THROW_RUNTIME_ERROR)
+) : UnstableSmartCast(argument, targetType, UNSTABLE_SMARTCAST)
 
 class UnstableSmartCastDiagnosticError(
     argument: ExpressionKotlinCallArgument,
@@ -214,11 +215,11 @@ class NonApplicableCallForBuilderInferenceDiagnostic(val kotlinCall: KotlinCall)
     }
 }
 
-class ArgumentTypeMismatchDiagnostic(
+class ArgumentNullabilityMismatchDiagnostic(
     val expectedType: UnwrappedType,
     val actualType: UnwrappedType,
     val expressionArgument: ExpressionKotlinCallArgument
-) : KotlinCallDiagnostic(MAY_THROW_RUNTIME_ERROR) {
+) : KotlinCallDiagnostic(UNSAFE_CALL) {
     override fun report(reporter: DiagnosticReporter) {
         reporter.onCallArgument(expressionArgument, this)
     }
@@ -257,6 +258,18 @@ class CompatibilityWarningOnArgument(
 ) : KotlinCallDiagnostic(RESOLVED) {
     override fun report(reporter: DiagnosticReporter) {
         reporter.onCallArgument(argument, this)
+    }
+}
+
+class NoContextReceiver(val receiverDescriptor: ReceiverParameterDescriptor) : KotlinCallDiagnostic(INAPPLICABLE) {
+    override fun report(reporter: DiagnosticReporter) {
+        reporter.onCall(this)
+    }
+}
+
+class MultipleArgumentsApplicableForContextReceiver(val receiverDescriptor: ReceiverParameterDescriptor) : KotlinCallDiagnostic(INAPPLICABLE) {
+    override fun report(reporter: DiagnosticReporter) {
+        reporter.onCall(this)
     }
 }
 

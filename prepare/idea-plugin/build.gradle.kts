@@ -106,9 +106,10 @@ val projectsToShadow by extra(listOf(
         ":idea:idea-git",
         ":idea:idea-jps-common",
         ":idea:idea-frontend-independent",
-        ":idea:idea-frontend-fir",
-        ":idea:idea-frontend-api",
-        ":idea:idea-frontend-fir:idea-fir-low-level-api",
+        ":idea-frontend-fir",
+        ":idea-frontend-api",
+        ":idea-frontend-fir:idea-fir-low-level-api",
+        ":idea:idea-frontend-fir:fir-low-level-api-ide-impl",
         ":idea:idea-fir-performance-tests",
         ":idea:idea-fir",
         *if (Ide.IJ())
@@ -233,5 +234,3 @@ tasks.register<Sync>("ideaPlugin") {
     rename(quote("-$version"), "")
     rename(quote("-$bootstrapKotlinVersion"), "")
 }
-
-apply(from = "$rootDir/gradle/kotlinPluginPublication.gradle.kts")

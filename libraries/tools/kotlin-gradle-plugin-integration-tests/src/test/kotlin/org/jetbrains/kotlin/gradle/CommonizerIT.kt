@@ -23,22 +23,27 @@ class CommonizerIT : BaseGradleIT() {
     @Test
     fun `test commonizeNativeDistributionWithIosLinuxWindows`() {
         with(Project("commonizeNativeDistributionWithIosLinuxWindows")) {
-            build(":p1:commonize", "-Pkotlin.mpp.enableNativeDistributionCommonizationCache=false") {
-                assertTasksExecuted(":p1:commonizeNativeDistribution")
+            build(":cleanNativeDistributionCommonization") {
+                assertSuccessful()
+            }
+
+            build("commonize", "-Pkotlin.mpp.enableNativeDistributionCommonizationCache=false") {
+                assertTasksExecuted(":commonizeNativeDistribution")
                 assertContains(DISABLED_NATIVE_TARGETS_REPORTER_WARNING_PREFIX)
                 assertContains(commonizerOutput)
                 assertSuccessful()
             }
 
-            build(":p1:commonize", "--rerun-tasks", "-Pkotlin.mpp.enableNativeDistributionCommonizationCache=true") {
-                assertTasksExecuted(":p1:commonizeNativeDistribution")
+            build("commonize", "--rerun-tasks", "-Pkotlin.mpp.enableNativeDistributionCommonizationCache=true") {
+                assertTasksExecuted(":commonizeNativeDistribution")
                 assertContains("Native Distribution Commonization: Cache hit")
+                assertContains("Native Distribution Commonization: All available targets are commonized already")
                 assertNotContains(commonizerOutput)
                 assertSuccessful()
             }
 
-            build(":p1:commonize", "--rerun-tasks", "-Pkotlin.mpp.enableNativeDistributionCommonizationCache=false") {
-                assertTasksExecuted(":p1:commonizeNativeDistribution")
+            build("commonize", "--rerun-tasks", "-Pkotlin.mpp.enableNativeDistributionCommonizationCache=false") {
+                assertTasksExecuted(":commonizeNativeDistribution")
                 assertContains("Native Distribution Commonization: Cache disabled")
                 assertContains(commonizerOutput)
                 assertSuccessful()
@@ -338,7 +343,7 @@ class CommonizerIT : BaseGradleIT() {
     @Test
     fun `test KT-46856 filename too long - all native targets configured`() {
         with(Project("commonize-kt-46856-all-targets")) {
-            build(":commonize") {
+            build(":commonize", options = BuildOptions(forceOutputToStdout = true)) {
                 assertSuccessful()
             }
         }

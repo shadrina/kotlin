@@ -5,7 +5,9 @@ plugins {
 
 dependencies {
     compile(project(":plugins:uast-kotlin-fir"))
-    compile(project(":idea:idea-frontend-fir"))
+    compile(project(":idea-frontend-fir"))
+    compile(project(":idea:idea-frontend-fir:fir-low-level-api-ide-impl"))
+
     compile(project(":idea:formatter"))
     compile(intellijDep())
     compile(intellijCoreDep())
@@ -23,7 +25,7 @@ dependencies {
     testCompile(projectTests(":idea"))
     testCompile(projectTests(":compiler:tests-common"))
     testCompile(projectTests(":idea:idea-test-framework"))
-    testCompile(projectTests(":idea:idea-frontend-fir"))
+    testCompile(projectTests(":idea-frontend-fir"))
     testCompile(project(":kotlin-test:kotlin-test-junit"))
     testCompile(commonDep("junit:junit"))
     testCompile(projectTests(":idea:idea-frontend-independent"))
@@ -40,7 +42,7 @@ sourceSets {
     "test" { projectDefault() }
 }
 
-projectTest(parallel = true) {
+projectTest(parallel = false) {
     dependsOn(":dist")
     workingDir = rootDir
     val useFirIdeaPlugin = kotlinBuildProperties.useFirIdeaPlugin

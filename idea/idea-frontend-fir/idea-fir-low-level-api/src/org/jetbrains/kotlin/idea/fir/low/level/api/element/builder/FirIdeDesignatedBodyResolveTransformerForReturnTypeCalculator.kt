@@ -7,7 +7,10 @@ package org.jetbrains.kotlin.idea.fir.low.level.api.element.builder
 
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.FirConstructor
+import org.jetbrains.kotlin.fir.declarations.FirDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirProperty
+import org.jetbrains.kotlin.fir.declarations.FirSimpleFunction
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.transformers.ReturnTypeCalculator
@@ -62,19 +65,19 @@ class FirIdeDesignatedBodyResolveTransformerForReturnTypeCalculatorImpl(
         simpleFunction: FirSimpleFunction,
         data: ResolutionMode
     ): FirSimpleFunction {
-        val firDesignation = FirDeclarationDesignation(declarationDesignation, simpleFunction, false)
+        val firDesignation = FirDeclarationDesignation(declarationDesignation, simpleFunction)
         FirLazyBodiesCalculator.calculateLazyBodiesForFunction(firDesignation)
         return super.transformSimpleFunction(simpleFunction, data)
     }
 
-    override fun transformConstructor(constructor: FirConstructor, data: ResolutionMode): FirDeclaration {
-        val firDesignation = FirDeclarationDesignation(declarationDesignation, constructor, false)
+    override fun transformConstructor(constructor: FirConstructor, data: ResolutionMode): FirConstructor {
+        val firDesignation = FirDeclarationDesignation(declarationDesignation, constructor)
         FirLazyBodiesCalculator.calculateLazyBodyForSecondaryConstructor(firDesignation)
         return super.transformConstructor(constructor, data)
     }
 
     override fun transformProperty(property: FirProperty, data: ResolutionMode): FirProperty {
-        val firDesignation = FirDeclarationDesignation(declarationDesignation, property, false)
+        val firDesignation = FirDeclarationDesignation(declarationDesignation, property)
         FirLazyBodiesCalculator.calculateLazyBodyForProperty(firDesignation)
         return super.transformProperty(property, data)
     }
